@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Квест</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container" id="main-container">
+        <header class="header" id="header">
+            <h1 class="level-title" id="level-title">Уровень <span id="current-level">1</span> / 40</h1>
+            <div class="balance-start">
+                <label>Начальный баланс:</label>
+                <input type="number" id="start-balance" value="1500000" step="10000">
+            </div>
+            <button id="random-btn" class="random-btn hidden">🎲 Рандом</button>
+        </header>
+
+        <div class="cards-container" id="cards-container"></div>
+
+        <!-- Модалка для штрафов (пока не используется) -->
+        <div id="penalty-modal" class="modal hidden">
+            <div class="modal-content penalty-content">
+                <span class="close-modal">&times;</span>
+                <h2>Выбери штраф</h2>
+                <div class="penalty-cards" id="penalty-cards"></div>
+            </div>
+        </div>
+
+        <div class="balance-panel" id="balance-panel">
+            <h2>Баланс <button id="add-balance-btn" class="small-btn">➕</button></h2>
+            <table class="balance-table">
+                <thead>
+                    <tr>
+                        <th>Время</th>
+                        <th>Описание</th>
+                        <th>Изменение</th>
+                        <th>Баланс</th>
+                    </tr>
+                </thead>
+                <tbody id="balance-body"></tbody>
+            </table>
+        </div>
+
+        <div class="control-panel" id="control-panel">
+            <button id="reset-btn" class="big-btn danger hidden">🔄 Начать заново</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно для завершения задания и добавления баланса -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
