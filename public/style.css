@@ -16,10 +16,11 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    width: 300px;               /* можно изменить */
-    height: 100vh;
-    object-fit: cover;
-    object-position: left top;
+    width: auto;               
+    height: 100vh;              
+    max-width: 400px;           
+    object-fit: contain;        
+    object-position: left center; 
     opacity: 0.2;
     pointer-events: none;
     z-index: -1;
@@ -274,7 +275,7 @@ body {
         width: 90%;
     }
     .dragon-left {
-        width: 150px; 
+        max-width: 150px; 
         opacity: 0.1;
     }
 }
