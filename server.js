@@ -291,7 +291,7 @@ questState.balanceHistory.push({
   balance: DEFAULT_BALANCE
 });
 
-// ================== Сервер ==================
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
@@ -433,6 +433,21 @@ io.on('connection', (socket) => {
     io.emit('state', questState);
   });
 
+  
+  socket.on('loadSavedGame', (savedState) => {
+    questState = {
+      level: savedState.level,
+      availableTasks: savedState.availableTasks,
+      currentCards: savedState.currentCards,
+      selectedTaskId: savedState.selectedTaskId,
+      currentBalance: savedState.currentBalance,
+      balanceHistory: savedState.balanceHistory,
+      penaltiesLog: savedState.penaltiesLog || []
+    };
+    io.emit('state', questState);
+    console.log('Загружено сохранение с уровня', savedState.level);
+  });
+
   socket.on('disconnect', () => console.log('Клиент отключён'));
 });
 
@@ -440,4 +455,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
+
 
