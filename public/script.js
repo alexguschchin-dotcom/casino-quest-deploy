@@ -82,8 +82,8 @@ function updatePoolStats(availableTasks) {
   const counts = [0,0,0,0,0,0];
   availableTasks.forEach(t => counts[t.difficulty-1]++);
   poolStatsDiv.innerHTML = `
-    <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #16213e; padding: 10px 20px; border-radius: 60px; border: 1px solid #FFA500; margin-bottom: 10px;">
-      <span style="color: #FFA500;">Осталось заданий:</span>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #16213e; padding: 10px 20px; border-radius: 60px; border: 1px solid gold; margin-bottom: 10px;">
+      <span style="color: gold;">Осталось заданий:</span>
       <span>⭐1: ${counts[0]}</span>
       <span>⭐⭐2: ${counts[1]}</span>
       <span>⭐⭐⭐3: ${counts[2]}</span>
