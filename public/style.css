@@ -191,16 +191,24 @@ body {
 .modal button { background:#FFD700; border:none; padding:12px; border-radius:30px; font-weight:bold; cursor:pointer; width:100%; margin-top:10px; transition:0.2s; }
 .modal button:hover { background:#FFA500; }
 
-@media (max-width:900px){
-    .header{flex-direction:column;align-items:stretch;}
-    .balance-start{flex-wrap:wrap; justify-content:center;}
-    .cards-container{flex-direction:column;}
-    .level-title{font-size:2rem; text-align:center;}
-    .penalty-cards { flex-direction: column; align-items: center; }
-    .cards-container.selected-mode .card {
-        width: 90%;
-    }
+/* Стили для новой кнопки "Изменить баланс" */
+.balance-btn {
+    background: #4ecca7;
+    border: none;
+    color: #0B0B1A;
+    font-weight: bold;
+    padding: 8px 15px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.9rem;
+    white-space: nowrap;
 }
+.balance-btn:hover {
+    background: #45b896;
+    transform: scale(1.02);
+}
+
 /* Стили для модалки завершения */
 .completion-content {
     text-align: center;
@@ -235,4 +243,15 @@ body {
 #completion-reset-btn:hover {
     background: #ffa500;
     transform: scale(1.05);
+}
+
+@media (max-width:900px){
+    .header{flex-direction:column;align-items:stretch;}
+    .balance-start{flex-wrap:wrap; justify-content:center;}
+    .cards-container{flex-direction:column;}
+    .level-title{font-size:2rem; text-align:center;}
+    .penalty-cards { flex-direction: column; align-items: center; }
+    .cards-container.selected-mode .card {
+        width: 90%;
+    }
 }

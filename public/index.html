@@ -14,13 +14,14 @@
             <div class="balance-start">
                 <label>Начальный баланс:</label>
                 <input type="number" id="start-balance" value="1500000" step="10000">
+                <button id="apply-start-balance" class="balance-btn">Изменить баланс</button>
             </div>
             <button id="random-btn" class="random-btn hidden">🎲 Рандом</button>
         </header>
 
         <div class="cards-container" id="cards-container"></div>
 
-        <!-- Модалка для штрафов (не используется, но оставлена) -->
+        <!-- Модалка для штрафов (не используется) -->
         <div id="penalty-modal" class="modal hidden">
             <div class="modal-content penalty-content">
                 <span class="close-modal">&times;</span>
@@ -57,7 +58,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно завершения игры (новое) -->
+    <!-- Модальное окно завершения игры -->
     <div id="completion-modal" class="modal hidden">
         <div class="modal-content completion-content">
             <span class="close-completion">&times;</span>

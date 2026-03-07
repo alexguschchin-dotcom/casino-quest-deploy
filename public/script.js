@@ -18,7 +18,7 @@ const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modal-body');
 const closeModal = document.querySelector('.close-modal');
 
-// Новые элементы для модалки завершения
+// Элементы для модалки завершения
 const completionModal = document.getElementById('completion-modal');
 const closeCompletion = document.querySelector('.close-completion');
 const finalBalanceSpan = document.getElementById('final-balance');
@@ -329,6 +329,20 @@ resetBtn.addEventListener('click', () => {
   }
 });
 
+// Кнопка "Изменить баланс" – устанавливает текущий баланс равным значению из поля
+document.getElementById('apply-start-balance').addEventListener('click', () => {
+  const newBalance = parseFloat(startBalanceInput.value);
+  if (!isNaN(newBalance) && newBalance !== currentBalance) {
+    const change = newBalance - currentBalance;
+    socket.emit('addBalance', 'Установка начального баланса', change);
+  } else if (newBalance === currentBalance) {
+    alert('Баланс уже равен этому значению');
+  } else {
+    alert('Введите корректное число');
+  }
+});
+
+// Двойной клик по заголовку – открывает розыгрыш
 document.querySelector('.level-title').addEventListener('dblclick', () => {
   openPrizeModal();
 });
