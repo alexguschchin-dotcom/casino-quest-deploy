@@ -55,7 +55,7 @@ const taskTemplates = [
     'Поставить 30 000₽ на 5 в Crazy Time',
     'Выдать 5 000₽ одному зрителю',
     'Купить бонус в Gates of Olympus за 40 000₽',
-    'Пройти до лягушки 4x4 в Wild Hop Drop в бонуске за 20 000₽ (две попытки)',
+    'Пройти до лягушки 3x3 в Wild Hop Drop в бонуске за 20 000₽ с первой попытки',
     'Поймать ретригер в Fonzo‘s Feline Fortune в бонуске за 20 000₽'
   ]},
   
@@ -440,6 +440,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
+
 
 
 
