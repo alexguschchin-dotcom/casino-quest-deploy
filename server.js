@@ -7,12 +7,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-
+// ================== НАСТРОЙКИ ==================
 const MAX_LEVEL = 40;
 const DEFAULT_BALANCE = 1500000;
 const PENALTY_BURN_RANGE = [15, 20]; // штраф 15-20 лёгких заданий
 
-
+// ================== ПУЛ ЗАДАНИЙ (РАСШИРЕННЫЙ) ==================
 const taskTemplates = [
   // ⭐ 1 звезда (100 заданий)
   { difficulty: 1, texts: [
@@ -167,7 +167,7 @@ const taskTemplates = [
   ]}
 ];
 
-
+// ================== Функции работы с пулом ==================
 function createInitialPool() {
   const pool = [];
   const counts = [100, 60, 30, 20, 10, 2];
@@ -272,7 +272,7 @@ function applyPenalty(pool) {
   return actualBurn;
 }
 
-
+// ================== Состояние ==================
 let questState = {
   level: 1,
   availableTasks: createInitialPool(),
@@ -291,7 +291,7 @@ questState.balanceHistory.push({
   balance: DEFAULT_BALANCE
 });
 
-
+// ================== Сервер ==================
 app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
@@ -433,21 +433,6 @@ io.on('connection', (socket) => {
     io.emit('state', questState);
   });
 
-  
-  socket.on('loadSavedGame', (savedState) => {
-    questState = {
-      level: savedState.level,
-      availableTasks: savedState.availableTasks,
-      currentCards: savedState.currentCards,
-      selectedTaskId: savedState.selectedTaskId,
-      currentBalance: savedState.currentBalance,
-      balanceHistory: savedState.balanceHistory,
-      penaltiesLog: savedState.penaltiesLog || []
-    };
-    io.emit('state', questState);
-    console.log('Загружено сохранение с уровня', savedState.level);
-  });
-
   socket.on('disconnect', () => console.log('Клиент отключён'));
 });
 
@@ -455,5 +440,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
+
 
 
