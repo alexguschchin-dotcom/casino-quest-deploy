@@ -12,19 +12,20 @@ body {
 }
 
 
-.dragon-left {
+body::before {
+    content: '';
     position: fixed;
     left: 0;
     top: 0;
-    width: auto;               
-    height: 100vh;              
-    max-width: 400px;           
-    object-fit: contain;        
-    object-position: left center; 
+    width: 100%;
+    height: 100vh;
+    background: url('https://masterpiecer-images.s3.yandex.net/362283412bf511eea43d56181a0358a2:upscaled') no-repeat left center / contain;
+    
     opacity: 0.2;
     pointer-events: none;
     z-index: -1;
     filter: drop-shadow(0 0 20px gold);
+    background-color: transparent; /* убеждаемся, что фон не перекрывает */
 }
 
 .container {
@@ -274,8 +275,8 @@ body {
     .cards-container.selected-mode .card {
         width: 90%;
     }
-    .dragon-left {
-        max-width: 150px; 
+    body::before {
+        background-size: 150px auto; 
         opacity: 0.1;
     }
 }
