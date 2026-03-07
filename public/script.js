@@ -1,9 +1,9 @@
 const socket = io();
 
-// Ключ для сохранения в localStorage
+
 const SAVE_KEY = 'casino_quest_save';
 
-// ===== ФУНКЦИИ СОХРАНЕНИЯ И ЗАГРУЗКИ =====
+
 function saveGameState(state) {
     try {
         const saveData = {
@@ -28,7 +28,7 @@ function loadGameState() {
         if (!saved) return null;
         
         const saveData = JSON.parse(saved);
-        // Проверяем, что сохранение не слишком старое (например, 24 часа)
+        
         if (Date.now() - saveData.timestamp > 24 * 60 * 60 * 1000) {
             console.log('Сохранение устарело');
             localStorage.removeItem(SAVE_KEY);
@@ -45,27 +45,27 @@ function clearSavedGame() {
     localStorage.removeItem(SAVE_KEY);
 }
 
-// При подключении проверяем, есть ли сохранённая игра
+
 socket.on('connect', () => {
     const savedState = loadGameState();
     if (savedState) {
-        // Если есть сохранение, восстанавливаем его
+        
         if (confirm('Найден сохранённый прогресс. Восстановить?')) {
             socket.emit('loadSavedGame', savedState);
         } else {
-            // Если отказались, начинаем новую игру
+            
             const startBalance = parseFloat(document.getElementById('start-balance').value) || 1500000;
             socket.emit('reset', startBalance);
             clearSavedGame();
         }
     } else {
-        // Нет сохранения — обычный старт
+        
         const startBalance = parseFloat(document.getElementById('start-balance').value) || 1500000;
         socket.emit('reset', startBalance);
     }
 });
 
-// DOM элементы
+
 const levelSpan = document.getElementById('current-level');
 const cardsContainer = document.getElementById('cards-container');
 const balanceBody = document.getElementById('balance-body');
@@ -77,7 +77,7 @@ const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modal-body');
 const closeModal = document.querySelector('.close-modal');
 
-// Элементы для модалки завершения
+
 const completionModal = document.getElementById('completion-modal');
 const closeCompletion = document.querySelector('.close-completion');
 const finalBalanceSpan = document.getElementById('final-balance');
@@ -87,10 +87,10 @@ let selectedTaskInProgress = false;
 let isAnimating = false;
 let pendingState = null;
 
-// Текущий баланс
+
 let currentBalance = 1500000;
 
-// Статистика пула
+
 const poolStatsDiv = document.createElement('div');
 poolStatsDiv.className = 'pool-stats';
 document.querySelector('.header').appendChild(poolStatsDiv);
@@ -102,7 +102,7 @@ socket.on('state', (state) => {
         updateUI(state);
         updatePoolStats(state.availableTasks);
         currentBalance = state.currentBalance;
-        // Сохраняем состояние после каждого обновления
+        
         saveGameState(state);
     }
 });
@@ -112,10 +112,10 @@ function updateUI(state) {
     renderCards(state.currentCards, state.selectedTaskId);
     renderBalance(state.balanceHistory);
 
-    // Проверка на завершение игры (40 уровень и нет карточек)
+    )
     if (state.level === 40 && state.currentCards.length === 0 && !isAnimating) {
         showCompletionModal(state.currentBalance);
-        // При завершении удаляем сохранение
+        
         clearSavedGame();
     }
 
@@ -131,12 +131,12 @@ function showCompletionModal(finalBalance) {
     completionModal.classList.remove('hidden');
 }
 
-// Закрытие модалки завершения
+
 closeCompletion.addEventListener('click', () => {
     completionModal.classList.add('hidden');
 });
 
-// Кнопка "Начать заново" в модалке завершения
+
 completionResetBtn.addEventListener('click', () => {
     const newStartBalance = parseFloat(startBalanceInput.value) || 1500000;
     socket.emit('reset', newStartBalance);
@@ -280,7 +280,7 @@ function renderCards(tasks, selectedId) {
     }
 }
 
-// ИЗМЕНЕНО: теперь новые записи появляются сверху
+
 function renderBalance(history) {
     balanceBody.innerHTML = '';
     for (let i = history.length - 1; i >= 0; i--) {
@@ -385,7 +385,7 @@ function openPrizeModal() {
     }, { once: true });
 }
 
-// Обработчики кнопок
+
 addBalanceBtn.addEventListener('click', openAddBalanceModal);
 
 resetBtn.addEventListener('click', () => {
@@ -396,7 +396,7 @@ resetBtn.addEventListener('click', () => {
     }
 });
 
-// Кнопка "Изменить баланс"
+
 document.getElementById('apply-start-balance').addEventListener('click', () => {
     const newBalance = parseFloat(startBalanceInput.value);
     if (!isNaN(newBalance) && newBalance !== currentBalance) {
@@ -409,7 +409,7 @@ document.getElementById('apply-start-balance').addEventListener('click', () => {
     }
 });
 
-// Двойной клик по заголовку – открывает розыгрыш
+
 document.querySelector('.level-title').addEventListener('dblclick', () => {
     openPrizeModal();
 });
@@ -427,7 +427,7 @@ window.addEventListener('click', (e) => {
     }
 });
 
-// Анимация сгорания
+
 (function addBurnAnimation() {
     const style = document.createElement('style');
     style.textContent = `
