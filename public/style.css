@@ -71,7 +71,7 @@ body {
     position: relative;
     z-index: 1;
 }
-/* Режим с одной выбранной карточкой – центрируем её */
+
 .cards-container.selected-mode {
     display: flex;
     justify-content: center;
@@ -191,7 +191,7 @@ body {
 .modal button { background:#FFD700; border:none; padding:12px; border-radius:30px; font-weight:bold; cursor:pointer; width:100%; margin-top:10px; transition:0.2s; }
 .modal button:hover { background:#FFA500; }
 
-/* Стили для новой кнопки "Изменить баланс" */
+
 .balance-btn {
     background: #4ecca7;
     border: none;
@@ -209,7 +209,7 @@ body {
     transform: scale(1.02);
 }
 
-/* Стили для модалки завершения */
+
 .completion-content {
     text-align: center;
     background: linear-gradient(135deg, #16213e, #1a1a2e);

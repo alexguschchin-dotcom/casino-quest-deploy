@@ -1,12 +1,12 @@
 const socket = io();
 
-// При первом подключении сбрасываем игру (чтобы перезагрузка начиналась заново)
+
 socket.on('connect', () => {
   const startBalance = parseFloat(document.getElementById('start-balance').value) || 1500000;
   socket.emit('reset', startBalance);
 });
 
-// DOM элементы
+
 const levelSpan = document.getElementById('current-level');
 const cardsContainer = document.getElementById('cards-container');
 const balanceBody = document.getElementById('balance-body');
@@ -18,7 +18,7 @@ const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modal-body');
 const closeModal = document.querySelector('.close-modal');
 
-// Элементы для модалки завершения
+
 const completionModal = document.getElementById('completion-modal');
 const closeCompletion = document.querySelector('.close-completion');
 const finalBalanceSpan = document.getElementById('final-balance');
@@ -51,7 +51,7 @@ function updateUI(state) {
   renderCards(state.currentCards, state.selectedTaskId);
   renderBalance(state.balanceHistory);
 
-  // Проверка на завершение игры (40 уровень и нет карточек)
+
   if (state.level === 40 && state.currentCards.length === 0 && !isAnimating) {
     showCompletionModal(state.currentBalance);
   }
@@ -68,12 +68,12 @@ function showCompletionModal(finalBalance) {
   completionModal.classList.remove('hidden');
 }
 
-// Закрытие модалки завершения
+
 closeCompletion.addEventListener('click', () => {
   completionModal.classList.add('hidden');
 });
 
-// Кнопка "Начать заново" в модалке завершения
+
 completionResetBtn.addEventListener('click', () => {
   const newStartBalance = parseFloat(startBalanceInput.value) || 1500000;
   socket.emit('reset', newStartBalance);
@@ -216,10 +216,10 @@ function renderCards(tasks, selectedId) {
   }
 }
 
-// ИЗМЕНЕНО: теперь новые записи появляются сверху
+
 function renderBalance(history) {
   balanceBody.innerHTML = '';
-  // Проходим по массиву с конца, чтобы свежие записи были вверху
+
   for (let i = history.length - 1; i >= 0; i--) {
     const entry = history[i];
     const row = document.createElement('tr');
@@ -322,7 +322,7 @@ function openPrizeModal() {
   }, { once: true });
 }
 
-// Обработчики кнопок
+
 addBalanceBtn.addEventListener('click', openAddBalanceModal);
 
 resetBtn.addEventListener('click', () => {
@@ -332,7 +332,7 @@ resetBtn.addEventListener('click', () => {
   }
 });
 
-// Кнопка "Изменить баланс" – устанавливает текущий баланс равным значению из поля
+
 document.getElementById('apply-start-balance').addEventListener('click', () => {
   const newBalance = parseFloat(startBalanceInput.value);
   if (!isNaN(newBalance) && newBalance !== currentBalance) {
@@ -345,7 +345,7 @@ document.getElementById('apply-start-balance').addEventListener('click', () => {
   }
 });
 
-// Двойной клик по заголовку – открывает розыгрыш
+
 document.querySelector('.level-title').addEventListener('dblclick', () => {
   openPrizeModal();
 });
@@ -354,7 +354,7 @@ closeModal.addEventListener('click', () => {
   modal.classList.add('hidden');
 });
 
-// Закрытие модалок при клике вне их
+
 window.addEventListener('click', (e) => {
   if (e.target === modal) {
     modal.classList.add('hidden');
@@ -364,7 +364,7 @@ window.addEventListener('click', (e) => {
   }
 });
 
-// Анимация сгорания
+
 (function addBurnAnimation() {
   const style = document.createElement('style');
   style.textContent = `
