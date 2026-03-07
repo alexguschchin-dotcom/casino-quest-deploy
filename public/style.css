@@ -18,7 +18,7 @@ body {
     top: 0;
     width: auto;
     height: 100vh;
-    background: url(https://image.winudf.com/v2/image1/Y29tLmdsaWRlcHV6emxlLmdsaWRlcHV6emxlcGlua29wZW5hbHR5a2lja3Nfc2NyZWVuXzBfMTc0NDc3NjI0N18wNzQ/screen-0.jpg?fakeurl=1&amp;type=.jpg) no-repeat left center / contain;
+    background: url('https://image.winudf.com/v2/image1/Y29tLmdsaWRlcHV6emxlLmdsaWRlcHV6emxlcGlua29wZW5hbHR5a2lja3Nfc2NyZWVuXzBfMTc0NDc3NjI0N18wNzQ/screen-0.jpg?fakeurl=1&amp;type=.jpg') no-repeat left center / contain;
     opacity: 0.2;
     pointer-events: none;
     z-index: -1;
