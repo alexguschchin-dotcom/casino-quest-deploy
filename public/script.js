@@ -216,9 +216,12 @@ function renderCards(tasks, selectedId) {
   }
 }
 
+// ИЗМЕНЕНО: теперь новые записи появляются сверху
 function renderBalance(history) {
   balanceBody.innerHTML = '';
-  history.forEach(entry => {
+  // Проходим по массиву с конца, чтобы свежие записи были вверху
+  for (let i = history.length - 1; i >= 0; i--) {
+    const entry = history[i];
     const row = document.createElement('tr');
     const changeClass = entry.change > 0 ? 'positive' : (entry.change < 0 ? 'negative' : '');
     row.innerHTML = `
@@ -228,7 +231,7 @@ function renderBalance(history) {
       <td>${entry.balance}</td>
     `;
     balanceBody.appendChild(row);
-  });
+  }
 }
 
 function openCompleteTaskModal(taskId) {
