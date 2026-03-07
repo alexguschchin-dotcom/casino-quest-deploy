@@ -16,15 +16,14 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    width: auto;        
-    height: 100vh;       
-    background: url(https://image.winudf.com/v2/image1/Y29tLmdsaWRlcHV6emxlLmdsaWRlcHV6emxlcGlua29wZW5hbHR5a2lja3Nfc2NyZWVuXzBfMTc0NDc3NjI0N18wNzQ/screen-0.jpg?fakeurl=1&amp;type=.jpg) no-repeat left center / contain;
+    width: 300px;          
+    height: 100vh;         
+    background: url(https://masterpiecer-images.s3.yandex.net/362283412bf511eea43d56181a0358a2:upscaled) no-repeat left center / contain;
     
     opacity: 0.2;
     pointer-events: none;
     z-index: -1;
     filter: drop-shadow(0 0 20px gold);
-    max-width: 400px;    
 }
 
 .container {
@@ -275,7 +274,7 @@ body {
         width: 90%;
     }
     .dragon-left {
-        max-width: 150px; 
+        width: 150px; 
         opacity: 0.1;
     }
 }
