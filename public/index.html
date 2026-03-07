@@ -20,7 +20,7 @@
 
         <div class="cards-container" id="cards-container"></div>
 
-        <!-- Модалка для штрафов (пока не используется) -->
+        <!-- Модалка для штрафов (не используется, но оставлена) -->
         <div id="penalty-modal" class="modal hidden">
             <div class="modal-content penalty-content">
                 <span class="close-modal">&times;</span>
@@ -54,6 +54,17 @@
         <div class="modal-content">
             <span class="close-modal">&times;</span>
             <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно завершения игры (новое) -->
+    <div id="completion-modal" class="modal hidden">
+        <div class="modal-content completion-content">
+            <span class="close-completion">&times;</span>
+            <h2>🎉 Поздравляем! 🎉</h2>
+            <p>Вы успешно завершили все 40 уровней квеста!</p>
+            <p>Ваш итоговый баланс: <span id="final-balance"></span> ₽</p>
+            <button id="completion-reset-btn" class="big-btn">🔄 Начать заново</button>
         </div>
     </div>
 

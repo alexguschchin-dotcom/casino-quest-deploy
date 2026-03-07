@@ -2,7 +2,6 @@ const socket = io();
 
 // При первом подключении сбрасываем игру (чтобы перезагрузка начиналась заново)
 socket.on('connect', () => {
-  // При подключении сбрасываем с текущим начальным балансом из поля
   const startBalance = parseFloat(document.getElementById('start-balance').value) || 1500000;
   socket.emit('reset', startBalance);
 });
@@ -19,11 +18,17 @@ const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modal-body');
 const closeModal = document.querySelector('.close-modal');
 
+// Новые элементы для модалки завершения
+const completionModal = document.getElementById('completion-modal');
+const closeCompletion = document.querySelector('.close-completion');
+const finalBalanceSpan = document.getElementById('final-balance');
+const completionResetBtn = document.getElementById('completion-reset-btn');
+
 let selectedTaskInProgress = false;
 let isAnimating = false;
 let pendingState = null;
 
-// Текущий баланс (для отображения в модалках)
+// Текущий баланс
 let currentBalance = 1500000;
 
 // Статистика пула
@@ -37,7 +42,6 @@ socket.on('state', (state) => {
   } else {
     updateUI(state);
     updatePoolStats(state.availableTasks);
-    // Обновляем текущий баланс
     currentBalance = state.currentBalance;
   }
 });
@@ -47,12 +51,34 @@ function updateUI(state) {
   renderCards(state.currentCards, state.selectedTaskId);
   renderBalance(state.balanceHistory);
 
+  // Проверка на завершение игры (40 уровень и нет карточек)
+  if (state.level === 40 && state.currentCards.length === 0 && !isAnimating) {
+    showCompletionModal(state.currentBalance);
+  }
+
   if (state.level >= 40) {
     resetBtn.classList.remove('hidden');
   } else {
     resetBtn.classList.add('hidden');
   }
 }
+
+function showCompletionModal(finalBalance) {
+  finalBalanceSpan.textContent = finalBalance;
+  completionModal.classList.remove('hidden');
+}
+
+// Закрытие модалки завершения
+closeCompletion.addEventListener('click', () => {
+  completionModal.classList.add('hidden');
+});
+
+// Кнопка "Начать заново" в модалке завершения
+completionResetBtn.addEventListener('click', () => {
+  const newStartBalance = parseFloat(startBalanceInput.value) || 1500000;
+  socket.emit('reset', newStartBalance);
+  completionModal.classList.add('hidden');
+});
 
 function updatePoolStats(availableTasks) {
   const counts = [0,0,0,0,0,0];
@@ -73,9 +99,7 @@ function updatePoolStats(availableTasks) {
 function renderCards(tasks, selectedId) {
   cardsContainer.innerHTML = '';
   
-  // Если есть выбранное задание (т.е. одна карточка и selectedId не null)
   if (tasks.length === 1 && selectedId) {
-    // Режим отображения одной карточки по центру
     cardsContainer.classList.add('selected-mode');
     const task = tasks[0];
     const card = document.createElement('div');
@@ -101,7 +125,6 @@ function renderCards(tasks, selectedId) {
     `;
     cardsContainer.appendChild(card);
 
-    // Обработчики для кнопок на выбранной карточке
     document.querySelectorAll('.complete-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -119,7 +142,6 @@ function renderCards(tasks, selectedId) {
     });
 
   } else {
-    // Обычный режим: три карточки для выбора
     cardsContainer.classList.remove('selected-mode');
     tasks.forEach(task => {
       const card = document.createElement('div');
@@ -148,14 +170,12 @@ function renderCards(tasks, selectedId) {
       cardsContainer.appendChild(card);
     });
 
-    // Обработчики выбора
     document.querySelectorAll('.select-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (selectedId) return; // уже выбрано
+        if (selectedId) return;
         const taskId = e.target.dataset.id;
 
-        // Визуальная обратная связь: добавляем классы burn (для остальных) и selected (для выбранной)
         document.querySelectorAll('.card').forEach(c => {
           if (c.dataset.id !== taskId) {
             c.classList.add('burn');
@@ -165,7 +185,6 @@ function renderCards(tasks, selectedId) {
         });
 
         isAnimating = true;
-
         socket.emit('selectTask', taskId);
 
         setTimeout(() => {
@@ -179,7 +198,6 @@ function renderCards(tasks, selectedId) {
       });
     });
 
-    // Обработчики завершения и штрафа (если вдруг они есть в обычном режиме)
     document.querySelectorAll('.complete-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -302,8 +320,6 @@ function openPrizeModal() {
 }
 
 // Обработчики кнопок
-// Кнопка "Установить" удалена, поэтому обработчик setBalanceBtn убран
-
 addBalanceBtn.addEventListener('click', openAddBalanceModal);
 
 resetBtn.addEventListener('click', () => {
@@ -321,13 +337,17 @@ closeModal.addEventListener('click', () => {
   modal.classList.add('hidden');
 });
 
+// Закрытие модалок при клике вне их
 window.addEventListener('click', (e) => {
   if (e.target === modal) {
     modal.classList.add('hidden');
   }
+  if (e.target === completionModal) {
+    completionModal.classList.add('hidden');
+  }
 });
 
-// Добавляем анимацию сгорания в CSS (если ещё нет)
+// Анимация сгорания
 (function addBurnAnimation() {
   const style = document.createElement('style');
   style.textContent = `

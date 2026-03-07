@@ -201,3 +201,38 @@ body {
         width: 90%;
     }
 }
+/* Стили для модалки завершения */
+.completion-content {
+    text-align: center;
+    background: linear-gradient(135deg, #16213e, #1a1a2e);
+    border: 3px solid gold;
+}
+.completion-content h2 {
+    color: gold;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+.completion-content p {
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+#final-balance {
+    font-weight: bold;
+    color: #4ecca7;
+    font-size: 1.5rem;
+}
+#completion-reset-btn {
+    margin-top: 20px;
+    background: gold;
+    color: #0B0B1A;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+#completion-reset-btn:hover {
+    background: #ffa500;
+    transform: scale(1.05);
+}
