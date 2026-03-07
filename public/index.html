@@ -8,9 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    
+    <div class="dragon-background"></div>
+
     <div class="container" id="main-container">
         <header class="header" id="header">
-            <h1 class="level-title" id="level-title">Уровень <span id="current-level">1</span> / 40</h1>
+            <h1 class="level-title" id="level-title">Уровень <span id="current-level">1</span> / 30</h1>
             <div class="balance-start">
                 <label>Начальный баланс:</label>
                 <input type="number" id="start-balance" value="1500000" step="10000">
@@ -21,7 +24,7 @@
 
         <div class="cards-container" id="cards-container"></div>
 
-       
+        
         <div id="penalty-modal" class="modal hidden">
             <div class="modal-content penalty-content">
                 <span class="close-modal">&times;</span>
@@ -63,7 +66,7 @@
         <div class="modal-content completion-content">
             <span class="close-completion">&times;</span>
             <h2>🎉 Поздравляем! 🎉</h2>
-            <p>Вы успешно завершили все 40 уровней квеста! Я думал не сможете.</p>
+            <p>Вы успешно завершили все 30 уровней квеста! Я думал не сможете.</p>
             <p>Ваш итоговый баланс: <span id="final-balance"></span> ₽</p>
             <p>Квест подготовил великий и могучий gg wp</p>
             <button id="completion-reset-btn" class="big-btn">🔄 Начать заново</button>
