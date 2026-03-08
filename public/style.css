@@ -20,7 +20,6 @@ body::before {
     width: 100%;
     height: 100vh;
     background: url('https://masterpiecer-images.s3.yandex.net/362283412bf511eea43d56181a0358a2:upscaled') no-repeat center / cover;
-    
     opacity: 0.2;
     pointer-events: none;
     z-index: -1;
@@ -130,16 +129,21 @@ body::before {
 .card::after {
     content: '';
     position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 100px;
-    height: 100px;
-    background: url('/chest1.png') no-repeat center / contain;
-    
+    bottom: 15px;
+    right: 15px;
+    width: 70px;
+    height: 70px;
+    background: url('/chest1.png') no-repeat center / contain;  /* или /chest.jpg */
     opacity: 0.9;
-    pointer-events: none; 
+    pointer-events: none;
     z-index: 5;
-    filter: drop-shadow(0 0 5px gold);
+    filter: drop-shadow(0 0 8px gold);
+}
+
+
+.card.selected::after,
+.card.completed::after {
+    display: none;
 }
 
 
@@ -292,14 +296,14 @@ body::before {
     .cards-container.selected-mode .card {
         width: 90%;
     }
+    .card::after {
+        width: 50px;
+        height: 50px;
+        bottom: 10px;
+        right: 10px;
+    }
     body::before {
         background-size: cover;
         opacity: 0.1;
-    }
-    .card::after {
-        width: 30px; 
-        height: 30px;
-        bottom: 5px;
-        right: 5px;
     }
 }
