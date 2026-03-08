@@ -129,10 +129,10 @@ body::before {
 .card::after {
     content: '';
     position: absolute;
-    bottom: 15px;
-    right: 15px;
-    width: 70px;
-    height: 70px;
+    bottom: 20px;
+    right: 20px;
+    width: 100px;
+    height: 100px;
     background: url('/chest1.png') no-repeat center / contain;  /* или /chest.jpg */
     opacity: 0.9;
     pointer-events: none;
