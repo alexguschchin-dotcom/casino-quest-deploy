@@ -24,6 +24,12 @@ const closeCompletion = document.querySelector('.close-completion');
 const finalBalanceSpan = document.getElementById('final-balance');
 const completionResetBtn = document.getElementById('completion-reset-btn');
 
+
+const rulesModal = document.getElementById('rules-modal');
+const rulesBtn = document.getElementById('rules-btn');
+const dontShowCheckbox = document.getElementById('dont-show-rules');
+const startQuestBtn = document.getElementById('start-quest-btn');
+
 let selectedTaskInProgress = false;
 let isAnimating = false;
 let pendingState = null;
@@ -214,7 +220,6 @@ function renderCards(tasks, selectedId) {
   }
 }
 
-
 function renderBalance(history) {
   balanceBody.innerHTML = '';
   for (let i = history.length - 1; i >= 0; i--) {
@@ -358,28 +363,11 @@ window.addEventListener('click', (e) => {
   if (e.target === completionModal) {
     completionModal.classList.add('hidden');
   }
+  if (e.target === rulesModal) {
+    rulesModal.classList.add('hidden');
+  }
 });
 
-
-(function addBurnAnimation() {
-  const style = document.createElement('style');
-  style.textContent = `
-    .card.burn {
-      animation: burn 0.5s forwards;
-      pointer-events: none;
-    }
-    @keyframes burn {
-      0% { opacity: 1; transform: scale(1); filter: brightness(1); }
-      100% { opacity: 0; transform: scale(0) rotate(10deg); filter: brightness(2); }
-    }
-  `;
-  document.head.appendChild(style);
-})
-
-const rulesModal = document.getElementById('rules-modal');
-const rulesBtn = document.getElementById('rules-btn');
-const dontShowCheckbox = document.getElementById('dont-show-rules');
-const startQuestBtn = document.getElementById('start-quest-btn');
 
 
 function shouldShowRules() {
@@ -388,7 +376,6 @@ function shouldShowRules() {
 
 
 if (shouldShowRules()) {
-    
     setTimeout(() => {
         rulesModal.classList.remove('hidden');
     }, 500);
@@ -413,8 +400,17 @@ startQuestBtn.addEventListener('click', () => {
 });
 
 
-window.addEventListener('click', (e) => {
-    if (e.target === rulesModal) {
-        rulesModal.classList.add('hidden');
+(function addBurnAnimation() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .card.burn {
+      animation: burn 0.5s forwards;
+      pointer-events: none;
     }
-});();
+    @keyframes burn {
+      0% { opacity: 1; transform: scale(1); filter: brightness(1); }
+      100% { opacity: 0; transform: scale(0) rotate(10deg); filter: brightness(2); }
+    }
+  `;
+  document.head.appendChild(style);
+})();

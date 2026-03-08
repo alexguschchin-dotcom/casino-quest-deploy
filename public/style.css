@@ -133,7 +133,7 @@ body::before {
     right: 20px;
     width: 100px;
     height: 100px;
-    background: url('/chest1.png') no-repeat center / contain;  /* или /chest.jpg */
+    background: url('/chest1.png') no-repeat center / contain;  
     opacity: 0.9;
     pointer-events: none;
     z-index: 5;
@@ -234,6 +234,89 @@ body::before {
 .modal button:hover { background:#FFA500; }
 
 
+.rules-btn {
+    background: #FFD700;
+    border: none;
+    color: #0B0B1A;
+    font-weight: bold;
+    padding: 8px 15px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    margin-left: 10px;
+}
+.rules-btn:hover {
+    background: #FFA500;
+    transform: scale(1.02);
+}
+
+
+.rules-content {
+    max-width: 600px;
+    background: linear-gradient(135deg, #16213e, #1a1a2e);
+    border: 3px solid #FFD700;
+    color: #fff;
+}
+.rules-content h2 {
+    color: #FFD700;
+    text-align: center;
+    margin-bottom: 20px;
+}
+.rules-text {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+.rules-text h3 {
+    color: #FFD700;
+    margin: 15px 0 10px;
+}
+.rules-text ul {
+    padding-left: 20px;
+}
+.rules-text li {
+    margin: 8px 0;
+    line-height: 1.4;
+}
+.rules-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.rules-footer label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    color: #FFD700;
+}
+.rules-footer input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+#start-quest-btn {
+    background: #FFD700;
+    color: #0B0B1A;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+#start-quest-btn:hover {
+    background: #FFA500;
+    transform: scale(1.05);
+}
+
+
 .balance-btn {
     background: #FFD700;
     border: none;
@@ -306,86 +389,7 @@ body::before {
         background-size: cover;
         opacity: 0.1;
     }
-}
-/* Кнопка "Правила" в шапке */
-.rules-btn {
-    background: #FFD700;
-    border: none;
-    color: #0B0B1A;
-    font-weight: bold;
-    padding: 8px 15px;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: 0.2s;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    margin-left: 10px;
-}
-.rules-btn:hover {
-    background: #FFA500;
-    transform: scale(1.02);
-}
-
-/* Стили для модалки правил */
-.rules-content {
-    max-width: 600px;
-    background: linear-gradient(135deg, #16213e, #1a1a2e);
-    border: 3px solid #FFD700;
-    color: #fff;
-}
-.rules-content h2 {
-    color: #FFD700;
-    text-align: center;
-    margin-bottom: 20px;
-}
-.rules-text {
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 10px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 15px;
-    margin-bottom: 20px;
-}
-.rules-text h3 {
-    color: #FFD700;
-    margin: 15px 0 10px;
-}
-.rules-text ul {
-    padding-left: 20px;
-}
-.rules-text li {
-    margin: 8px 0;
-    line-height: 1.4;
-}
-.rules-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-.rules-footer label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    color: #FFD700;
-}
-.rules-footer input[type="checkbox"] {
-    width: auto;
-    margin: 0;
-}
-#start-quest-btn {
-    background: #FFD700;
-    color: #0B0B1A;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 50px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
-#start-quest-btn:hover {
-    background: #FFA500;
-    transform: scale(1.05);
+    .rules-content {
+        max-width: 95%;
+    }
 }

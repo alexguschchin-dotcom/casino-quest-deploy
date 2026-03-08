@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    
+    <!-- Дракон через CSS (псевдоэлемент) -->
 
     <div class="container" id="main-container">
         <header class="header" id="header">
@@ -51,7 +51,7 @@
         </div>
     </div>
 
-    
+    <!-- Модальное окно для завершения задания / добавления баланса -->
     <div id="modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -59,25 +59,25 @@
         </div>
     </div>
 
-    
+    <!-- Модальное окно завершения игры -->
     <div id="completion-modal" class="modal hidden">
         <div class="modal-content completion-content">
             <span class="close-completion">&times;</span>
             <h2>🎉 Поздравляем! 🎉</h2>
             <p>Вы успешно завершили все 30 уровней квеста! Я думал не сможете.</p>
             <p>Ваш итоговый баланс: <span id="final-balance"></span> ₽</p>
-            <p>Квест подготовил великий и могучий gg wp</p>
+            <p>Квест подготовил великий и ужасный gg wp</p>
             <button id="completion-reset-btn" class="big-btn">🔄 Начать заново</button>
         </div>
     </div>
 
-    
+    <!-- Модальное окно с правилами -->
     <div id="rules-modal" class="modal hidden">
         <div class="modal-content rules-content">
             <span class="close-modal">&times;</span>
             <h2>📜 Добро пожаловать на квест!</h2>
             <div class="rules-text">
-                <p>Перед тобой — игра которую я подготовил, чтобы тебя победить!</p>
+                <p>Перед тобой — игра, которую придумал злой gg wp, чтобы ты проиграл весь баланс</p>
                 <h3>Как играть:</h3>
                 <ul>
                     <li>На каждом уровне (всего 30) выпадают три карточки с заданиями разной сложности (⭐).</li>
@@ -86,7 +86,8 @@
                     <li>Если не смог — нажми ⚠️ Штраф, сгорит 15–20 лёгких заданий (50% шанс на 1★, 30% — 2★, 20% — 3★).</li>
                     <li>На уровнях 5, 15, 25 гарантированы задания 3–4★, а на 10, 20, 30 — 4–6★.</li>
                     <li>Цель пройти 30 уровней!</li>
-                
+                </ul>
+                <p>💰 Начальный баланс можно изменить в любое время (кнопка "Изменить баланс").</p>
                 
             </div>
             <div class="rules-footer">
