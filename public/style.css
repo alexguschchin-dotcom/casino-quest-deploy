@@ -134,7 +134,7 @@ body::before {
     right: 20px;
     width: 100px;
     height: 100px;
-    background: url('/chest.jpg') no-repeat center / contain;
+    background: url('/chest1.png') no-repeat center / contain;
     
     opacity: 0.9;
     pointer-events: none; 
