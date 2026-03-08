@@ -8,7 +8,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 
-const MAX_LEVEL = 30; 
+const MAX_LEVEL = 30;
 const DEFAULT_BALANCE = 1500000;
 const PENALTY_BURN_RANGE = [15, 20];
 
@@ -200,7 +200,6 @@ function drawCards(pool, n, level) {
   let candidates = pool;
 
   if (level % 10 === 0) {
-    // Уровни, кратные 10: только 4★,5★,6★
     const hard = pool.filter(t => t.difficulty >= 4);
     if (hard.length >= n) {
       candidates = hard;
@@ -209,7 +208,6 @@ function drawCards(pool, n, level) {
       candidates = hard.concat(rest);
     }
   } else if (level % 5 === 0) {
-    // Уровни, кратные 5, но не кратные 10: только 3★ и 4★
     const mid = pool.filter(t => t.difficulty === 3 || t.difficulty === 4);
     if (mid.length >= n) {
       candidates = mid;
@@ -235,7 +233,6 @@ function applyPenalty(pool) {
   const burnCount = Math.floor(Math.random() * (PENALTY_BURN_RANGE[1] - PENALTY_BURN_RANGE[0] + 1)) + PENALTY_BURN_RANGE[0];
   const actualBurn = Math.min(burnCount, lightTasks.length);
 
-  // Вероятности: 50% 1★, 30% 2★, 20% 3★
   const weights = { 1: 5, 2: 3, 3: 2 };
   const totalWeight = 10;
 
@@ -272,7 +269,7 @@ function applyPenalty(pool) {
   return actualBurn;
 }
 
-
+// ================== Состояние ==================
 let questState = {
   level: 1,
   availableTasks: createInitialPool(),
@@ -285,13 +282,13 @@ let questState = {
 
 questState.currentCards = drawCards(questState.availableTasks, 3, 1);
 questState.balanceHistory.push({
-  time: new Date().toLocaleTimeString(),
+  timestamp: Date.now(),
   desc: 'Стартовый баланс',
   change: DEFAULT_BALANCE,
   balance: DEFAULT_BALANCE
 });
 
-
+// ================== Сервер ==================
 app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
@@ -322,7 +319,7 @@ io.on('connection', (socket) => {
       questState.selectedTaskId = null;
       questState.currentBalance += change;
       questState.balanceHistory.push({
-        time: new Date().toLocaleTimeString(),
+        timestamp: Date.now(),
         desc: `Уровень ${questState.level}: ${task.description.substring(0, 30)}...`,
         change: change,
         balance: questState.currentBalance
@@ -345,7 +342,7 @@ io.on('connection', (socket) => {
       const change = newBalance - questState.currentBalance;
       questState.currentBalance = newBalance;
       questState.balanceHistory.push({
-        time: new Date().toLocaleTimeString(),
+        timestamp: Date.now(),
         desc: `Штраф (не выполнено): ${task.description.substring(0, 30)}...`,
         change: change,
         balance: questState.currentBalance
@@ -353,7 +350,7 @@ io.on('connection', (socket) => {
 
       const burned = applyPenalty(questState.availableTasks);
       questState.balanceHistory.push({
-        time: new Date().toLocaleTimeString(),
+        timestamp: Date.now(),
         desc: `Штраф: сгорело ${burned} лёгких заданий`,
         change: 0,
         balance: questState.currentBalance
@@ -373,7 +370,7 @@ io.on('connection', (socket) => {
   socket.on('applyPenalty', () => {
     const burned = applyPenalty(questState.availableTasks);
     questState.balanceHistory.push({
-      time: new Date().toLocaleTimeString(),
+      timestamp: Date.now(),
       desc: `Штраф: сгорело ${burned} лёгких заданий`,
       change: 0,
       balance: questState.currentBalance
@@ -394,7 +391,7 @@ io.on('connection', (socket) => {
     const total = amount * winners.length;
     questState.currentBalance -= total;
     questState.balanceHistory.push({
-      time: new Date().toLocaleTimeString(),
+      timestamp: Date.now(),
       desc: `Розыгрыш: ${amount}₽ x ${winners.length} (${winners.join(', ')})`,
       change: -total,
       balance: questState.currentBalance
@@ -405,7 +402,7 @@ io.on('connection', (socket) => {
   socket.on('addBalance', (description, amount) => {
     questState.currentBalance += amount;
     questState.balanceHistory.push({
-      time: new Date().toLocaleTimeString(),
+      timestamp: Date.now(),
       desc: description,
       change: amount,
       balance: questState.currentBalance
@@ -422,7 +419,7 @@ io.on('connection', (socket) => {
       selectedTaskId: null,
       currentBalance: startBalance,
       balanceHistory: [{
-        time: new Date().toLocaleTimeString(),
+        timestamp: Date.now(),
         desc: 'Стартовый баланс',
         change: startBalance,
         balance: startBalance
@@ -431,6 +428,21 @@ io.on('connection', (socket) => {
     };
     questState.currentCards = drawCards(questState.availableTasks, 3, 1);
     io.emit('state', questState);
+  });
+
+  // ===== ЗАГРУЗКА СОХРАНЁННОЙ ИГРЫ =====
+  socket.on('loadSavedGame', (savedState) => {
+    questState = {
+      level: savedState.level,
+      availableTasks: savedState.availableTasks,
+      currentCards: savedState.currentCards,
+      selectedTaskId: savedState.selectedTaskId,
+      currentBalance: savedState.currentBalance,
+      balanceHistory: savedState.balanceHistory,
+      penaltiesLog: savedState.penaltiesLog || []
+    };
+    io.emit('state', questState);
+    console.log('Загружено сохранение с уровня', savedState.level);
   });
 
   socket.on('disconnect', () => console.log('Клиент отключён'));
