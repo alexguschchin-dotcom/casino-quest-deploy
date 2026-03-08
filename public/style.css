@@ -19,12 +19,12 @@ body::before {
     top: 0;
     width: 100%;
     height: 100vh;
-    background: url('https://masterpiecer-images.s3.yandex.net/362283412bf511eea43d56181a0358a2:upscaled') no-repeat left center / contain;
+    background: url('https://masterpiecer-images.s3.yandex.net/362283412bf511eea43d56181a0358a2:upscaled') no-repeat center / cover;
+    
     opacity: 0.2;
     pointer-events: none;
     z-index: -1;
     filter: drop-shadow(0 0 20px #FFD700);
-    background-color: transparent;
 }
 
 .container {
@@ -118,13 +118,30 @@ body::before {
     padding:25px;
     flex:1 1 300px;
     box-shadow:0 20px 30px rgba(0,0,0,0.5);
-    border:2px solid #FFD700; 
+    border:2px solid #FFD700;
     position:relative;
     overflow:hidden;
     transition: transform 0.3s, opacity 0.5s, box-shadow 0.3s, z-index 0s;
     cursor:pointer;
     will-change: transform;
 }
+
+
+.card::after {
+    content: '';
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background: url('/chest.jpg') no-repeat center / contain;
+    
+    opacity: 0.9;
+    pointer-events: none; 
+    z-index: 5;
+    filter: drop-shadow(0 0 5px gold);
+}
+
 
 .card.difficulty-1 { box-shadow:0 0 20px #4ecca7; }
 .card.difficulty-2 { box-shadow:0 0 20px #FFD700; }
@@ -276,7 +293,13 @@ body::before {
         width: 90%;
     }
     body::before {
-        background-size: 150px auto;
+        background-size: cover;
         opacity: 0.1;
+    }
+    .card::after {
+        width: 30px; 
+        height: 30px;
+        bottom: 5px;
+        right: 5px;
     }
 }
