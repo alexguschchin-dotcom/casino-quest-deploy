@@ -374,4 +374,47 @@ window.addEventListener('click', (e) => {
     }
   `;
   document.head.appendChild(style);
-})();
+})
+
+const rulesModal = document.getElementById('rules-modal');
+const rulesBtn = document.getElementById('rules-btn');
+const dontShowCheckbox = document.getElementById('dont-show-rules');
+const startQuestBtn = document.getElementById('start-quest-btn');
+
+
+function shouldShowRules() {
+    return !localStorage.getItem('quest_rules_hidden');
+}
+
+
+if (shouldShowRules()) {
+    
+    setTimeout(() => {
+        rulesModal.classList.remove('hidden');
+    }, 500);
+}
+
+
+rulesBtn.addEventListener('click', () => {
+    rulesModal.classList.remove('hidden');
+});
+
+
+rulesModal.querySelector('.close-modal').addEventListener('click', () => {
+    rulesModal.classList.add('hidden');
+});
+
+
+startQuestBtn.addEventListener('click', () => {
+    if (dontShowCheckbox.checked) {
+        localStorage.setItem('quest_rules_hidden', 'true');
+    }
+    rulesModal.classList.add('hidden');
+});
+
+
+window.addEventListener('click', (e) => {
+    if (e.target === rulesModal) {
+        rulesModal.classList.add('hidden');
+    }
+});();
