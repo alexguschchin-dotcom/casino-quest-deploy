@@ -1,42 +1,261 @@
 const socket = io();
 
+// Состояние игры
+let gameState = {
+    currentRoomIndex: 0,          // индекс текущей комнаты (куда зашли герои)
+    rooms: [],                    // массив комнат
+    heroesX: 0,                   // координаты героев на карте
+    heroesY: 0,
+    currentBalance: 1500000,
+    balanceHistory: [],
+    availableTasks: [],           // пул заданий от сервера
+    currentTaskId: null,
+    savedGame: null
+};
 
-const SAVE_KEY = 'casino_quest_save';
+// DOM элементы
+const canvas = document.getElementById('dungeonMap');
+const ctx = canvas.getContext('2d');
+const balanceSpan = document.getElementById('current-balance');
+const historyDiv = document.getElementById('balance-history');
+const resetBtn = document.getElementById('reset-btn');
+const taskModal = document.getElementById('task-modal');
+const taskDesc = document.getElementById('task-description');
+const newBalanceInput = document.getElementById('new-balance');
+const completeBtn = document.getElementById('complete-task');
+const failBtn = document.getElementById('fail-task');
+const completionModal = document.getElementById('completion-modal');
+const finalBalanceSpan = document.getElementById('final-balance');
+const completionResetBtn = document.getElementById('completion-reset-btn');
+const rulesModal = document.getElementById('rules-modal');
+const dontShowCheckbox = document.getElementById('dont-show-rules');
+const startQuestBtn = document.getElementById('start-quest-btn');
 
+// Ключ сохранения
+const SAVE_KEY = 'temple_quest_save';
 
-function saveGameState(state) {
+// ------------------- Инициализация карты -------------------
+function initMap() {
+    // Создаём 30 комнат, расположенных в виде дерева (упрощённо)
+    // Каждая комната имеет координаты (x, y), тип, соседей, задание (позже), состояние
+    const rooms = [];
+    // Простая линейная карта с развилками
+    const roomData = [
+        { x: 100, y: 300, type: 'start', name: 'Вход' },
+        { x: 250, y: 200, type: 'normal', name: 'Зал теней' },
+        { x: 250, y: 400, type: 'normal', name: 'Зал огня' },
+        { x: 400, y: 150, type: 'normal', name: 'Комната воинов' },
+        { x: 400, y: 300, type: 'trap', name: 'Ловушка' },
+        { x: 400, y: 450, type: 'treasure', name: 'Сокровищница' },
+        { x: 550, y: 100, type: 'normal', name: 'Библиотека' },
+        { x: 550, y: 250, type: 'boss', name: 'Тронный зал' },
+        // ... до 30 комнат, но для примера сократим
+    ];
+    for (let i = 0; i < 30; i++) {
+        // Заполним остальные комнаты случайными координатами для демонстрации
+        rooms.push({
+            index: i,
+            x: 100 + (i % 6) * 150,
+            y: 100 + Math.floor(i / 6) * 150,
+            type: i === 0 ? 'start' : (i === 29 ? 'boss' : 'normal'),
+            name: `Комната ${i+1}`,
+            visited: i === 0,
+            available: i === 0 || i === 1 || i === 2, // для демо первые три доступны
+            taskId: null,
+            neighbors: []
+        });
+    }
+    // Простая связь: каждая комната соединена со следующей
+    for (let i = 0; i < rooms.length - 1; i++) {
+        rooms[i].neighbors.push(i+1);
+    }
+    // Добавим развилки
+    rooms[1].neighbors.push(3);
+    rooms[2].neighbors.push(5);
+    return rooms;
+}
+
+gameState.rooms = initMap();
+gameState.heroesX = gameState.rooms[0].x;
+gameState.heroesY = gameState.rooms[0].y;
+
+// ------------------- Отрисовка карты -------------------
+function drawMap() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Рисуем тропинки
+    ctx.strokeStyle = '#b8860b';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = 'gold';
+    ctx.shadowBlur = 10;
+    
+    gameState.rooms.forEach(room => {
+        room.neighbors.forEach(neighbor => {
+            const next = gameState.rooms[neighbor];
+            ctx.beginPath();
+            ctx.moveTo(room.x, room.y);
+            ctx.lineTo(next.x, next.y);
+            ctx.stroke();
+        });
+    });
+    
+    ctx.shadowBlur = 0;
+    
+    // Рисуем комнаты
+    gameState.rooms.forEach((room, index) => {
+        let color = '#2a2440';
+        if (room.visited) color = '#4ecca7';
+        if (index === gameState.currentRoomIndex) color = '#ffaa00';
+        
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#b8860b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(room.x, room.y, 20, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Иконка типа комнаты
+        ctx.font = '24px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        let emoji = '';
+        switch(room.type) {
+            case 'start': emoji = '🚪'; break;
+            case 'normal': emoji = '👾'; break;
+            case 'trap': emoji = '💀'; break;
+            case 'treasure': emoji = '💰'; break;
+            case 'boss': emoji = '👑'; break;
+            default: emoji = '⬜';
+        }
+        ctx.fillText(emoji, room.x, room.y);
+    });
+    
+    // Рисуем героев
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'gold';
+    ctx.font = '40px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+    ctx.fillStyle = 'white';
+    ctx.fillText('⚔️🏹🔮', gameState.heroesX - 30, gameState.heroesY - 30);
+    ctx.shadowBlur = 0;
+}
+
+// ------------------- Загрузка задания для комнаты -------------------
+function enterRoom(roomIndex) {
+    const room = gameState.rooms[roomIndex];
+    if (!room || room.visited) return;
+    
+    // Получаем случайное задание из пула (или можно связать с комнатой)
+    // Для демо используем заглушку
+    const task = gameState.availableTasks[Math.floor(Math.random() * gameState.availableTasks.length)];
+    if (!task) {
+        alert('Нет заданий в пуле');
+        return;
+    }
+    
+    gameState.currentTaskId = task.id;
+    taskDesc.textContent = task.description;
+    newBalanceInput.value = gameState.currentBalance;
+    taskModal.classList.remove('hidden');
+}
+
+// ------------------- Обработка завершения задания -------------------
+function completeTask(success) {
+    const newBalance = parseFloat(newBalanceInput.value);
+    if (isNaN(newBalance)) return;
+    
+    const change = newBalance - gameState.currentBalance;
+    const task = gameState.availableTasks.find(t => t.id === gameState.currentTaskId);
+    if (!task) return;
+    
+    // Отправляем событие на сервер (как раньше)
+    if (success) {
+        socket.emit('completeTask', gameState.currentTaskId, change);
+    } else {
+        socket.emit('penaltyWithBalance', gameState.currentTaskId, newBalance);
+    }
+    
+    // Обновляем локально (сервер пришлёт новое состояние)
+    // Но пока отметим комнату пройденной
+    const room = gameState.rooms[gameState.currentRoomIndex];
+    if (room) {
+        room.visited = true;
+        // Открываем соседей
+        room.neighbors.forEach(idx => {
+            gameState.rooms[idx].available = true;
+        });
+    }
+    
+    taskModal.classList.add('hidden');
+}
+
+// ------------------- Подключение к серверу -------------------
+socket.on('connect', () => {
+    const saved = loadGameState();
+    if (saved) {
+        if (confirm('Найден сохранённый поход. Восстановить?')) {
+            gameState = saved;
+            gameState.heroesX = gameState.rooms[gameState.currentRoomIndex].x;
+            gameState.heroesY = gameState.rooms[gameState.currentRoomIndex].y;
+            updateUI();
+            return;
+        } else {
+            clearSavedGame();
+        }
+    }
+    socket.emit('reset', 1500000);
+});
+
+socket.on('state', (serverState) => {
+    // Обновляем баланс и историю, но карту оставляем свою
+    gameState.currentBalance = serverState.currentBalance;
+    gameState.balanceHistory = serverState.balanceHistory;
+    gameState.availableTasks = serverState.availableTasks;
+    updateUI();
+    saveGameState();
+});
+
+function updateUI() {
+    balanceSpan.textContent = gameState.currentBalance;
+    renderHistory();
+    drawMap();
+}
+
+function renderHistory() {
+    historyDiv.innerHTML = '';
+    gameState.balanceHistory.slice().reverse().forEach(entry => {
+        const date = new Date(entry.timestamp);
+        const time = date.toLocaleTimeString();
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `<strong>${time}</strong> ${entry.desc} (${entry.change > 0 ? '+' : ''}${entry.change})`;
+        historyDiv.appendChild(div);
+    });
+}
+
+// ------------------- Сохранение и загрузка -------------------
+function saveGameState() {
     try {
         const saveData = {
-            level: state.level,
-            currentBalance: state.currentBalance,
-            balanceHistory: state.balanceHistory,
-            availableTasks: state.availableTasks,
-            currentCards: state.currentCards,
-            selectedTaskId: state.selectedTaskId,
+            ...gameState,
             timestamp: Date.now()
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-        console.log('Игра сохранена');
-    } catch (e) {
-        console.error('Ошибка сохранения:', e);
-    }
+    } catch (e) {}
 }
 
 function loadGameState() {
     try {
         const saved = localStorage.getItem(SAVE_KEY);
         if (!saved) return null;
-        
-        const saveData = JSON.parse(saved);
-        
-        if (Date.now() - saveData.timestamp > 24 * 60 * 60 * 1000) {
-            console.log('Сохранение устарело');
+        const data = JSON.parse(saved);
+        if (Date.now() - data.timestamp > 24*60*60*1000) {
             localStorage.removeItem(SAVE_KEY);
             return null;
         }
-        return saveData;
+        return data;
     } catch (e) {
-        console.error('Ошибка загрузки:', e);
         return null;
     }
 }
@@ -45,434 +264,66 @@ function clearSavedGame() {
     localStorage.removeItem(SAVE_KEY);
 }
 
-
-
-socket.on('connect', () => {
-    console.log('Подключено к серверу');
-});
-
-
-const levelSpan = document.getElementById('current-level');
-const cardsContainer = document.getElementById('cards-container');
-const balanceBody = document.getElementById('balance-body');
-const resetBtn = document.getElementById('reset-btn');
-const startBalanceInput = document.getElementById('start-balance');
-const addBalanceBtn = document.getElementById('add-balance-btn');
-
-const modal = document.getElementById('modal');
-const modalBody = document.getElementById('modal-body');
-const closeModal = document.querySelector('.close-modal');
-
-
-const completionModal = document.getElementById('completion-modal');
-const closeCompletion = document.querySelector('.close-completion');
-const finalBalanceSpan = document.getElementById('final-balance');
-const completionResetBtn = document.getElementById('completion-reset-btn');
-
-
-const rulesModal = document.getElementById('rules-modal');
-const rulesBtn = document.getElementById('rules-btn');
-const dontShowCheckbox = document.getElementById('dont-show-rules');
-const startQuestBtn = document.getElementById('start-quest-btn');
-
-let selectedTaskInProgress = false;
-let isAnimating = false;
-let pendingState = null;
-
-
-let currentBalance = 1500000;
-
-
-const poolStatsDiv = document.createElement('div');
-poolStatsDiv.className = 'pool-stats';
-document.querySelector('.header').appendChild(poolStatsDiv);
-
-socket.on('state', (state) => {
-    if (isAnimating) {
-        pendingState = state;
-    } else {
-        
-        const savedState = loadGameState();
-        if (savedState && savedState.level > state.level && state.level === 1) {
-            
-            if (confirm('Найден сохранённый прогресс. Восстановить?')) {
-                socket.emit('loadSavedGame', savedState);
-                return;
-            } else {
-                clearSavedGame();
-                
-            }
-        }
-        updateUI(state);
-        updatePoolStats(state.availableTasks);
-        currentBalance = state.currentBalance;
-        
-        saveGameState(state);
-    }
-});
-
-function updateUI(state) {
-    levelSpan.textContent = state.level;
-    renderCards(state.currentCards, state.selectedTaskId);
-    renderBalance(state.balanceHistory);
-
+// ------------------- Обработчики событий -------------------
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
     
-    if (state.level === 30 && state.currentCards.length === 0 && !isAnimating) {
-        showCompletionModal(state.currentBalance);
-        clearSavedGame(); // при завершении удаляем сохранение
+    // Ищем комнату под курсором
+    for (let i = 0; i < gameState.rooms.length; i++) {
+        const room = gameState.rooms[i];
+        const dist = Math.hypot(mouseX - room.x, mouseY - room.y);
+        if (dist < 25 && room.available && !room.visited && i !== gameState.currentRoomIndex) {
+            // Перемещаем героев в эту комнату
+            gameState.currentRoomIndex = i;
+            gameState.heroesX = room.x;
+            gameState.heroesY = room.y;
+            drawMap();
+            enterRoom(i);
+            break;
+        }
     }
+});
 
-    if (state.level >= 30) {
-        resetBtn.classList.remove('hidden');
-    } else {
-        resetBtn.classList.add('hidden');
+completeBtn.addEventListener('click', () => completeTask(true));
+failBtn.addEventListener('click', () => completeTask(false));
+
+resetBtn.addEventListener('click', () => {
+    if (confirm('Начать новое приключение?')) {
+        socket.emit('reset', parseFloat(document.getElementById('start-balance').value) || 1500000);
+        gameState.rooms = initMap();
+        gameState.currentRoomIndex = 0;
+        gameState.heroesX = gameState.rooms[0].x;
+        gameState.heroesY = gameState.rooms[0].y;
+        clearSavedGame();
+        updateUI();
     }
-}
-
-function showCompletionModal(finalBalance) {
-    finalBalanceSpan.textContent = finalBalance;
-    completionModal.classList.remove('hidden');
-}
-
-closeCompletion.addEventListener('click', () => {
-    completionModal.classList.add('hidden');
 });
 
 completionResetBtn.addEventListener('click', () => {
-    const newStartBalance = parseFloat(startBalanceInput.value) || 1500000;
-    socket.emit('reset', newStartBalance);
+    socket.emit('reset', 1500000);
     completionModal.classList.add('hidden');
-    clearSavedGame();
 });
 
-function updatePoolStats(availableTasks) {
-    const counts = [0,0,0,0,0,0];
-    availableTasks.forEach(t => counts[t.difficulty-1]++);
-    poolStatsDiv.innerHTML = `
-        <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #16213e; padding: 10px 20px; border-radius: 60px; border: 1px solid gold; margin-bottom: 10px;">
-            <span style="color: gold;">Осталось заданий:</span>
-            <span>⭐1: ${counts[0]}</span>
-            <span>⭐⭐2: ${counts[1]}</span>
-            <span>⭐⭐⭐3: ${counts[2]}</span>
-            <span>⭐⭐⭐⭐4: ${counts[3]}</span>
-            <span>⭐⭐⭐⭐⭐5: ${counts[4]}</span>
-            <span>⭐⭐⭐⭐⭐⭐6: ${counts[5]}</span>
-        </div>
-    `;
+// Правила
+if (!localStorage.getItem('quest_rules_hidden')) {
+    setTimeout(() => rulesModal.classList.remove('hidden'), 500);
 }
-
-function renderCards(tasks, selectedId) {
-    cardsContainer.innerHTML = '';
-    
-    if (tasks.length === 1 && selectedId) {
-        cardsContainer.classList.add('selected-mode');
-        const task = tasks[0];
-        const card = document.createElement('div');
-        card.className = `card ${task.selected ? 'selected' : ''} ${task.completed ? 'completed' : ''}`;
-        card.dataset.id = task.id;
-
-        let stars = '⭐'.repeat(task.difficulty);
-
-        let buttons = '';
-        if (task.selected && !task.completed) {
-            buttons = `
-                <button class="complete-btn" data-id="${task.id}">✅ Выполнено</button>
-                <button class="penalty-btn" data-id="${task.id}">⚠️ Штраф</button>
-            `;
-        } else if (task.completed) {
-            buttons = `<button disabled>✔ Выполнено</button>`;
-        }
-
-        card.innerHTML = `
-            <div class="difficulty">${stars}</div>
-            <div class="task-text">${task.description}</div>
-            <div class="card-actions">${buttons}</div>
-        `;
-        cardsContainer.appendChild(card);
-
-        document.querySelectorAll('.complete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const taskId = e.target.dataset.id;
-                openCompleteTaskModal(taskId);
-            });
-        });
-
-        document.querySelectorAll('.penalty-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const taskId = e.target.dataset.id;
-                openPenaltyModal(taskId);
-            });
-        });
-
-    } else {
-        cardsContainer.classList.remove('selected-mode');
-        tasks.forEach(task => {
-            const card = document.createElement('div');
-            card.className = `card ${task.selected ? 'selected' : ''} ${task.completed ? 'completed' : ''}`;
-            card.dataset.id = task.id;
-
-            let stars = '⭐'.repeat(task.difficulty);
-
-            let buttons = '';
-            if (!task.selected && !task.completed && !selectedId) {
-                buttons = `<button class="select-btn" data-id="${task.id}">Выбрать</button>`;
-            } else if (task.selected && !task.completed) {
-                buttons = `
-                    <button class="complete-btn" data-id="${task.id}">✅ Выполнено</button>
-                    <button class="penalty-btn" data-id="${task.id}">⚠️ Штраф</button>
-                `;
-            } else if (task.completed) {
-                buttons = `<button disabled>✔ Выполнено</button>`;
-            }
-
-            card.innerHTML = `
-                <div class="difficulty">${stars}</div>
-                <div class="task-text">${task.description}</div>
-                <div class="card-actions">${buttons}</div>
-            `;
-            cardsContainer.appendChild(card);
-        });
-
-        document.querySelectorAll('.select-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (selectedId) return;
-                const taskId = e.target.dataset.id;
-
-                document.querySelectorAll('.card').forEach(c => {
-                    if (c.dataset.id !== taskId) {
-                        c.classList.add('burn');
-                    } else {
-                        c.classList.add('selected');
-                    }
-                });
-
-                isAnimating = true;
-                socket.emit('selectTask', taskId);
-
-                setTimeout(() => {
-                    isAnimating = false;
-                    if (pendingState) {
-                        updateUI(pendingState);
-                        updatePoolStats(pendingState.availableTasks);
-                        pendingState = null;
-                    }
-                }, 500);
-            });
-        });
-
-        document.querySelectorAll('.complete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const taskId = e.target.dataset.id;
-                openCompleteTaskModal(taskId);
-            });
-        });
-
-        document.querySelectorAll('.penalty-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const taskId = e.target.dataset.id;
-                openPenaltyModal(taskId);
-            });
-        });
-    }
-}
-
-function renderBalance(history) {
-    balanceBody.innerHTML = '';
-    for (let i = history.length - 1; i >= 0; i--) {
-        const entry = history[i];
-        const row = document.createElement('tr');
-        const changeClass = entry.change > 0 ? 'positive' : (entry.change < 0 ? 'negative' : '');
-        
-        
-        const date = new Date(entry.timestamp);
-        const timeStr = date.toLocaleTimeString();
-        
-        row.innerHTML = `
-            <td>${timeStr}</td>
-            <td>${entry.desc}</td>
-            <td class="${changeClass}">${entry.change > 0 ? '+' : ''}${entry.change}</td>
-            <td>${entry.balance}</td>
-        `;
-        balanceBody.appendChild(row);
-    }
-}
-
-function openCompleteTaskModal(taskId) {
-    modalBody.innerHTML = `
-        <h2>Текущий баланс: ${currentBalance} ₽</h2>
-        <p>Введите новый баланс после выполнения задания:</p>
-        <input type="number" id="new-balance" value="${currentBalance}" step="100">
-        <button id="submit-complete">Подтвердить</button>
-    `;
-    modal.classList.remove('hidden');
-
-    document.getElementById('submit-complete').addEventListener('click', () => {
-        const newBalance = parseFloat(document.getElementById('new-balance').value);
-        if (!isNaN(newBalance)) {
-            const change = newBalance - currentBalance;
-            socket.emit('completeTask', taskId, change);
-        }
-        modal.classList.add('hidden');
-    }, { once: true });
-}
-
-function openPenaltyModal(taskId) {
-    modalBody.innerHTML = `
-        <h2>Текущий баланс: ${currentBalance} ₽</h2>
-        <p>Введите новый баланс после неудачной попытки (штраф):</p>
-        <input type="number" id="new-balance" value="${currentBalance}" step="100">
-        <button id="submit-penalty">Подтвердить штраф</button>
-    `;
-    modal.classList.remove('hidden');
-
-    document.getElementById('submit-penalty').addEventListener('click', () => {
-        const newBalance = parseFloat(document.getElementById('new-balance').value);
-        if (!isNaN(newBalance)) {
-            socket.emit('penaltyWithBalance', taskId, newBalance);
-        }
-        modal.classList.add('hidden');
-    }, { once: true });
-}
-
-function openAddBalanceModal() {
-    modalBody.innerHTML = `
-        <h2>Добавить запись в баланс</h2>
-        <p>Текущий баланс: ${currentBalance} ₽</p>
-        <input type="text" id="balance-desc" placeholder="Описание">
-        <input type="number" id="balance-amount" placeholder="Сумма изменения">
-        <button id="submit-balance">Добавить</button>
-    `;
-    modal.classList.remove('hidden');
-
-    document.getElementById('submit-balance').addEventListener('click', () => {
-        const desc = document.getElementById('balance-desc').value;
-        const amount = parseFloat(document.getElementById('balance-amount').value) || 0;
-        if (desc) {
-            socket.emit('addBalance', desc, amount);
-        }
-        modal.classList.add('hidden');
-    }, { once: true });
-}
-
-function openPrizeModal() {
-    modalBody.innerHTML = `
-        <h2>🎁 Обычный розыгрыш</h2>
-        <p>Текущий баланс: ${currentBalance} ₽</p>
-        <p>Сумма приза (3 000 – 10 000 ₽):</p>
-        <input type="number" id="prize-amount" value="3000" step="100">
-        <p>Количество победителей (1-5):</p>
-        <input type="number" id="prize-winners" value="1" min="1" max="5">
-        <p>Введите имена через запятую:</p>
-        <textarea id="prize-names" placeholder="user1, user2, user3"></textarea>
-        <button id="submit-prize">Раздать</button>
-    `;
-    modal.classList.remove('hidden');
-
-    document.getElementById('submit-prize').addEventListener('click', () => {
-        const amount = parseFloat(document.getElementById('prize-amount').value);
-        const winnersCount = parseInt(document.getElementById('prize-winners').value);
-        const namesStr = document.getElementById('prize-names').value;
-        const names = namesStr.split(',').map(s => s.trim()).filter(s => s);
-        if (amount && winnersCount && names.length >= winnersCount) {
-            const shuffled = names.sort(() => 0.5 - Math.random());
-            const winners = shuffled.slice(0, winnersCount);
-            socket.emit('prizeDraw', { amount, winners });
-            alert(`Победители: ${winners.join(', ')}`);
-        } else {
-            alert('Недостаточно имён или неверные данные');
-        }
-        modal.classList.add('hidden');
-    }, { once: true });
-}
-
-
-addBalanceBtn.addEventListener('click', openAddBalanceModal);
-
-resetBtn.addEventListener('click', () => {
-    if (confirm('Завершить квест и начать заново?')) {
-        const newStartBalance = parseFloat(startBalanceInput.value) || 1500000;
-        socket.emit('reset', newStartBalance);
-        clearSavedGame();
-    }
-});
-
-
-document.getElementById('apply-start-balance').addEventListener('click', () => {
-    const newBalance = parseFloat(startBalanceInput.value);
-    if (!isNaN(newBalance) && newBalance !== currentBalance) {
-        const change = newBalance - currentBalance;
-        socket.emit('addBalance', 'Установка начального баланса', change);
-    } else if (newBalance === currentBalance) {
-        alert('Баланс уже равен этому значению');
-    } else {
-        alert('Введите корректное число');
-    }
-});
-
-
-document.querySelector('.level-title').addEventListener('dblclick', () => {
-    openPrizeModal();
-});
-
-closeModal.addEventListener('click', () => {
-    modal.classList.add('hidden');
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.classList.add('hidden');
-    }
-    if (e.target === completionModal) {
-        completionModal.classList.add('hidden');
-    }
-    if (e.target === rulesModal) {
-        rulesModal.classList.add('hidden');
-    }
-});
-
-
-function shouldShowRules() {
-    return !localStorage.getItem('quest_rules_hidden');
-}
-
-if (shouldShowRules()) {
-    setTimeout(() => {
-        rulesModal.classList.remove('hidden');
-    }, 500);
-}
-
-rulesBtn.addEventListener('click', () => {
-    rulesModal.classList.remove('hidden');
-});
-
-rulesModal.querySelector('.close-modal').addEventListener('click', () => {
-    rulesModal.classList.add('hidden');
-});
-
 startQuestBtn.addEventListener('click', () => {
-    if (dontShowCheckbox.checked) {
-        localStorage.setItem('quest_rules_hidden', 'true');
-    }
+    if (dontShowCheckbox.checked) localStorage.setItem('quest_rules_hidden', 'true');
     rulesModal.classList.add('hidden');
 });
+rulesModal.querySelector('.close-modal').addEventListener('click', () => rulesModal.classList.add('hidden'));
 
-
-(function addBurnAnimation() {
-    const style = document.createElement('style');
-    style.textContent = `
-        .card.burn {
-            animation: burn 0.5s forwards;
-            pointer-events: none;
-        }
-        @keyframes burn {
-            0% { opacity: 1; transform: scale(1); filter: brightness(1); }
-            100% { opacity: 0; transform: scale(0) rotate(10deg); filter: brightness(2); }
-        }
-    `;
-    document.head.appendChild(style);
-})();
+// Применить начальный баланс (упрощённо)
+document.querySelector('.balance-btn').addEventListener('click', () => {
+    const newBal = prompt('Введите начальный баланс:', gameState.currentBalance);
+    if (newBal && !isNaN(newBal)) {
+        gameState.currentBalance = parseFloat(newBal);
+        updateUI();
+        socket.emit('addBalance', 'Изменение стартового баланса', 0); // просто фиксация
+    }
+});
