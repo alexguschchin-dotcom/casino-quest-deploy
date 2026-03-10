@@ -5,52 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Хроники Забытого Храма</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Декоративный дракон (фон) -->
+    <!-- Фоновый дракон -->
     <div class="dragon-bg"></div>
-    
-    <div class="game-container">
-        <!-- Карта храма -->
-        <div class="map-container">
-            <canvas id="dungeonMap" width="1000" height="600"></canvas>
+
+    <div class="game-wrapper">
+        <!-- Верхняя панель -->
+        <div class="top-panel">
+            <div class="party-info">
+                <span class="hero-icon"><i class="fas fa-khanda"></i> Рыцарь</span>
+                <span class="hero-icon"><i class="fas fa-bow-arrow"></i> Лучница</span>
+                <span class="hero-icon"><i class="fas fa-magic"></i> Маг</span>
+            </div>
+            <div class="balance-info">
+                <span>💰 Сокровища: <span id="current-balance">0</span></span>
+                <button id="apply-start-balance" class="btn-gold">Изменить стартовый баланс</button>
+            </div>
         </div>
 
-        <!-- Панель баланса и управления -->
-        <div class="info-panel">
-            <div class="party-stats">
-                <h2>Отряд героев</h2>
-                <div class="heroes">
-                    <div class="hero warrior">⚔️ Рыцарь</div>
-                    <div class="hero archer">🏹 Лучница</div>
-                    <div class="hero mage">🔮 Маг</div>
-                </div>
-                <div class="treasure">
-                    <span>💰 Сокровища: <span id="current-balance">0</span></span>
-                    <button id="apply-start-balance" class="balance-btn">Изменить стартовый баланс</button>
-                </div>
+        <!-- Игровое поле (Canvas) -->
+        <div class="game-area">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+        </div>
+
+        <!-- Панель управления (кнопки движения) -->
+        <div class="control-panel">
+            <button id="move-up" class="move-btn"><i class="fas fa-arrow-up"></i></button>
+            <div class="move-row">
+                <button id="move-left" class="move-btn"><i class="fas fa-arrow-left"></i></button>
+                <button id="move-down" class="move-btn"><i class="fas fa-arrow-down"></i></button>
+                <button id="move-right" class="move-btn"><i class="fas fa-arrow-right"></i></button>
             </div>
-            <div class="chat-panel">
-                <h3>📜 Летопись</h3>
-                <div id="balance-history" class="history-list"></div>
+            <div class="action-buttons">
+                <button id="reset-btn" class="btn-danger">🔄 Новый поход</button>
             </div>
-            <button id="reset-btn" class="reset-btn hidden">🔄 Начать новое приключение</button>
+        </div>
+
+        <!-- История событий -->
+        <div class="history-panel">
+            <h3>📜 Летопись</h3>
+            <div id="history-list" class="history-list"></div>
         </div>
     </div>
 
     <!-- Модальное окно задания -->
     <div id="task-modal" class="modal hidden">
-        <div class="modal-content task-content">
-            <h2>Испытание</h2>
+        <div class="modal-content">
+            <h2 id="room-title">Испытание</h2>
             <p id="task-description"></p>
             <div class="balance-input">
                 <label>Новый баланс после испытания:</label>
                 <input type="number" id="new-balance" value="1500000" step="100">
             </div>
             <div class="modal-buttons">
-                <button id="complete-task" class="btn-success">✅ Выполнено</button>
-                <button id="fail-task" class="btn-danger">⚠️ Провал</button>
+                <button id="complete-task" class="btn-success"><i class="fas fa-check"></i> Выполнено</button>
+                <button id="fail-task" class="btn-danger"><i class="fas fa-skull"></i> Провал</button>
             </div>
         </div>
     </div>
@@ -61,19 +73,17 @@
             <h2>🏆 Победа! 🏆</h2>
             <p>Вы прошли храм и собрали несметные сокровища!</p>
             <p>Итоговый баланс: <span id="final-balance"></span> 💰</p>
-            <button id="completion-reset-btn">🔄 Начать заново</button>
+            <button id="completion-reset-btn" class="btn-gold">🔄 Начать заново</button>
         </div>
     </div>
 
     <!-- Модальное окно правил -->
     <div id="rules-modal" class="modal hidden">
-        <div class="modal-content rules-content">
+        <div class="modal-content">
             <h2>📖 Легенда храма</h2>
-            <div class="rules-text">
-                <p>Добро пожаловать, искатель приключений! Вы ведёте отряд героев через древний храм. В каждой комнате вас ждут испытания — задания, которые нужно выполнить в казино. Зрители в чате подсказывают путь, пишите "налево" или "направо" на развилках. Вперёд к сокровищам!</p>
-            </div>
+            <p>Вы ведёте отряд героев через древний храм. В каждой комнате вас ждут испытания — задания, которые нужно выполнить в казино. Зрители в чате подсказывают путь, пишите "вверх", "вниз", "влево", "вправо".</p>
             <label><input type="checkbox" id="dont-show-rules"> Больше не показывать</label>
-            <button id="start-quest-btn">В путь!</button>
+            <button id="start-quest-btn" class="btn-gold">В путь!</button>
         </div>
     </div>
 

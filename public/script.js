@@ -1,25 +1,30 @@
 const socket = io();
 
+// ------------------- Конфигурация игры -------------------
+const ROWS = 5;
+const COLS = 6;
+const ROOM_SIZE = 100; // размер клетки на canvas
+
 // Состояние игры
 let gameState = {
-    currentRoomIndex: 0,          // индекс текущей комнаты (куда зашли герои)
-    rooms: [],                    // массив комнат
-    heroesX: 0,                   // координаты героев на карте
-    heroesY: 0,
+    map: [],                  // 2D массив комнат
+    playerRow: 0,
+    playerCol: 0,
     currentBalance: 1500000,
     balanceHistory: [],
-    availableTasks: [],           // пул заданий от сервера
+    availableTasks: [],
     currentTaskId: null,
-    savedGame: null
+    gameCompleted: false
 };
 
 // DOM элементы
-const canvas = document.getElementById('dungeonMap');
+const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const balanceSpan = document.getElementById('current-balance');
-const historyDiv = document.getElementById('balance-history');
+const historyDiv = document.getElementById('history-list');
 const resetBtn = document.getElementById('reset-btn');
 const taskModal = document.getElementById('task-modal');
+const roomTitle = document.getElementById('room-title');
 const taskDesc = document.getElementById('task-description');
 const newBalanceInput = document.getElementById('new-balance');
 const completeBtn = document.getElementById('complete-task');
@@ -30,131 +35,186 @@ const completionResetBtn = document.getElementById('completion-reset-btn');
 const rulesModal = document.getElementById('rules-modal');
 const dontShowCheckbox = document.getElementById('dont-show-rules');
 const startQuestBtn = document.getElementById('start-quest-btn');
+const moveUp = document.getElementById('move-up');
+const moveDown = document.getElementById('move-down');
+const moveLeft = document.getElementById('move-left');
+const moveRight = document.getElementById('move-right');
 
-// Ключ сохранения
-const SAVE_KEY = 'temple_quest_save';
+// Кнопка изменения баланса
+document.getElementById('apply-start-balance').addEventListener('click', () => {
+    const newBal = prompt('Введите новый стартовый баланс:', gameState.currentBalance);
+    if (newBal && !isNaN(newBal)) {
+        gameState.currentBalance = parseFloat(newBal);
+        updateUI();
+        socket.emit('addBalance', 'Изменение стартового баланса', 0);
+    }
+});
 
-// ------------------- Инициализация карты -------------------
-function initMap() {
-    // Создаём 30 комнат, расположенных в виде дерева (упрощённо)
-    // Каждая комната имеет координаты (x, y), тип, соседей, задание (позже), состояние
-    const rooms = [];
-    // Простая линейная карта с развилками
-    const roomData = [
-        { x: 100, y: 300, type: 'start', name: 'Вход' },
-        { x: 250, y: 200, type: 'normal', name: 'Зал теней' },
-        { x: 250, y: 400, type: 'normal', name: 'Зал огня' },
-        { x: 400, y: 150, type: 'normal', name: 'Комната воинов' },
-        { x: 400, y: 300, type: 'trap', name: 'Ловушка' },
-        { x: 400, y: 450, type: 'treasure', name: 'Сокровищница' },
-        { x: 550, y: 100, type: 'normal', name: 'Библиотека' },
-        { x: 550, y: 250, type: 'boss', name: 'Тронный зал' },
-        // ... до 30 комнат, но для примера сократим
-    ];
-    for (let i = 0; i < 30; i++) {
-        // Заполним остальные комнаты случайными координатами для демонстрации
-        rooms.push({
-            index: i,
-            x: 100 + (i % 6) * 150,
-            y: 100 + Math.floor(i / 6) * 150,
-            type: i === 0 ? 'start' : (i === 29 ? 'boss' : 'normal'),
-            name: `Комната ${i+1}`,
-            visited: i === 0,
-            available: i === 0 || i === 1 || i === 2, // для демо первые три доступны
-            taskId: null,
-            neighbors: []
-        });
+// ------------------- Генерация карты -------------------
+function generateMap() {
+    const map = [];
+    for (let r = 0; r < ROWS; r++) {
+        const row = [];
+        for (let c = 0; c < COLS; c++) {
+            // Типы комнат: 'normal', 'treasure', 'monster', 'trap', 'boss'
+            let type = 'normal';
+            if (r === ROWS-1 && c === COLS-1) type = 'boss';
+            else if (Math.random() < 0.15) type = 'treasure';
+            else if (Math.random() < 0.2) type = 'monster';
+            else if (Math.random() < 0.1) type = 'trap';
+            
+            row.push({
+                type: type,
+                visited: false,
+                available: (r === 0 && c === 0), // только старт доступен
+                taskId: null
+            });
+        }
+        map.push(row);
     }
-    // Простая связь: каждая комната соединена со следующей
-    for (let i = 0; i < rooms.length - 1; i++) {
-        rooms[i].neighbors.push(i+1);
-    }
-    // Добавим развилки
-    rooms[1].neighbors.push(3);
-    rooms[2].neighbors.push(5);
-    return rooms;
+    map[0][0].visited = true; // старт посещён
+    return map;
 }
 
-gameState.rooms = initMap();
-gameState.heroesX = gameState.rooms[0].x;
-gameState.heroesY = gameState.rooms[0].y;
+gameState.map = generateMap();
 
 // ------------------- Отрисовка карты -------------------
 function drawMap() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Рисуем тропинки
+
+    // Рисуем сетку
     ctx.strokeStyle = '#b8860b';
-    ctx.lineWidth = 4;
-    ctx.shadowColor = 'gold';
-    ctx.shadowBlur = 10;
-    
-    gameState.rooms.forEach(room => {
-        room.neighbors.forEach(neighbor => {
-            const next = gameState.rooms[neighbor];
-            ctx.beginPath();
-            ctx.moveTo(room.x, room.y);
-            ctx.lineTo(next.x, next.y);
-            ctx.stroke();
-        });
-    });
-    
-    ctx.shadowBlur = 0;
-    
-    // Рисуем комнаты
-    gameState.rooms.forEach((room, index) => {
-        let color = '#2a2440';
-        if (room.visited) color = '#4ecca7';
-        if (index === gameState.currentRoomIndex) color = '#ffaa00';
-        
-        ctx.fillStyle = color;
-        ctx.strokeStyle = '#b8860b';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(room.x, room.y, 20, 0, 2*Math.PI);
-        ctx.fill();
-        ctx.stroke();
-        
-        // Иконка типа комнаты
-        ctx.font = '24px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        let emoji = '';
-        switch(room.type) {
-            case 'start': emoji = '🚪'; break;
-            case 'normal': emoji = '👾'; break;
-            case 'trap': emoji = '💀'; break;
-            case 'treasure': emoji = '💰'; break;
-            case 'boss': emoji = '👑'; break;
-            default: emoji = '⬜';
+    ctx.lineWidth = 3;
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const x = c * ROOM_SIZE + 50;
+            const y = r * ROOM_SIZE + 50;
+            
+            // Цвет в зависимости от типа и посещённости
+            let fillColor = '#2a2440';
+            if (gameState.map[r][c].visited) fillColor = '#4ecca7';
+            if (gameState.playerRow === r && gameState.playerCol === c) fillColor = '#ffaa00';
+            
+            ctx.fillStyle = fillColor;
+            ctx.strokeStyle = '#b8860b';
+            ctx.lineWidth = 3;
+            ctx.fillRect(x, y, ROOM_SIZE-10, ROOM_SIZE-10);
+            ctx.strokeRect(x, y, ROOM_SIZE-10, ROOM_SIZE-10);
+            
+            // Иконка комнаты
+            ctx.font = '40px "Font Awesome 6 Free", "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let icon = '';
+            switch(gameState.map[r][c].type) {
+                case 'treasure': icon = '💰'; break;
+                case 'monster': icon = '👾'; break;
+                case 'trap': icon = '💀'; break;
+                case 'boss': icon = '👑'; break;
+                default: icon = '⬜';
+            }
+            ctx.fillText(icon, x + ROOM_SIZE/2 - 5, y + ROOM_SIZE/2 - 5);
         }
-        ctx.fillText(emoji, room.x, room.y);
-    });
-    
-    // Рисуем героев
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = 'gold';
-    ctx.font = '40px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+    }
+
+    // Рисуем героев (отряд)
+    const px = gameState.playerCol * ROOM_SIZE + 50 + ROOM_SIZE/2 - 20;
+    const py = gameState.playerRow * ROOM_SIZE + 50 + ROOM_SIZE/2 - 20;
+    ctx.font = '50px "Font Awesome 6 Free", "Segoe UI Emoji", sans-serif';
     ctx.fillStyle = 'white';
-    ctx.fillText('⚔️🏹🔮', gameState.heroesX - 30, gameState.heroesY - 30);
+    ctx.shadowColor = 'gold';
+    ctx.shadowBlur = 20;
+    ctx.fillText('⚔️🏹🔮', px - 30, py - 10);
     ctx.shadowBlur = 0;
 }
 
-// ------------------- Загрузка задания для комнаты -------------------
-function enterRoom(roomIndex) {
-    const room = gameState.rooms[roomIndex];
-    if (!room || room.visited) return;
+// ------------------- Движение персонажа -------------------
+function tryMove(dr, dc) {
+    const newRow = gameState.playerRow + dr;
+    const newCol = gameState.playerCol + dc;
     
-    // Получаем случайное задание из пула (или можно связать с комнатой)
-    // Для демо используем заглушку
-    const task = gameState.availableTasks[Math.floor(Math.random() * gameState.availableTasks.length)];
-    if (!task) {
-        alert('Нет заданий в пуле');
+    // Проверка границ
+    if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) return false;
+    
+    const targetRoom = gameState.map[newRow][newCol];
+    // Можно двигаться только если комната доступна и не посещена
+    if (!targetRoom.available || targetRoom.visited) return false;
+    
+    // Перемещаем героя
+    gameState.playerRow = newRow;
+    gameState.playerCol = newCol;
+    targetRoom.visited = true; // отмечаем как посещённую
+    
+    // Делаем соседние комнаты доступными (кроме посещённых)
+    const neighbors = [
+        [newRow-1, newCol], [newRow+1, newCol], [newRow, newCol-1], [newRow, newCol+1]
+    ];
+    neighbors.forEach(([r, c]) => {
+        if (r >= 0 && r < ROWS && c >= 0 && c < COLS && !gameState.map[r][c].visited) {
+            gameState.map[r][c].available = true;
+        }
+    });
+    
+    drawMap();
+    
+    // Если комната босса и всё пройдено
+    if (targetRoom.type === 'boss' && checkAllVisited()) {
+        completeGame();
+        return true;
+    }
+    
+    // Открываем модалку задания для этой комнаты
+    openTaskModal(targetRoom.type);
+    
+    return true;
+}
+
+function checkAllVisited() {
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (!gameState.map[r][c].visited) return false;
+        }
+    }
+    return true;
+}
+
+// ------------------- Завершение игры -------------------
+function completeGame() {
+    gameState.gameCompleted = true;
+    finalBalanceSpan.textContent = gameState.currentBalance;
+    completionModal.classList.remove('hidden');
+}
+
+// ------------------- Модалка задания -------------------
+function openTaskModal(roomType) {
+    // Получаем случайное задание из пула (или можно по типу)
+    const tasks = gameState.availableTasks;
+    if (!tasks || tasks.length === 0) {
+        alert('Нет заданий!');
         return;
     }
     
+    let filtered = tasks;
+    if (roomType === 'monster') filtered = tasks.filter(t => t.difficulty >= 4);
+    else if (roomType === 'treasure') filtered = tasks.filter(t => t.difficulty >= 3);
+    else if (roomType === 'trap') filtered = tasks.filter(t => t.difficulty <= 2);
+    
+    if (filtered.length === 0) filtered = tasks;
+    
+    const task = filtered[Math.floor(Math.random() * filtered.length)];
     gameState.currentTaskId = task.id;
+    
+    let title = '';
+    switch(roomType) {
+        case 'treasure': title = 'Сундук с сокровищами'; break;
+        case 'monster': title = 'Монстр!'; break;
+        case 'trap': title = 'Ловушка!'; break;
+        case 'boss': title = 'Владыка храма'; break;
+        default: title = 'Испытание';
+    }
+    
+    roomTitle.textContent = title;
     taskDesc.textContent = task.description;
     newBalanceInput.value = gameState.currentBalance;
     taskModal.classList.remove('hidden');
@@ -166,56 +226,51 @@ function completeTask(success) {
     if (isNaN(newBalance)) return;
     
     const change = newBalance - gameState.currentBalance;
-    const task = gameState.availableTasks.find(t => t.id === gameState.currentTaskId);
-    if (!task) return;
     
-    // Отправляем событие на сервер (как раньше)
     if (success) {
         socket.emit('completeTask', gameState.currentTaskId, change);
     } else {
         socket.emit('penaltyWithBalance', gameState.currentTaskId, newBalance);
     }
     
-    // Обновляем локально (сервер пришлёт новое состояние)
-    // Но пока отметим комнату пройденной
-    const room = gameState.rooms[gameState.currentRoomIndex];
-    if (room) {
-        room.visited = true;
-        // Открываем соседей
-        room.neighbors.forEach(idx => {
-            gameState.rooms[idx].available = true;
-        });
-    }
-    
     taskModal.classList.add('hidden');
+    updateUI();
+    saveGame();
 }
 
-// ------------------- Подключение к серверу -------------------
-socket.on('connect', () => {
-    const saved = loadGameState();
-    if (saved) {
-        if (confirm('Найден сохранённый поход. Восстановить?')) {
-            gameState = saved;
-            gameState.heroesX = gameState.rooms[gameState.currentRoomIndex].x;
-            gameState.heroesY = gameState.rooms[gameState.currentRoomIndex].y;
-            updateUI();
-            return;
-        } else {
-            clearSavedGame();
+// ------------------- Сохранение/загрузка -------------------
+const SAVE_KEY = 'temple_rpg_save';
+
+function saveGame() {
+    try {
+        const saveData = {
+            ...gameState,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    } catch (e) {}
+}
+
+function loadGame() {
+    try {
+        const saved = localStorage.getItem(SAVE_KEY);
+        if (!saved) return null;
+        const data = JSON.parse(saved);
+        if (Date.now() - data.timestamp > 24*60*60*1000) {
+            localStorage.removeItem(SAVE_KEY);
+            return null;
         }
+        return data;
+    } catch (e) {
+        return null;
     }
-    socket.emit('reset', 1500000);
-});
+}
 
-socket.on('state', (serverState) => {
-    // Обновляем баланс и историю, но карту оставляем свою
-    gameState.currentBalance = serverState.currentBalance;
-    gameState.balanceHistory = serverState.balanceHistory;
-    gameState.availableTasks = serverState.availableTasks;
-    updateUI();
-    saveGameState();
-});
+function clearSave() {
+    localStorage.removeItem(SAVE_KEY);
+}
 
+// ------------------- Обновление UI -------------------
 function updateUI() {
     balanceSpan.textContent = gameState.currentBalance;
     renderHistory();
@@ -234,57 +289,42 @@ function renderHistory() {
     });
 }
 
-// ------------------- Сохранение и загрузка -------------------
-function saveGameState() {
-    try {
-        const saveData = {
-            ...gameState,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-    } catch (e) {}
-}
-
-function loadGameState() {
-    try {
-        const saved = localStorage.getItem(SAVE_KEY);
-        if (!saved) return null;
-        const data = JSON.parse(saved);
-        if (Date.now() - data.timestamp > 24*60*60*1000) {
-            localStorage.removeItem(SAVE_KEY);
-            return null;
+// ------------------- Подключение к серверу -------------------
+socket.on('connect', () => {
+    const saved = loadGame();
+    if (saved && !saved.gameCompleted) {
+        if (confirm('Найден сохранённый поход. Восстановить?')) {
+            gameState = saved;
+            updateUI();
+            return;
+        } else {
+            clearSave();
         }
-        return data;
-    } catch (e) {
-        return null;
     }
-}
+    socket.emit('reset', 1500000);
+});
 
-function clearSavedGame() {
-    localStorage.removeItem(SAVE_KEY);
-}
+socket.on('state', (serverState) => {
+    gameState.currentBalance = serverState.currentBalance;
+    gameState.balanceHistory = serverState.balanceHistory;
+    gameState.availableTasks = serverState.availableTasks;
+    updateUI();
+    saveGame();
+});
 
-// ------------------- Обработчики событий -------------------
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const mouseX = (e.clientX - rect.left) * scaleX;
-    const mouseY = (e.clientY - rect.top) * scaleY;
-    
-    // Ищем комнату под курсором
-    for (let i = 0; i < gameState.rooms.length; i++) {
-        const room = gameState.rooms[i];
-        const dist = Math.hypot(mouseX - room.x, mouseY - room.y);
-        if (dist < 25 && room.available && !room.visited && i !== gameState.currentRoomIndex) {
-            // Перемещаем героев в эту комнату
-            gameState.currentRoomIndex = i;
-            gameState.heroesX = room.x;
-            gameState.heroesY = room.y;
-            drawMap();
-            enterRoom(i);
-            break;
-        }
+// ------------------- Обработчики кнопок движения -------------------
+moveUp.addEventListener('click', () => tryMove(-1, 0));
+moveDown.addEventListener('click', () => tryMove(1, 0));
+moveLeft.addEventListener('click', () => tryMove(0, -1));
+moveRight.addEventListener('click', () => tryMove(0, 1));
+
+// Клавиши WASD
+window.addEventListener('keydown', (e) => {
+    if (taskModal.classList.contains('hidden')) {
+        if (e.key === 'w' || e.key === 'W' || e.key === 'ц' || e.key === 'Ц') tryMove(-1, 0);
+        if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') tryMove(1, 0);
+        if (e.key === 'a' || e.key === 'A' || e.key === 'ф' || e.key === 'Ф') tryMove(0, -1);
+        if (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В') tryMove(0, 1);
     }
 });
 
@@ -293,12 +333,12 @@ failBtn.addEventListener('click', () => completeTask(false));
 
 resetBtn.addEventListener('click', () => {
     if (confirm('Начать новое приключение?')) {
-        socket.emit('reset', parseFloat(document.getElementById('start-balance').value) || 1500000);
-        gameState.rooms = initMap();
-        gameState.currentRoomIndex = 0;
-        gameState.heroesX = gameState.rooms[0].x;
-        gameState.heroesY = gameState.rooms[0].y;
-        clearSavedGame();
+        socket.emit('reset', 1500000);
+        gameState.map = generateMap();
+        gameState.playerRow = 0;
+        gameState.playerCol = 0;
+        gameState.gameCompleted = false;
+        clearSave();
         updateUI();
     }
 });
@@ -318,12 +358,5 @@ startQuestBtn.addEventListener('click', () => {
 });
 rulesModal.querySelector('.close-modal').addEventListener('click', () => rulesModal.classList.add('hidden'));
 
-// Применить начальный баланс (упрощённо)
-document.querySelector('.balance-btn').addEventListener('click', () => {
-    const newBal = prompt('Введите начальный баланс:', gameState.currentBalance);
-    if (newBal && !isNaN(newBal)) {
-        gameState.currentBalance = parseFloat(newBal);
-        updateUI();
-        socket.emit('addBalance', 'Изменение стартового баланса', 0); // просто фиксация
-    }
-});
+// Инициализация
+drawMap();
