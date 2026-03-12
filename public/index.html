@@ -3,87 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хроники Забытого Храма</title>
+    <title>Карточный турнир</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <!-- Фоновый дракон -->
-    <div class="dragon-bg"></div>
-
-    <div class="game-wrapper">
-        <!-- Верхняя панель -->
-        <div class="top-panel">
-            <div class="party-info">
-                <span class="hero-icon"><i class="fas fa-khanda"></i> Рыцарь</span>
-                <span class="hero-icon"><i class="fas fa-bow-arrow"></i> Лучница</span>
-                <span class="hero-icon"><i class="fas fa-magic"></i> Маг</span>
-            </div>
+    <div class="game-container">
+        <!-- Заголовок -->
+        <header class="header">
+            <h1>Карточный турнир</h1>
             <div class="balance-info">
-                <span>💰 Сокровища: <span id="current-balance">0</span></span>
-                <button id="apply-start-balance" class="btn-gold">Изменить стартовый баланс</button>
+                <span>💰 Баланс: <span id="current-balance">0</span></span>
+                <button id="apply-start-balance" class="btn-gold">Изменить</button>
+            </div>
+        </header>
+
+        <!-- Основной стол -->
+        <div class="table">
+            <!-- Противник -->
+            <div class="player opponent">
+                <div class="player-info">
+                    <div class="avatar opponent-avatar">👤</div>
+                    <div class="score">Очки: <span id="opponent-score">0</span></div>
+                </div>
+                <div class="hand" id="opponent-hand">
+                    <!-- Карты противника (рубашкой вверх) -->
+                </div>
+            </div>
+
+            <!-- Центр стола с историей и счётчиком раундов -->
+            <div class="center-area">
+                <div class="round-counter">Раунд <span id="round-count">1</span> / 30</div>
+                <div class="log-area" id="log-area">
+                    <div class="log-title">📋 Хроника</div>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+
+            <!-- Игрок -->
+            <div class="player player-self">
+                <div class="player-info">
+                    <div class="avatar player-avatar">⚔️</div>
+                    <div class="score">Очки: <span id="player-score">0</span></div>
+                </div>
+                <div class="hand" id="player-hand">
+                    <!-- Карты игрока (рубашкой вверх) -->
+                </div>
             </div>
         </div>
 
-        <!-- Игровое поле (Canvas) -->
-        <div class="game-area">
-            <canvas id="gameCanvas" width="800" height="600"></canvas>
-        </div>
-
-        <!-- Панель управления (кнопки движения) -->
-        <div class="control-panel">
-            <button id="move-up" class="move-btn"><i class="fas fa-arrow-up"></i></button>
-            <div class="move-row">
-                <button id="move-left" class="move-btn"><i class="fas fa-arrow-left"></i></button>
-                <button id="move-down" class="move-btn"><i class="fas fa-arrow-down"></i></button>
-                <button id="move-right" class="move-btn"><i class="fas fa-arrow-right"></i></button>
-            </div>
-            <div class="action-buttons">
-                <button id="reset-btn" class="btn-danger">🔄 Новый поход</button>
-            </div>
-        </div>
-
-        <!-- История событий -->
-        <div class="history-panel">
-            <h3>📜 Летопись</h3>
-            <div id="history-list" class="history-list"></div>
+        <!-- Управление -->
+        <div class="controls">
+            <button id="reset-btn" class="btn-danger">🔄 Новая игра</button>
+            <button id="rules-btn" class="btn-gold">📜 Правила</button>
         </div>
     </div>
 
-    <!-- Модальное окно задания -->
+    <!-- Модалка задания -->
     <div id="task-modal" class="modal hidden">
         <div class="modal-content">
-            <h2 id="room-title">Испытание</h2>
+            <h2>Выбрана карта</h2>
             <p id="task-description"></p>
             <div class="balance-input">
-                <label>Новый баланс после испытания:</label>
-                <input type="number" id="new-balance" value="1500000" step="100">
+                <label>Новый баланс после выполнения:</label>
+                <input type="number" id="new-balance" step="100">
             </div>
             <div class="modal-buttons">
-                <button id="complete-task" class="btn-success"><i class="fas fa-check"></i> Выполнено</button>
-                <button id="fail-task" class="btn-danger"><i class="fas fa-skull"></i> Провал</button>
+                <button id="complete-task" class="btn-success">✅ Выполнено</button>
+                <button id="fail-task" class="btn-danger">⚠️ Провал</button>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно завершения игры -->
+    <!-- Модалка конца игры -->
     <div id="completion-modal" class="modal hidden">
-        <div class="modal-content completion-content">
-            <h2>🏆 Победа! 🏆</h2>
-            <p>Вы прошли храм и собрали несметные сокровища!</p>
-            <p>Итоговый баланс: <span id="final-balance"></span> 💰</p>
-            <button id="completion-reset-btn" class="btn-gold">🔄 Начать заново</button>
+        <div class="modal-content">
+            <h2>🏆 Итоги турнира 🏆</h2>
+            <p id="final-message"></p>
+            <p>Ваш итоговый баланс: <span id="final-balance"></span> ₽</p>
+            <button id="completion-reset-btn" class="btn-gold">🔄 Сыграть ещё</button>
         </div>
     </div>
 
-    <!-- Модальное окно правил -->
+    <!-- Модалка правил -->
     <div id="rules-modal" class="modal hidden">
         <div class="modal-content">
-            <h2>📖 Легенда храма</h2>
-            <p>Вы ведёте отряд героев через древний храм. В каждой комнате вас ждут испытания — задания, которые нужно выполнить в казино. Зрители в чате подсказывают путь, пишите "вверх", "вниз", "влево", "вправо".</p>
+            <h2>📜 Правила</h2>
+            <p>Вы и таинственный противник садитесь за стол. У каждого на руках по 3 карты заданий. Вы выбираете одну карту (по совету чата), открываете её и выполняете задание в казино. Затем вводите новый баланс. Противник автоматически открывает свою карту и получает очки, равные её сложности. Побеждает тот, кто наберёт больше очков за 30 раундов. Задания не повторяются.</p>
             <label><input type="checkbox" id="dont-show-rules"> Больше не показывать</label>
-            <button id="start-quest-btn" class="btn-gold">В путь!</button>
+            <button id="start-quest-btn" class="btn-gold">Понятно</button>
         </div>
     </div>
 
