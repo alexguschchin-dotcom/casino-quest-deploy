@@ -11,21 +11,7 @@ let gameState = {
     balanceHistory: [],
     availableTasks: [],      // локальная копия пула заданий
     currentTaskId: null,
-    gameCompleted: false,
-    // Трофеи
-    trophies: {
-        heartMaster: false,      // выполнено 3♥ подряд
-        diamondMaster: false,    // 3♦ подряд
-        clubMaster: false,       // 3♣ подряд
-        spadeMaster: false,      // 3♠ подряд
-        noFail: false,           // 10 раундов без штрафа
-        tournamentWinner: false, // победа в турнире
-        collector: false,        // по 5 каждой масти
-        winStreak: 0,            // счётчик побед подряд
-        collection: { heart: 0, diamond: 0, club: 0, spade: 0 } // выполнено каждой масти
-    },
-    failStreak: 0,               // счётчик раундов без штрафа (для трофея)
-    lastSuits: [],               // последние 3 масти для проверки комбо
+    gameCompleted: false
 };
 
 // DOM элементы
@@ -195,74 +181,6 @@ function selectPlayerCard(index) {
     window.selectedCardIndex = index;
 }
 
-// Проверка трофеев
-function checkTrophies(cardSuit, success) {
-    if (!success) {
-        // Если провал, сбрасываем счётчик безштрафных раундов
-        gameState.failStreak = 0;
-        return;
-    }
-    
-    // Увеличиваем счётчик безштрафных раундов
-    gameState.failStreak++;
-    if (gameState.failStreak >= 10 && !gameState.trophies.noFail) {
-        gameState.trophies.noFail = true;
-        addHistoryEntry('🏆 Получен трофей "Без единого провала"!');
-        renderTrophies();
-    }
-    
-    // Обновляем коллекцию мастей
-    if (cardSuit === '♥') gameState.trophies.collection.heart++;
-    if (cardSuit === '♦') gameState.trophies.collection.diamond++;
-    if (cardSuit === '♣') gameState.trophies.collection.club++;
-    if (cardSuit === '♠') gameState.trophies.collection.spade++;
-    
-    // Проверка на коллекционера (по 5 каждой масти)
-    const coll = gameState.trophies.collection;
-    if (!gameState.trophies.collector && coll.heart >=5 && coll.diamond >=5 && coll.club >=5 && coll.spade >=5) {
-        gameState.trophies.collector = true;
-        addHistoryEntry('🏆 Получен трофей "Коллекционер"!');
-        renderTrophies();
-    }
-    
-    // Проверка на мастеров мастей (3 подряд одной масти)
-    gameState.lastSuits.push(cardSuit);
-    if (gameState.lastSuits.length > 3) gameState.lastSuits.shift();
-    
-    if (gameState.lastSuits.length === 3) {
-        const [s1, s2, s3] = gameState.lastSuits;
-        if (s1 === s2 && s2 === s3) {
-            const trophyKey = {
-                '♥': 'heartMaster',
-                '♦': 'diamondMaster',
-                '♣': 'clubMaster',
-                '♠': 'spadeMaster'
-            }[s1];
-            if (!gameState.trophies[trophyKey]) {
-                gameState.trophies[trophyKey] = true;
-                addHistoryEntry(`🏆 Получен трофей "Мастер ${s1}"!`);
-                renderTrophies();
-            }
-        }
-    }
-}
-
-// Отрисовка трофеев
-function renderTrophies() {
-    const trophiesList = document.getElementById('trophies-list');
-    if (!trophiesList) return;
-    const trophies = gameState.trophies;
-    let html = '';
-    if (trophies.heartMaster) html += '<span class="trophy" title="Мастер ♥">♥</span>';
-    if (trophies.diamondMaster) html += '<span class="trophy" title="Мастер ♦">♦</span>';
-    if (trophies.clubMaster) html += '<span class="trophy" title="Мастер ♣">♣</span>';
-    if (trophies.spadeMaster) html += '<span class="trophy" title="Мастер ♠">♠</span>';
-    if (trophies.noFail) html += '<span class="trophy" title="Без единого провала">🛡️</span>';
-    if (trophies.tournamentWinner) html += '<span class="trophy" title="Победитель турнира">🏆</span>';
-    if (trophies.collector) html += '<span class="trophy" title="Коллекционер">📚</span>';
-    trophiesList.innerHTML = html;
-}
-
 // Завершение задания (успех/провал)
 function completeTask(success) {
     const newBalance = parseFloat(newBalanceInput.value);
@@ -271,7 +189,6 @@ function completeTask(success) {
     const change = newBalance - gameState.currentBalance;
     const cardIndex = window.selectedCardIndex;
     const card = gameState.playerHand[cardIndex];
-    const suit = difficultyToSuit(card.difficulty);
     
     // Удаляем карту из руки игрока
     gameState.playerHand.splice(cardIndex, 1);
@@ -289,10 +206,8 @@ function completeTask(success) {
     // Отправляем событие на сервер
     if (success) {
         socket.emit('completeTask', card.id, change);
-        checkTrophies(suit, true);
     } else {
         socket.emit('penaltyWithBalance', card.id, newBalance);
-        checkTrophies(null, false);
     }
     
     // Добираем новую карту игроку
@@ -322,16 +237,10 @@ function endGame() {
     let message = '';
     if (gameState.playerScore > gameState.opponentScore) {
         message = '🏆 Вы победили!';
-        gameState.trophies.tournamentWinner = true;
-        gameState.trophies.winStreak++;
-        addHistoryEntry(`🏆 Победная серия: ${gameState.trophies.winStreak}`);
-        renderTrophies();
     } else if (gameState.playerScore < gameState.opponentScore) {
         message = '😔 Противник оказался сильнее...';
-        gameState.trophies.winStreak = 0;
     } else {
         message = '🤝 Ничья!';
-        gameState.trophies.winStreak = 0;
     }
     finalMessage.textContent = message;
     finalBalanceSpan.textContent = gameState.currentBalance;
@@ -348,9 +257,6 @@ function resetGame() {
     gameState.currentBalance = 1500000;
     gameState.balanceHistory = [];
     gameState.gameCompleted = false;
-    gameState.failStreak = 0;
-    gameState.lastSuits = [];
-    // Трофеи не сбрасываем, кроме тех, что зависят от сессии (победная серия уже сброшена)
     
     // Запрашиваем новый пул у сервера
     socket.emit('reset', gameState.currentBalance);
@@ -361,7 +267,6 @@ function resetGame() {
     playerScoreSpan.textContent = '0';
     opponentScoreSpan.textContent = '0';
     balanceSpan.textContent = gameState.currentBalance;
-    renderTrophies();
 }
 
 // ------------------- Подключение к серверу -------------------
@@ -373,7 +278,6 @@ socket.on('connect', () => {
             updateUI();
             renderHands();
             updatePoolStats();
-            renderTrophies();
             return;
         } else {
             clearSave();
@@ -394,7 +298,6 @@ socket.on('state', (serverState) => {
     }
     renderHistory();
     updatePoolStats();
-    renderTrophies();
     saveGame();
 });
 

@@ -10,59 +10,72 @@
 </head>
 <body>
     <div class="game-container">
-        <!-- Заголовок -->
-        <header class="header">
-            <h1>Карточный турнир</h1>
-            <div class="balance-info">
-                <span>💰 Баланс: <span id="current-balance">0</span></span>
-                <button id="apply-start-balance" class="btn-gold">Изменить</button>
-            </div>
-        </header>
-
-        <!-- Основной стол -->
-        <div class="table">
-            <!-- Противник -->
-            <div class="player opponent">
-                <div class="player-info">
-                    <div class="avatar opponent-avatar">👤</div>
-                    <div class="score">Очки: <span id="opponent-score">0</span></div>
-                </div>
-                <div class="hand" id="opponent-hand">
-                    <!-- Карты противника (рубашкой вверх) -->
-                </div>
-            </div>
-
-            <!-- Центр стола с историей и счётчиком раундов -->
-            <div class="center-area">
-                <div class="round-counter">Раунд <span id="round-count">1</span> / 30</div>
-                <div class="pool-stats" id="pool-stats"></div>
-                <div class="log-area" id="log-area">
-                    <div class="log-title">📋 Хроника</div>
-                    <div id="history-list"></div>
-                </div>
-                <!-- Панель трофеев -->
-                <div class="trophies-area">
-                    <h3>🏆 Трофеи</h3>
-                    <div id="trophies-list" class="trophies-list"></div>
-                </div>
-            </div>
-
-            <!-- Игрок -->
-            <div class="player player-self">
-                <div class="player-info">
-                    <div class="avatar player-avatar">⚔️</div>
-                    <div class="score">Очки: <span id="player-score">0</span></div>
-                </div>
-                <div class="hand" id="player-hand">
-                    <!-- Карты игрока (рубашкой вверх) -->
-                </div>
-            </div>
+        <!-- Левая панель с обозначением мастей -->
+        <div class="suit-legend">
+            <h3>Масти и сложность</h3>
+            <div class="legend-item"><span class="suit ♥">♥</span> – легко (1 очко)</div>
+            <div class="legend-item"><span class="suit ♦">♦</span> – средне (2 очка)</div>
+            <div class="legend-item"><span class="suit ♣">♣</span> – сложно (3 очка)</div>
+            <div class="legend-item"><span class="suit ♠">♠</span> – очень сложно (4 очка)</div>
+            <div class="legend-item"><span class="trophy">🏆</span> – трофеи за достижения</div>
         </div>
 
-        <!-- Управление -->
-        <div class="controls">
-            <button id="reset-btn" class="btn-danger">🔄 Новая игра</button>
-            <button id="rules-btn" class="btn-gold">📜 Правила</button>
+        <!-- Основной контент -->
+        <div class="main-content">
+            <!-- Заголовок -->
+            <header class="header">
+                <h1>Карточный турнир</h1>
+                <div class="balance-info">
+                    <span>💰 Баланс: <span id="current-balance">0</span></span>
+                    <button id="apply-start-balance" class="btn-gold">Изменить</button>
+                </div>
+            </header>
+
+            <!-- Основной стол -->
+            <div class="table">
+                <!-- Противник -->
+                <div class="player opponent">
+                    <div class="player-info">
+                        <div class="avatar opponent-avatar">👤</div>
+                        <div class="score">Очки: <span id="opponent-score">0</span></div>
+                    </div>
+                    <div class="hand" id="opponent-hand">
+                        <!-- Карты противника (рубашкой вверх) -->
+                    </div>
+                </div>
+
+                <!-- Центр стола с историей и счётчиком раундов -->
+                <div class="center-area">
+                    <div class="round-counter">Раунд <span id="round-count">1</span> / 30</div>
+                    <div class="pool-stats" id="pool-stats"></div>
+                    <div class="log-area" id="log-area">
+                        <div class="log-title">📋 Хроника</div>
+                        <div id="history-list"></div>
+                    </div>
+                    <!-- Панель трофеев -->
+                    <div class="trophies-area">
+                        <h3>🏆 Трофеи</h3>
+                        <div id="trophies-list" class="trophies-list"></div>
+                    </div>
+                </div>
+
+                <!-- Игрок -->
+                <div class="player player-self">
+                    <div class="player-info">
+                        <div class="avatar player-avatar">⚔️</div>
+                        <div class="score">Очки: <span id="player-score">0</span></div>
+                    </div>
+                    <div class="hand" id="player-hand">
+                        <!-- Карты игрока (рубашкой вверх) -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Управление -->
+            <div class="controls">
+                <button id="reset-btn" class="btn-danger">🔄 Новая игра</button>
+                <button id="rules-btn" class="btn-gold">📜 Правила</button>
+            </div>
         </div>
     </div>
 
