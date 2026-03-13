@@ -2,14 +2,14 @@ const socket = io();
 
 // Состояние игры
 let gameState = {
-    playerHand: [],          // массив карт игрока (объекты с id, difficulty, description)
-    opponentHand: [],        // массив карт противника (id, difficulty) — описание не храним до открытия
+    playerHand: [],
+    opponentHand: [],
     playerScore: 0,
     opponentScore: 0,
     round: 1,
     currentBalance: 1500000,
     balanceHistory: [],
-    availableTasks: [],      // локальная копия пула заданий
+    availableTasks: [],
     currentTaskId: null,
     gameCompleted: false
 };
@@ -20,6 +20,7 @@ const playerScoreSpan = document.getElementById('player-score');
 const opponentScoreSpan = document.getElementById('opponent-score');
 const roundSpan = document.getElementById('round-count');
 const historyDiv = document.getElementById('history-list');
+const poolStatsVertical = document.getElementById('pool-stats-vertical');
 const playerHandDiv = document.getElementById('player-hand');
 const opponentHandDiv = document.getElementById('opponent-hand');
 const resetBtn = document.getElementById('reset-btn');
@@ -37,24 +38,20 @@ const completionResetBtn = document.getElementById('completion-reset-btn');
 const rulesModal = document.getElementById('rules-modal');
 const dontShowCheckbox = document.getElementById('dont-show-rules');
 const startQuestBtn = document.getElementById('start-quest-btn');
-const poolStatsVertical = document.getElementById('pool-stats-vertical'); // новый элемент
-
-// Ключ сохранения
-const SAVE_KEY = 'tournament_save';
 
 // ------------------- Преобразование difficulty в масть и очки -------------------
 function difficultyToSuit(diff) {
-    if (diff <= 1) return '♥';   // 1★
-    if (diff === 2) return '♦';   // 2★
-    if (diff === 3) return '♣';   // 3★
-    return '♠';                   // 4★ и выше (объединяем)
+    if (diff <= 1) return '♥';
+    if (diff === 2) return '♦';
+    if (diff === 3) return '♣';
+    return '♠';
 }
 
 function difficultyToPoints(diff) {
     if (diff <= 1) return 1;
     if (diff === 2) return 2;
     if (diff === 3) return 3;
-    return 4; // для 4★ и выше
+    return 4;
 }
 
 // ------------------- Вспомогательные функции -------------------
@@ -66,7 +63,6 @@ function shuffleArray(arr) {
     return arr;
 }
 
-// Взять случайную карту из пула и удалить её из gameState.availableTasks
 function drawCardFromPool() {
     if (gameState.availableTasks.length === 0) return null;
     const index = Math.floor(Math.random() * gameState.availableTasks.length);
@@ -75,7 +71,6 @@ function drawCardFromPool() {
     return card;
 }
 
-// Инициализация рук (раздача по 3 карты)
 function initHands() {
     gameState.playerHand = [];
     gameState.opponentHand = [];
@@ -89,24 +84,19 @@ function initHands() {
     updatePoolStatsVertical();
 }
 
-// Ход противника (открыть одну карту, начислить очки, убрать, добить новую)
 function opponentTurn() {
     if (gameState.opponentHand.length === 0) return;
-    // Выбираем случайную карту из руки противника
     const index = Math.floor(Math.random() * gameState.opponentHand.length);
     const card = gameState.opponentHand[index];
     gameState.opponentHand.splice(index, 1);
     
-    // Начисляем очки (по масти)
     const points = difficultyToPoints(card.difficulty);
     gameState.opponentScore += points;
     opponentScoreSpan.textContent = gameState.opponentScore;
     
-    // Добавляем запись в историю
     const suit = difficultyToSuit(card.difficulty);
     addHistoryEntry(`🤖 Противник открыл ${suit} (${points} очк.)`);
     
-    // Добираем новую карту, если есть
     const newCard = drawCardFromPool();
     if (newCard) gameState.opponentHand.push(newCard);
     
@@ -114,7 +104,6 @@ function opponentTurn() {
     updatePoolStatsVertical();
 }
 
-// Добавить запись в историю
 function addHistoryEntry(text) {
     const entry = document.createElement('div');
     entry.className = 'history-item';
@@ -123,7 +112,6 @@ function addHistoryEntry(text) {
     historyDiv.scrollTop = historyDiv.scrollHeight;
 }
 
-// Обновление вертикальной статистики пула (по мастям) в левой панели
 function updatePoolStatsVertical() {
     const counts = { '♥': 0, '♦': 0, '♣': 0, '♠': 0 };
     gameState.availableTasks.forEach(task => {
@@ -146,9 +134,7 @@ function updatePoolStatsVertical() {
     `;
 }
 
-// Отрисовка рук
 function renderHands() {
-    // Рука игрока
     playerHandDiv.innerHTML = '';
     gameState.playerHand.forEach((card, idx) => {
         const cardEl = document.createElement('div');
@@ -166,7 +152,6 @@ function renderHands() {
         playerHandDiv.appendChild(cardEl);
     });
 
-    // Рука противника (все рубашкой вверх)
     opponentHandDiv.innerHTML = '';
     gameState.opponentHand.forEach(() => {
         const cardEl = document.createElement('div');
@@ -176,7 +161,6 @@ function renderHands() {
     });
 }
 
-// Выбор карты игроком
 function selectPlayerCard(index) {
     if (gameState.playerHand.length <= index) return;
     const card = gameState.playerHand[index];
@@ -184,12 +168,9 @@ function selectPlayerCard(index) {
     taskDesc.textContent = card.description;
     newBalanceInput.value = gameState.currentBalance;
     taskModal.classList.remove('hidden');
-    
-    // Сохраняем выбранную карту для последующего удаления
     window.selectedCardIndex = index;
 }
 
-// Завершение задания (успех/провал)
 function completeTask(success) {
     const newBalance = parseFloat(newBalanceInput.value);
     if (isNaN(newBalance)) return;
@@ -198,10 +179,8 @@ function completeTask(success) {
     const cardIndex = window.selectedCardIndex;
     const card = gameState.playerHand[cardIndex];
     
-    // Удаляем карту из руки игрока
     gameState.playerHand.splice(cardIndex, 1);
     
-    // Добавляем очки игроку (по масти)
     const points = difficultyToPoints(card.difficulty);
     if (success) {
         gameState.playerScore += points;
@@ -211,25 +190,20 @@ function completeTask(success) {
         addHistoryEntry(`❌ Вы провалили задание (0 очк.)`);
     }
     
-    // Отправляем событие на сервер
     if (success) {
         socket.emit('completeTask', card.id, change);
     } else {
         socket.emit('penaltyWithBalance', card.id, newBalance);
     }
     
-    // Добираем новую карту игроку
     const newCard = drawCardFromPool();
     if (newCard) gameState.playerHand.push(newCard);
     
-    // Ход противника
     opponentTurn();
     
-    // Увеличиваем счётчик раундов
     gameState.round++;
     roundSpan.textContent = gameState.round;
     
-    // Проверка на завершение игры (30 раундов)
     if (gameState.round > 30 || gameState.availableTasks.length === 0) {
         endGame();
     }
@@ -239,7 +213,6 @@ function completeTask(success) {
     taskModal.classList.add('hidden');
 }
 
-// Завершение игры
 function endGame() {
     gameState.gameCompleted = true;
     let message = '';
@@ -255,7 +228,6 @@ function endGame() {
     completionModal.classList.remove('hidden');
 }
 
-// Сброс игры
 function resetGame() {
     gameState.playerHand = [];
     gameState.opponentHand = [];
@@ -266,10 +238,8 @@ function resetGame() {
     gameState.balanceHistory = [];
     gameState.gameCompleted = false;
     
-    // Запрашиваем новый пул у сервера
     socket.emit('reset', gameState.currentBalance);
     
-    // Очистим историю
     historyDiv.innerHTML = '';
     roundSpan.textContent = '1';
     playerScoreSpan.textContent = '0';
@@ -279,34 +249,20 @@ function resetGame() {
 
 // ------------------- Подключение к серверу -------------------
 socket.on('connect', () => {
-    const saved = loadGameState();
-    if (saved && !saved.gameCompleted) {
-        if (confirm('Найден сохранённый турнир. Восстановить?')) {
-            gameState = saved;
-            updateUI();
-            renderHands();
-            updatePoolStatsVertical();
-            return;
-        } else {
-            clearSave();
-        }
-    }
     socket.emit('reset', 1500000);
 });
 
 socket.on('state', (serverState) => {
     gameState.currentBalance = serverState.currentBalance;
     gameState.balanceHistory = serverState.balanceHistory;
-    gameState.availableTasks = serverState.availableTasks; // копируем пул
+    gameState.availableTasks = serverState.availableTasks;
     balanceSpan.textContent = gameState.currentBalance;
     
-    // Если руки пусты (первый запуск), инициализируем
     if (gameState.playerHand.length === 0 && gameState.availableTasks.length > 0) {
         initHands();
     }
     renderHistory();
     updatePoolStatsVertical();
-    saveGame();
 });
 
 function renderHistory() {
@@ -328,36 +284,6 @@ function updateUI() {
     roundSpan.textContent = gameState.round;
 }
 
-// ------------------- Сохранение и загрузка -------------------
-function saveGame() {
-    try {
-        const saveData = {
-            ...gameState,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-    } catch (e) {}
-}
-
-function loadGameState() {
-    try {
-        const saved = localStorage.getItem(SAVE_KEY);
-        if (!saved) return null;
-        const data = JSON.parse(saved);
-        if (Date.now() - data.timestamp > 24*60*60*1000) {
-            localStorage.removeItem(SAVE_KEY);
-            return null;
-        }
-        return data;
-    } catch (e) {
-        return null;
-    }
-}
-
-function clearSave() {
-    localStorage.removeItem(SAVE_KEY);
-}
-
 // ------------------- Обработчики -------------------
 applyBalanceBtn.addEventListener('click', () => {
     const newBal = prompt('Введите новый начальный баланс:', gameState.currentBalance);
@@ -371,7 +297,6 @@ applyBalanceBtn.addEventListener('click', () => {
 resetBtn.addEventListener('click', () => {
     if (confirm('Начать новый турнир?')) {
         resetGame();
-        clearSave();
     }
 });
 
@@ -394,7 +319,6 @@ startQuestBtn.addEventListener('click', () => {
 rulesBtn.addEventListener('click', () => rulesModal.classList.remove('hidden'));
 rulesModal.querySelector('.close-modal')?.addEventListener('click', () => rulesModal.classList.add('hidden'));
 
-// Закрытие модалок по клику вне
 window.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) {
         e.target.classList.add('hidden');
