@@ -20,7 +20,6 @@ const playerScoreSpan = document.getElementById('player-score');
 const opponentScoreSpan = document.getElementById('opponent-score');
 const roundSpan = document.getElementById('round-count');
 const historyDiv = document.getElementById('history-list');
-const poolStatsDiv = document.getElementById('pool-stats');
 const playerHandDiv = document.getElementById('player-hand');
 const opponentHandDiv = document.getElementById('opponent-hand');
 const resetBtn = document.getElementById('reset-btn');
@@ -38,6 +37,7 @@ const completionResetBtn = document.getElementById('completion-reset-btn');
 const rulesModal = document.getElementById('rules-modal');
 const dontShowCheckbox = document.getElementById('dont-show-rules');
 const startQuestBtn = document.getElementById('start-quest-btn');
+const poolStatsVertical = document.getElementById('pool-stats-vertical'); // новый элемент
 
 // Ключ сохранения
 const SAVE_KEY = 'tournament_save';
@@ -86,7 +86,7 @@ function initHands() {
         if (opponentCard) gameState.opponentHand.push(opponentCard);
     }
     renderHands();
-    updatePoolStats();
+    updatePoolStatsVertical();
 }
 
 // Ход противника (открыть одну карту, начислить очки, убрать, добить новую)
@@ -111,7 +111,7 @@ function opponentTurn() {
     if (newCard) gameState.opponentHand.push(newCard);
     
     renderHands();
-    updatePoolStats();
+    updatePoolStatsVertical();
 }
 
 // Добавить запись в историю
@@ -123,18 +123,26 @@ function addHistoryEntry(text) {
     historyDiv.scrollTop = historyDiv.scrollHeight;
 }
 
-// Обновление статистики пула (по мастям)
-function updatePoolStats() {
+// Обновление вертикальной статистики пула (по мастям) в левой панели
+function updatePoolStatsVertical() {
     const counts = { '♥': 0, '♦': 0, '♣': 0, '♠': 0 };
     gameState.availableTasks.forEach(task => {
         const suit = difficultyToSuit(task.difficulty);
         counts[suit]++;
     });
-    poolStatsDiv.innerHTML = `
-        <div class="pool-stat"><span class="suit ♥">♥</span> ${counts['♥']}</div>
-        <div class="pool-stat"><span class="suit ♦">♦</span> ${counts['♦']}</div>
-        <div class="pool-stat"><span class="suit ♣">♣</span> ${counts['♣']}</div>
-        <div class="pool-stat"><span class="suit ♠">♠</span> ${counts['♠']}</div>
+    poolStatsVertical.innerHTML = `
+        <div class="pool-stat-item">
+            <span class="suit ♥">♥</span> <span>${counts['♥']}</span>
+        </div>
+        <div class="pool-stat-item">
+            <span class="suit ♦">♦</span> <span>${counts['♦']}</span>
+        </div>
+        <div class="pool-stat-item">
+            <span class="suit ♣">♣</span> <span>${counts['♣']}</span>
+        </div>
+        <div class="pool-stat-item">
+            <span class="suit ♠">♠</span> <span>${counts['♠']}</span>
+        </div>
     `;
 }
 
@@ -227,7 +235,7 @@ function completeTask(success) {
     }
     
     renderHands();
-    updatePoolStats();
+    updatePoolStatsVertical();
     taskModal.classList.add('hidden');
 }
 
@@ -277,7 +285,7 @@ socket.on('connect', () => {
             gameState = saved;
             updateUI();
             renderHands();
-            updatePoolStats();
+            updatePoolStatsVertical();
             return;
         } else {
             clearSave();
@@ -297,7 +305,7 @@ socket.on('state', (serverState) => {
         initHands();
     }
     renderHistory();
-    updatePoolStats();
+    updatePoolStatsVertical();
     saveGame();
 });
 

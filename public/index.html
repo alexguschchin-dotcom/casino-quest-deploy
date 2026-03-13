@@ -9,6 +9,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
+    <!-- Левая панель с информацией о сложности -->
+    <div class="left-panel">
+        <h2 class="panel-title">Сложность</h2>
+        <div class="difficulty-item">
+            <span class="suit ♥">♥</span> 1 очко – легко
+        </div>
+        <div class="difficulty-item">
+            <span class="suit ♦">♦</span> 2 очка – средне
+        </div>
+        <div class="difficulty-item">
+            <span class="suit ♣">♣</span> 3 очка – сложно
+        </div>
+        <div class="difficulty-item">
+            <span class="suit ♠">♠</span> 4 очка – очень сложно
+        </div>
+        <div class="pool-stats-vertical" id="pool-stats-vertical">
+            <!-- Здесь будет отображаться статистика оставшихся карт -->
+        </div>
+    </div>
+
     <div class="game-container">
         <!-- Заголовок -->
         <header class="header">
@@ -35,7 +55,6 @@
             <!-- Центр стола с историей и счётчиком раундов -->
             <div class="center-area">
                 <div class="round-counter">Раунд <span id="round-count">1</span> / 30</div>
-                <div class="pool-stats" id="pool-stats"></div>
                 <div class="log-area" id="log-area">
                     <div class="log-title">📋 Хроника</div>
                     <div id="history-list"></div>
