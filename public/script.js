@@ -20,6 +20,7 @@ const playerScoreSpan = document.getElementById('player-score');
 const opponentScoreSpan = document.getElementById('opponent-score');
 const roundSpan = document.getElementById('round-count');
 const historyDiv = document.getElementById('history-list');
+const poolStatsDiv = document.getElementById('pool-stats');
 const playerHandDiv = document.getElementById('player-hand');
 const opponentHandDiv = document.getElementById('opponent-hand');
 const resetBtn = document.getElementById('reset-btn');
@@ -40,6 +41,21 @@ const startQuestBtn = document.getElementById('start-quest-btn');
 
 // Ключ сохранения
 const SAVE_KEY = 'tournament_save';
+
+// ------------------- Преобразование difficulty в масть и очки -------------------
+function difficultyToSuit(diff) {
+    if (diff <= 1) return '♥';   // 1★
+    if (diff === 2) return '♦';   // 2★
+    if (diff === 3) return '♣';   // 3★
+    return '♠';                   // 4★ и выше (объединяем)
+}
+
+function difficultyToPoints(diff) {
+    if (diff <= 1) return 1;
+    if (diff === 2) return 2;
+    if (diff === 3) return 3;
+    return 4; // для 4★ и выше
+}
 
 // ------------------- Вспомогательные функции -------------------
 function shuffleArray(arr) {
@@ -70,6 +86,7 @@ function initHands() {
         if (opponentCard) gameState.opponentHand.push(opponentCard);
     }
     renderHands();
+    updatePoolStats();
 }
 
 // Ход противника (открыть одну карту, начислить очки, убрать, добить новую)
@@ -80,19 +97,21 @@ function opponentTurn() {
     const card = gameState.opponentHand[index];
     gameState.opponentHand.splice(index, 1);
     
-    // Начисляем очки (звёздность)
-    const points = card.difficulty;
+    // Начисляем очки (по масти)
+    const points = difficultyToPoints(card.difficulty);
     gameState.opponentScore += points;
     opponentScoreSpan.textContent = gameState.opponentScore;
     
     // Добавляем запись в историю
-    addHistoryEntry(`🤖 Противник открыл задание ${points}★`);
+    const suit = difficultyToSuit(card.difficulty);
+    addHistoryEntry(`🤖 Противник открыл ${suit} (${points} очк.)`);
     
     // Добираем новую карту, если есть
     const newCard = drawCardFromPool();
     if (newCard) gameState.opponentHand.push(newCard);
     
     renderHands();
+    updatePoolStats();
 }
 
 // Добавить запись в историю
@@ -104,6 +123,21 @@ function addHistoryEntry(text) {
     historyDiv.scrollTop = historyDiv.scrollHeight;
 }
 
+// Обновление статистики пула (по мастям)
+function updatePoolStats() {
+    const counts = { '♥': 0, '♦': 0, '♣': 0, '♠': 0 };
+    gameState.availableTasks.forEach(task => {
+        const suit = difficultyToSuit(task.difficulty);
+        counts[suit]++;
+    });
+    poolStatsDiv.innerHTML = `
+        <div class="pool-stat"><span class="suit ♥">♥</span> ${counts['♥']}</div>
+        <div class="pool-stat"><span class="suit ♦">♦</span> ${counts['♦']}</div>
+        <div class="pool-stat"><span class="suit ♣">♣</span> ${counts['♣']}</div>
+        <div class="pool-stat"><span class="suit ♠">♠</span> ${counts['♠']}</div>
+    `;
+}
+
 // Отрисовка рук
 function renderHands() {
     // Рука игрока
@@ -112,10 +146,11 @@ function renderHands() {
         const cardEl = document.createElement('div');
         cardEl.className = 'card';
         cardEl.dataset.index = idx;
+        const suit = difficultyToSuit(card.difficulty);
         cardEl.innerHTML = `
             <div class="card-back">🃏</div>
             <div class="card-front" style="display: none;">
-                <div class="stars">${'★'.repeat(card.difficulty)}</div>
+                <div class="suit ${suit}">${suit}</div>
                 <div class="task-text">${card.description.substring(0, 20)}…</div>
             </div>
         `;
@@ -158,13 +193,14 @@ function completeTask(success) {
     // Удаляем карту из руки игрока
     gameState.playerHand.splice(cardIndex, 1);
     
-    // Добавляем очки игроку (звёздность)
+    // Добавляем очки игроку (по масти)
+    const points = difficultyToPoints(card.difficulty);
     if (success) {
-        gameState.playerScore += card.difficulty;
+        gameState.playerScore += points;
         playerScoreSpan.textContent = gameState.playerScore;
-        addHistoryEntry(`✅ Вы выполнили задание ${card.difficulty}★`);
+        addHistoryEntry(`✅ Вы выполнили задание (${points} очк.)`);
     } else {
-        addHistoryEntry(`❌ Вы провалили задание ${card.difficulty}★`);
+        addHistoryEntry(`❌ Вы провалили задание (0 очк.)`);
     }
     
     // Отправляем событие на сервер
@@ -191,6 +227,7 @@ function completeTask(success) {
     }
     
     renderHands();
+    updatePoolStats();
     taskModal.classList.add('hidden');
 }
 
@@ -217,11 +254,11 @@ function resetGame() {
     gameState.playerScore = 0;
     gameState.opponentScore = 0;
     gameState.round = 1;
-    gameState.currentBalance = parseFloat(document.getElementById('start-balance')?.value) || 1500000;
+    gameState.currentBalance = 1500000;
     gameState.balanceHistory = [];
     gameState.gameCompleted = false;
     
-    // Запрашиваем новый пул у сервера (отправляем reset)
+    // Запрашиваем новый пул у сервера
     socket.emit('reset', gameState.currentBalance);
     
     // Очистим историю
@@ -240,6 +277,7 @@ socket.on('connect', () => {
             gameState = saved;
             updateUI();
             renderHands();
+            updatePoolStats();
             return;
         } else {
             clearSave();
@@ -259,6 +297,7 @@ socket.on('state', (serverState) => {
         initHands();
     }
     renderHistory();
+    updatePoolStats();
     saveGame();
 });
 
@@ -272,6 +311,13 @@ function renderHistory() {
         div.innerHTML = `<strong>${time}</strong> ${entry.desc} (${entry.change > 0 ? '+' : ''}${entry.change})`;
         historyDiv.appendChild(div);
     });
+}
+
+function updateUI() {
+    balanceSpan.textContent = gameState.currentBalance;
+    playerScoreSpan.textContent = gameState.playerScore;
+    opponentScoreSpan.textContent = gameState.opponentScore;
+    roundSpan.textContent = gameState.round;
 }
 
 // ------------------- Сохранение и загрузка -------------------
@@ -317,6 +363,7 @@ applyBalanceBtn.addEventListener('click', () => {
 resetBtn.addEventListener('click', () => {
     if (confirm('Начать новый турнир?')) {
         resetGame();
+        clearSave();
     }
 });
 
@@ -345,6 +392,3 @@ window.addEventListener('click', (e) => {
         e.target.classList.add('hidden');
     }
 });
-
-// Анимация сгорания (оставим, но не используется)
-// (можно убрать)

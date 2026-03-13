@@ -213,11 +213,13 @@ body::before {
     gap: 10px;
 }
 
-.card-front .stars {
-    color: gold;
-    font-size: 1.4rem;
+.card-front .suit {
+    font-size: 3rem;
 }
-
+.card-front .suit.♥ { color: #ff4d4d; }
+.card-front .suit.♦ { color: #ff4d4d; }
+.card-front .suit.♣ { color: #333; }
+.card-front .suit.♠ { color: #333; }
 .card-front .task-text {
     font-size: 0.9rem;
     padding: 0 10px;
@@ -241,6 +243,29 @@ body::before {
     color: gold;
     text-align: center;
 }
+
+.pool-stats {
+    background: #1a1625;
+    border: 2px solid gold;
+    border-radius: 30px;
+    padding: 15px;
+    width: 100%;
+    font-size: 1.2rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+}
+.pool-stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.pool-stat .suit { font-size: 1.5rem; }
+.pool-stat .suit.♥ { color: #ff4d4d; }
+.pool-stat .suit.♦ { color: #ff4d4d; }
+.pool-stat .suit.♣ { color: #333; }
+.pool-stat .suit.♠ { color: #333; }
 
 .log-area {
     background: #1a1625;
