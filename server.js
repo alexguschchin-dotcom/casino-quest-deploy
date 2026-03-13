@@ -1,217 +1,397 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
+const socket = io();
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-// ================== НАСТРОЙКИ ==================
-const MAX_LEVEL = 30;
-const DEFAULT_BALANCE = 1500000;
-const PENALTY_BURN_RANGE = [15, 20];
-
-// ================== ПУЛ ЗАДАНИЙ (РАСШИРЕННЫЙ) ==================
-const taskTemplates = [
-  // ... ваш полный пул заданий (см. предыдущие версии)
-];
-
-function createInitialPool() {
-  const pool = [];
-  const counts = [100, 60, 30, 20, 10, 2];
-  for (let star = 1; star <= 6; star++) {
-    const template = taskTemplates.find(t => t.difficulty === star);
-    if (!template) continue;
-    for (let i = 0; i < counts[star-1]; i++) {
-      const text = template.texts[i % template.texts.length];
-      pool.push({
-        id: `task_${Date.now()}_${Math.random()}`,
-        description: text,
-        difficulty: star
-      });
-    }
-  }
-  return shuffle(pool);
-}
-
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-function applyPenalty(pool) {
-  const lightTasks = pool.filter(t => t.difficulty >= 1 && t.difficulty <= 3);
-  if (lightTasks.length === 0) return 0;
-
-  const burnCount = Math.floor(Math.random() * (PENALTY_BURN_RANGE[1] - PENALTY_BURN_RANGE[0] + 1)) + PENALTY_BURN_RANGE[0];
-  const actualBurn = Math.min(burnCount, lightTasks.length);
-
-  const weights = { 1: 5, 2: 3, 3: 2 };
-  const totalWeight = 10;
-
-  let remainingLight = [...lightTasks];
-
-  for (let i = 0; i < actualBurn; i++) {
-    if (remainingLight.length === 0) break;
-
-    const rand = Math.random() * totalWeight;
-    let chosenStar = 1;
-    if (rand < 5) chosenStar = 1;
-    else if (rand < 8) chosenStar = 2;
-    else chosenStar = 3;
-
-    const candidates = remainingLight.filter(t => t.difficulty === chosenStar);
-    if (candidates.length > 0) {
-      const idx = Math.floor(Math.random() * candidates.length);
-      const taskToBurn = candidates[idx];
-      
-      const poolIndex = pool.findIndex(t => t.id === taskToBurn.id);
-      if (poolIndex !== -1) pool.splice(poolIndex, 1);
-      
-      const lightIndex = remainingLight.findIndex(t => t.id === taskToBurn.id);
-      if (lightIndex !== -1) remainingLight.splice(lightIndex, 1);
-    } else {
-      const anyTask = remainingLight[Math.floor(Math.random() * remainingLight.length)];
-      const poolIndex = pool.findIndex(t => t.id === anyTask.id);
-      if (poolIndex !== -1) pool.splice(poolIndex, 1);
-      const lightIndex = remainingLight.findIndex(t => t.id === anyTask.id);
-      if (lightIndex !== -1) remainingLight.splice(lightIndex, 1);
-    }
-  }
-
-  return actualBurn;
-}
-
-let questState = {
-  level: 1,
-  availableTasks: createInitialPool(),
-  currentCards: [],
-  selectedTaskId: null,
-  currentBalance: DEFAULT_BALANCE,
-  balanceHistory: [],
-  penaltiesLog: []
+// Состояние игры
+let gameState = {
+    playerHand: [],          // массив карт игрока (объекты с id, difficulty, description)
+    opponentHand: [],        // массив карт противника (id, difficulty) — описание не храним до открытия
+    playerScore: 0,
+    opponentScore: 0,
+    round: 1,
+    currentBalance: 1500000,
+    balanceHistory: [],
+    availableTasks: [],      // локальная копия пула заданий
+    currentTaskId: null,
+    gameCompleted: false
 };
 
-questState.balanceHistory.push({
-  timestamp: Date.now(),
-  desc: 'Стартовый баланс',
-  change: DEFAULT_BALANCE,
-  balance: DEFAULT_BALANCE
-});
+// DOM элементы
+const balanceSpan = document.getElementById('current-balance');
+const playerScoreSpan = document.getElementById('player-score');
+const opponentScoreSpan = document.getElementById('opponent-score');
+const roundSpan = document.getElementById('round-count');
+const historyDiv = document.getElementById('history-list');
+const poolStatsDiv = document.getElementById('pool-stats');
+const playerHandDiv = document.getElementById('player-hand');
+const opponentHandDiv = document.getElementById('opponent-hand');
+const resetBtn = document.getElementById('reset-btn');
+const rulesBtn = document.getElementById('rules-btn');
+const applyBalanceBtn = document.getElementById('apply-start-balance');
+const taskModal = document.getElementById('task-modal');
+const taskDesc = document.getElementById('task-description');
+const newBalanceInput = document.getElementById('new-balance');
+const completeBtn = document.getElementById('complete-task');
+const failBtn = document.getElementById('fail-task');
+const completionModal = document.getElementById('completion-modal');
+const finalMessage = document.getElementById('final-message');
+const finalBalanceSpan = document.getElementById('final-balance');
+const completionResetBtn = document.getElementById('completion-reset-btn');
+const rulesModal = document.getElementById('rules-modal');
+const dontShowCheckbox = document.getElementById('dont-show-rules');
+const startQuestBtn = document.getElementById('start-quest-btn');
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Ключ сохранения
+const SAVE_KEY = 'tournament_save';
 
-io.on('connection', (socket) => {
-  console.log('Клиент подключён');
-  socket.emit('state', questState);
+// ------------------- Преобразование difficulty в масть и очки -------------------
+function difficultyToSuit(diff) {
+    if (diff <= 1) return '♥';   // 1★
+    if (diff === 2) return '♦';   // 2★
+    if (diff === 3) return '♣';   // 3★
+    return '♠';                   // 4★ и выше (объединяем)
+}
 
-  socket.on('completeTask', (taskId, change) => {
-    const taskIndex = questState.availableTasks.findIndex(t => t.id === taskId);
-    if (taskIndex !== -1) {
-      questState.availableTasks.splice(taskIndex, 1);
+function difficultyToPoints(diff) {
+    if (diff <= 1) return 1;
+    if (diff === 2) return 2;
+    if (diff === 3) return 3;
+    return 4; // для 4★ и выше
+}
+
+// ------------------- Вспомогательные функции -------------------
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
     }
+    return arr;
+}
 
-    questState.currentBalance += change;
-    questState.balanceHistory.push({
-      timestamp: Date.now(),
-      desc: `Задание выполнено`,
-      change: change,
-      balance: questState.currentBalance
+// Взять случайную карту из пула и удалить её из gameState.availableTasks
+function drawCardFromPool() {
+    if (gameState.availableTasks.length === 0) return null;
+    const index = Math.floor(Math.random() * gameState.availableTasks.length);
+    const card = gameState.availableTasks[index];
+    gameState.availableTasks.splice(index, 1);
+    return card;
+}
+
+// Инициализация рук (раздача по 3 карты)
+function initHands() {
+    gameState.playerHand = [];
+    gameState.opponentHand = [];
+    for (let i = 0; i < 3; i++) {
+        const playerCard = drawCardFromPool();
+        if (playerCard) gameState.playerHand.push(playerCard);
+        const opponentCard = drawCardFromPool();
+        if (opponentCard) gameState.opponentHand.push(opponentCard);
+    }
+    renderHands();
+    updatePoolStats();
+}
+
+// Ход противника (открыть одну карту, начислить очки, убрать, добить новую)
+function opponentTurn() {
+    if (gameState.opponentHand.length === 0) return;
+    // Выбираем случайную карту из руки противника
+    const index = Math.floor(Math.random() * gameState.opponentHand.length);
+    const card = gameState.opponentHand[index];
+    gameState.opponentHand.splice(index, 1);
+    
+    // Начисляем очки (по масти)
+    const points = difficultyToPoints(card.difficulty);
+    gameState.opponentScore += points;
+    opponentScoreSpan.textContent = gameState.opponentScore;
+    
+    // Добавляем запись в историю
+    const suit = difficultyToSuit(card.difficulty);
+    addHistoryEntry(`🤖 Противник открыл ${suit} (${points} очк.)`);
+    
+    // Добираем новую карту, если есть
+    const newCard = drawCardFromPool();
+    if (newCard) gameState.opponentHand.push(newCard);
+    
+    renderHands();
+    updatePoolStats();
+}
+
+// Добавить запись в историю
+function addHistoryEntry(text) {
+    const entry = document.createElement('div');
+    entry.className = 'history-item';
+    entry.textContent = text;
+    historyDiv.appendChild(entry);
+    historyDiv.scrollTop = historyDiv.scrollHeight;
+}
+
+// Обновление статистики пула (по мастям)
+function updatePoolStats() {
+    const counts = { '♥': 0, '♦': 0, '♣': 0, '♠': 0 };
+    gameState.availableTasks.forEach(task => {
+        const suit = difficultyToSuit(task.difficulty);
+        counts[suit]++;
+    });
+    poolStatsDiv.innerHTML = `
+        <div class="pool-stat"><span class="suit ♥">♥</span> ${counts['♥']}</div>
+        <div class="pool-stat"><span class="suit ♦">♦</span> ${counts['♦']}</div>
+        <div class="pool-stat"><span class="suit ♣">♣</span> ${counts['♣']}</div>
+        <div class="pool-stat"><span class="suit ♠">♠</span> ${counts['♠']}</div>
+    `;
+}
+
+// Отрисовка рук
+function renderHands() {
+    // Рука игрока
+    playerHandDiv.innerHTML = '';
+    gameState.playerHand.forEach((card, idx) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.dataset.index = idx;
+        const suit = difficultyToSuit(card.difficulty);
+        cardEl.innerHTML = `
+            <div class="card-back">🃏</div>
+            <div class="card-front" style="display: none;">
+                <div class="suit ${suit}">${suit}</div>
+                <div class="task-text">${card.description.substring(0, 20)}…</div>
+            </div>
+        `;
+        cardEl.addEventListener('click', () => selectPlayerCard(idx));
+        playerHandDiv.appendChild(cardEl);
     });
 
-    io.emit('state', questState);
-  });
-
-  socket.on('penaltyWithBalance', (taskId, newBalance) => {
-    const change = newBalance - questState.currentBalance;
-    questState.currentBalance = newBalance;
-    questState.balanceHistory.push({
-      timestamp: Date.now(),
-      desc: `Штраф (не выполнено)`,
-      change: change,
-      balance: questState.currentBalance
+    // Рука противника (все рубашкой вверх)
+    opponentHandDiv.innerHTML = '';
+    gameState.opponentHand.forEach(() => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.innerHTML = `<div class="card-back">🃏</div>`;
+        opponentHandDiv.appendChild(cardEl);
     });
+}
 
-    const burned = applyPenalty(questState.availableTasks);
-    questState.balanceHistory.push({
-      timestamp: Date.now(),
-      desc: `Штраф: сгорело ${burned} лёгких заданий`,
-      change: 0,
-      balance: questState.currentBalance
-    });
+// Выбор карты игроком
+function selectPlayerCard(index) {
+    if (gameState.playerHand.length <= index) return;
+    const card = gameState.playerHand[index];
+    gameState.currentTaskId = card.id;
+    taskDesc.textContent = card.description;
+    newBalanceInput.value = gameState.currentBalance;
+    taskModal.classList.remove('hidden');
+    
+    // Сохраняем выбранную карту для последующего удаления
+    window.selectedCardIndex = index;
+}
 
-    io.emit('state', questState);
-  });
+// Завершение задания (успех/провал)
+function completeTask(success) {
+    const newBalance = parseFloat(newBalanceInput.value);
+    if (isNaN(newBalance)) return;
+    
+    const change = newBalance - gameState.currentBalance;
+    const cardIndex = window.selectedCardIndex;
+    const card = gameState.playerHand[cardIndex];
+    
+    // Удаляем карту из руки игрока
+    gameState.playerHand.splice(cardIndex, 1);
+    
+    // Добавляем очки игроку (по масти)
+    const points = difficultyToPoints(card.difficulty);
+    if (success) {
+        gameState.playerScore += points;
+        playerScoreSpan.textContent = gameState.playerScore;
+        addHistoryEntry(`✅ Вы выполнили задание (${points} очк.)`);
+    } else {
+        addHistoryEntry(`❌ Вы провалили задание (0 очк.)`);
+    }
+    
+    // Отправляем событие на сервер
+    if (success) {
+        socket.emit('completeTask', card.id, change);
+    } else {
+        socket.emit('penaltyWithBalance', card.id, newBalance);
+    }
+    
+    // Добираем новую карту игроку
+    const newCard = drawCardFromPool();
+    if (newCard) gameState.playerHand.push(newCard);
+    
+    // Ход противника
+    opponentTurn();
+    
+    // Увеличиваем счётчик раундов
+    gameState.round++;
+    roundSpan.textContent = gameState.round;
+    
+    // Проверка на завершение игры (30 раундов)
+    if (gameState.round > 30 || gameState.availableTasks.length === 0) {
+        endGame();
+    }
+    
+    renderHands();
+    updatePoolStats();
+    taskModal.classList.add('hidden');
+}
 
-  socket.on('prizeDraw', (data) => {
-    const { amount, winners } = data;
-    const total = amount * winners.length;
-    questState.currentBalance -= total;
-    questState.balanceHistory.push({
-      timestamp: Date.now(),
-      desc: `Розыгрыш: ${amount}₽ x ${winners.length} (${winners.join(', ')})`,
-      change: -total,
-      balance: questState.currentBalance
-    });
-    io.emit('state', questState);
-  });
+// Завершение игры
+function endGame() {
+    gameState.gameCompleted = true;
+    let message = '';
+    if (gameState.playerScore > gameState.opponentScore) {
+        message = '🏆 Вы победили!';
+    } else if (gameState.playerScore < gameState.opponentScore) {
+        message = '😔 Противник оказался сильнее...';
+    } else {
+        message = '🤝 Ничья!';
+    }
+    finalMessage.textContent = message;
+    finalBalanceSpan.textContent = gameState.currentBalance;
+    completionModal.classList.remove('hidden');
+}
 
-  socket.on('addBalance', (description, amount) => {
-    questState.currentBalance += amount;
-    questState.balanceHistory.push({
-      timestamp: Date.now(),
-      desc: description,
-      change: amount,
-      balance: questState.currentBalance
-    });
-    io.emit('state', questState);
-  });
+// Сброс игры
+function resetGame() {
+    gameState.playerHand = [];
+    gameState.opponentHand = [];
+    gameState.playerScore = 0;
+    gameState.opponentScore = 0;
+    gameState.round = 1;
+    gameState.currentBalance = 1500000;
+    gameState.balanceHistory = [];
+    gameState.gameCompleted = false;
+    
+    // Запрашиваем новый пул у сервера
+    socket.emit('reset', gameState.currentBalance);
+    
+    // Очистим историю
+    historyDiv.innerHTML = '';
+    roundSpan.textContent = '1';
+    playerScoreSpan.textContent = '0';
+    opponentScoreSpan.textContent = '0';
+    balanceSpan.textContent = gameState.currentBalance;
+}
 
-  socket.on('reset', (newBalance) => {
-    const startBalance = (newBalance !== undefined && !isNaN(newBalance)) ? newBalance : DEFAULT_BALANCE;
-    questState = {
-      level: 1,
-      availableTasks: createInitialPool(),
-      currentCards: [],
-      selectedTaskId: null,
-      currentBalance: startBalance,
-      balanceHistory: [{
-        timestamp: Date.now(),
-        desc: 'Стартовый баланс',
-        change: startBalance,
-        balance: startBalance
-      }],
-      penaltiesLog: []
-    };
-    io.emit('state', questState);
-  });
-
-  socket.on('loadSavedGame', (savedState) => {
-    questState = {
-      level: savedState.level || 1,
-      availableTasks: savedState.availableTasks || createInitialPool(),
-      currentCards: savedState.currentCards || [],
-      selectedTaskId: savedState.selectedTaskId || null,
-      currentBalance: savedState.currentBalance,
-      balanceHistory: savedState.balanceHistory,
-      penaltiesLog: savedState.penaltiesLog || []
-    };
-    io.emit('state', questState);
-    console.log('Загружено сохранение');
-  });
-
-  socket.on('disconnect', () => console.log('Клиент отключён'));
+// ------------------- Подключение к серверу -------------------
+socket.on('connect', () => {
+    const saved = loadGameState();
+    if (saved && !saved.gameCompleted) {
+        if (confirm('Найден сохранённый турнир. Восстановить?')) {
+            gameState = saved;
+            updateUI();
+            renderHands();
+            updatePoolStats();
+            return;
+        } else {
+            clearSave();
+        }
+    }
+    socket.emit('reset', 1500000);
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Сервер запущен на http://localhost:${PORT}`);
+socket.on('state', (serverState) => {
+    gameState.currentBalance = serverState.currentBalance;
+    gameState.balanceHistory = serverState.balanceHistory;
+    gameState.availableTasks = serverState.availableTasks; // копируем пул
+    balanceSpan.textContent = gameState.currentBalance;
+    
+    // Если руки пусты (первый запуск), инициализируем
+    if (gameState.playerHand.length === 0 && gameState.availableTasks.length > 0) {
+        initHands();
+    }
+    renderHistory();
+    updatePoolStats();
+    saveGame();
 });
 
+function renderHistory() {
+    historyDiv.innerHTML = '';
+    gameState.balanceHistory.slice().reverse().forEach(entry => {
+        const date = new Date(entry.timestamp);
+        const time = date.toLocaleTimeString();
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `<strong>${time}</strong> ${entry.desc} (${entry.change > 0 ? '+' : ''}${entry.change})`;
+        historyDiv.appendChild(div);
+    });
+}
+
+function updateUI() {
+    balanceSpan.textContent = gameState.currentBalance;
+    playerScoreSpan.textContent = gameState.playerScore;
+    opponentScoreSpan.textContent = gameState.opponentScore;
+    roundSpan.textContent = gameState.round;
+}
+
+// ------------------- Сохранение и загрузка -------------------
+function saveGame() {
+    try {
+        const saveData = {
+            ...gameState,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    } catch (e) {}
+}
+
+function loadGameState() {
+    try {
+        const saved = localStorage.getItem(SAVE_KEY);
+        if (!saved) return null;
+        const data = JSON.parse(saved);
+        if (Date.now() - data.timestamp > 24*60*60*1000) {
+            localStorage.removeItem(SAVE_KEY);
+            return null;
+        }
+        return data;
+    } catch (e) {
+        return null;
+    }
+}
+
+function clearSave() {
+    localStorage.removeItem(SAVE_KEY);
+}
+
+// ------------------- Обработчики -------------------
+applyBalanceBtn.addEventListener('click', () => {
+    const newBal = prompt('Введите новый начальный баланс:', gameState.currentBalance);
+    if (newBal && !isNaN(newBal)) {
+        gameState.currentBalance = parseFloat(newBal);
+        balanceSpan.textContent = gameState.currentBalance;
+        socket.emit('addBalance', 'Изменение баланса', 0);
+    }
+});
+
+resetBtn.addEventListener('click', () => {
+    if (confirm('Начать новый турнир?')) {
+        resetGame();
+        clearSave();
+    }
+});
+
+completeBtn.addEventListener('click', () => completeTask(true));
+failBtn.addEventListener('click', () => completeTask(false));
+
+completionResetBtn.addEventListener('click', () => {
+    completionModal.classList.add('hidden');
+    resetGame();
+});
+
+// Правила
+if (!localStorage.getItem('quest_rules_hidden')) {
+    setTimeout(() => rulesModal.classList.remove('hidden'), 500);
+}
+startQuestBtn.addEventListener('click', () => {
+    if (dontShowCheckbox.checked) localStorage.setItem('quest_rules_hidden', 'true');
+    rulesModal.classList.add('hidden');
+});
+rulesBtn.addEventListener('click', () => rulesModal.classList.remove('hidden'));
+rulesModal.querySelector('.close-modal')?.addEventListener('click', () => rulesModal.classList.add('hidden'));
+
+// Закрытие модалок по клику вне
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.add('hidden');
+    }
+});
 
 
 
