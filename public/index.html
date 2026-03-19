@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Драконий квест</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="dragon-bg"></div>
+    <div id="toast" class="toast hidden"></div>
+
+    <div class="game-container">
+        <header class="header">
+            <h1 class="dragon-title">
+                <i class="fas fa-dragon"></i> 
+                Драконий куш
+                <i class="fas fa-coins"></i>
+            </h1>
+            <div class="level-indicator">Уровень <span id="current-level">1</span>/15</div>
+            <div class="gold-panel">
+                <span class="label">🔥 Золото</span>
+                <span class="value" id="current-gold">0</span>
+            </div>
+        </header>
+
+        <!-- Панели: подсказки и возможный выигрыш -->
+        <div class="top-panels">
+            <div class="hints-panel">
+                <h3><i class="fas fa-question-circle"></i> Подсказки</h3>
+                <div class="hints-buttons">
+                    <button id="hint-fifty" class="hint-btn" title="50/50">⚔️ 50/50</button>
+                    <button id="hint-phone" class="hint-btn" title="Звонок другу">📞 Друг</button>
+                    <button id="hint-audience" class="hint-btn" title="Помощь зала">👥 Зал</button>
+                </div>
+            </div>
+
+            <div class="prize-panel">
+                <h3><i class="fas fa-trophy"></i> Возможный выигрыш</h3>
+                <div class="prize-list" id="prize-list"></div>
+            </div>
+        </div>
+
+        <!-- Карточка с заданием -->
+        <div class="task-card" id="task-card">
+            <div class="task-level">Уровень <span id="task-level">1</span></div>
+            <div class="task-text" id="task-text">Загрузка...</div>
+        </div>
+
+        <!-- Ввод результата -->
+        <div class="result-panel">
+            <input type="number" id="new-gold" placeholder="Новое золото" step="100">
+            <button id="submit-success" class="btn-success">✅ Успех</button>
+            <button id="submit-fail" class="btn-danger">❌ Провал</button>
+        </div>
+
+        <!-- Кнопка забрать выигрыш (появляется на несгораемых уровнях) -->
+        <div class="take-money-panel">
+            <button id="take-money" class="btn-neon hidden">💰 Забрать золото (несгораемая сумма)</button>
+        </div>
+
+        <div class="control-panel">
+            <button id="reset-btn" class="btn-danger">🔄 Новая игра</button>
+        </div>
+    </div>
+
+    <!-- Модалка завершения -->
+    <div id="gameover-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-dragon"></i> Игра окончена</h2>
+            <p id="final-message"></p>
+            <p>Ваше золото: <span id="final-gold"></span> 🔥</p>
+            <button id="new-game-btn" class="btn-neon">Новая игра</button>
+        </div>
+    </div>
+
+    <!-- Модалка звонка другу -->
+    <div id="phone-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-phone-alt"></i> Звонок другу</h2>
+            <p>У вас есть 30 секунд, чтобы спросить совет в чате!</p>
+            <div class="timer" id="phone-timer">30</div>
+            <button id="close-phone-modal" class="btn-neon">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Модалка помощи зала -->
+    <div id="audience-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-users"></i> Помощь зала</h2>
+            <p>Зал голосует! Напишите в чат, что выбрать капитану.</p>
+            <div class="timer" id="audience-timer">30</div>
+            <button id="close-audience-modal" class="btn-neon">Закрыть</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
