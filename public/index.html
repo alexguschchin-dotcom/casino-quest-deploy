@@ -3,53 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мозаика воспоминаний</title>
+    <title>Арена проклятых слотов</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="retro-bg"></div>
-    <div class="container">
-        <header>
-            <h1>🎞️ Мозаика воспоминаний</h1>
-            <p class="subtitle">Собираем пазл из нашего прошлого</p>
+    <div class="arena-bg"></div>
+    <div id="toast" class="toast hidden"></div>
+
+    <div class="game-container">
+        <header class="header">
+            <h1 class="arena-title">
+                <i class="fas fa-skull"></i> 
+                Арена проклятых слотов
+                <i class="fas fa-dice-d6"></i>
+            </h1>
         </header>
 
-        <div class="game-area">
-            <!-- Пазл -->
-            <div class="puzzle-container">
-                <div id="puzzle-grid" class="puzzle-grid"></div>
+        <div class="battle-area">
+            <div class="fighter player">
+                <div class="fighter-name">Гладиатор</div>
+                <div class="health-bar-container">
+                    <div class="health-bar" id="player-health-bar" style="width: 100%"></div>
+                </div>
+                <div class="health-text" id="player-health-text">❤️ 100</div>
+                <div class="fury-bar-container">
+                    <div class="fury-bar" id="player-fury-bar" style="width: 0%"></div>
+                </div>
+                <div class="fury-text" id="player-fury-text">⚡ 0/100</div>
             </div>
-
-            <!-- Задание и управление -->
-            <div class="task-panel">
-                <div class="task-card">
-                    <div class="task-number">Задание <span id="task-index">1</span>/<span id="total-tasks">25</span></div>
-                    <div class="task-text" id="task-text">Загрузка...</div>
-                    <div class="task-type" id="task-type"></div>
+            <div class="vs">VS</div>
+            <div class="fighter enemy">
+                <div class="fighter-name">Теневой капитан</div>
+                <div class="health-bar-container">
+                    <div class="health-bar" id="enemy-health-bar" style="width: 100%"></div>
                 </div>
-                <div class="result-panel">
-                    <label for="new-score">Новый баланс:</label>
-                    <input type="number" id="new-score" placeholder="Введите дублоны" step="100">
-                    <div class="buttons">
-                        <button id="success-btn" class="btn-success">✅ Успех</button>
-                        <button id="fail-btn" class="btn-fail">❌ Провал</button>
-                    </div>
-                </div>
-                <div class="hint-panel">
-                    <button id="hint-btn" class="btn-hint">💡 Подсказка</button>
-                </div>
+                <div class="health-text" id="enemy-health-text">❤️ 100</div>
             </div>
         </div>
 
-        <div id="toast" class="toast hidden"></div>
-        <div id="final-modal" class="modal hidden">
-            <div class="modal-content">
-                <h2>🎉 Мозаика собрана!</h2>
-                <div id="final-image" class="final-image"></div>
-                <p>Спасибо, что прошли этот путь вместе!</p>
-                <button id="reset-btn" class="btn-neon">🔄 Начать заново</button>
+        <div class="turn-indicator" id="turn-indicator">⚔️ Ваш ход ⚔️</div>
+
+        <div class="actions-container" id="actions-container"></div>
+
+        <div class="history-panel">
+            <h2><i class="fas fa-scroll"></i> Лог боя</h2>
+            <div id="history-list" class="history-list"></div>
+        </div>
+
+        <div class="control-panel">
+            <button id="reset-battle-btn" class="btn-danger">🔄 Новый бой</button>
+            <button id="force-win-btn" class="btn-neon">💪 Принудительная победа</button>
+        </div>
+    </div>
+
+    <!-- Модалка выполнения задания -->
+    <div id="task-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-dice-d6"></i> Испытание арены</h2>
+            <p id="task-description"></p>
+            <div class="modal-buttons">
+                <button id="task-success" class="btn-success">✅ Успех</button>
+                <button id="task-fail" class="btn-danger">❌ Провал</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Модалка окончания боя -->
+    <div id="end-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="end-title"></h2>
+            <p id="end-message"></p>
+            <button id="end-reset-btn" class="btn-neon">Начать новую битву</button>
         </div>
     </div>
 
