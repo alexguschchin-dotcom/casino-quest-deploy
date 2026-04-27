@@ -1,37 +1,16 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Где искать статику: сначала в корне, потом в папке public
-const possiblePaths = [
-    __dirname,
-    path.join(__dirname, 'public')
-];
+// Раздаём статику из папки, где лежит server.js
+app.use(express.static(__dirname));
 
-let staticDir = null;
-for (const p of possiblePaths) {
-    if (fs.existsSync(path.join(p, 'index.html'))) {
-        staticDir = p;
-        break;
-    }
-}
-
-if (!staticDir) {
-    console.error('❌ Ошибка: не найден index.html ни в корне, ни в папке public');
-    process.exit(1);
-}
-
-console.log(`✅ Статика из папки: ${staticDir}`);
-app.use(express.static(staticDir));
-
-// Любой запрос отдаём index.html
+// Все запросы -> index.html
 app.get('*', (req, res) => {
-    res.sendFile(path.join(staticDir, 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
-    console.log(`Сервер "Игра разума" запущен на порту ${PORT}`);
+    console.log(`Сервер запущен на порту ${PORT}`);
 });
