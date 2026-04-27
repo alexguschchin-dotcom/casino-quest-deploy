@@ -2,84 +2,90 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Арена проклятых слотов</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ИГРА РАЗУМА · психологический квест</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="arena-bg"></div>
-    <div id="toast" class="toast hidden"></div>
-
-    <div class="game-container">
-        <header class="header">
-            <h1 class="arena-title">
-                <i class="fas fa-skull"></i> 
-                Арена проклятых слотов
-                <i class="fas fa-dice-d6"></i>
-            </h1>
-        </header>
-
-        <div class="battle-area">
-            <div class="fighter player">
-                <div class="fighter-name">Гладиатор</div>
-                <div class="health-bar-container">
-                    <div class="health-bar" id="player-health-bar" style="width: 100%"></div>
-                </div>
-                <div class="health-text" id="player-health-text">❤️ 100</div>
-                <div class="fury-bar-container">
-                    <div class="fury-bar" id="player-fury-bar" style="width: 0%"></div>
-                </div>
-                <div class="fury-text" id="player-fury-text">⚡ 0/100</div>
-            </div>
-            <div class="vs">VS</div>
-            <div class="fighter enemy">
-                <div class="fighter-name">Теневой капитан</div>
-                <div class="health-bar-container">
-                    <div class="health-bar" id="enemy-health-bar" style="width: 100%"></div>
-                </div>
-                <div class="health-text" id="enemy-health-text">❤️ 100</div>
-            </div>
+    <div class="glitch-overlay"></div>
+    <div class="container">
+        <div class="status-bar">
+            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.0x9F2</div>
+            <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОС</button>
         </div>
-
-        <div class="turn-indicator" id="turn-indicator">⚔️ Ваш ход ⚔️</div>
-
-        <div class="actions-container" id="actions-container"></div>
-
-        <div class="history-panel">
-            <h2><i class="fas fa-scroll"></i> Лог боя</h2>
-            <div id="history-list" class="history-list"></div>
-        </div>
-
-        <div class="control-panel">
-            <button id="reset-battle-btn" class="btn-danger">🔄 Новый бой</button>
-            <button id="force-win-btn" class="btn-neon">💪 Принудительная победа</button>
+        <div class="main-grid">
+            <!-- левая колонка -->
+            <div class="left-panel">
+                <div class="player-card">
+                    <div class="avatar"><i class="fas fa-user-secret"></i> ПОДОПЫТНЫЙ</div>
+                    <div class="stress-bar">
+                        <span>УРОВЕНЬ СТРЕССА</span>
+                        <div class="bar-bg"><div id="stressFill" class="stress-fill" style="width:0%"></div></div>
+                        <span id="stressValue">0</span>%
+                    </div>
+                    <div class="trust-bar">
+                        <span>ДОВЕРИЕ К СИСТЕМЕ</span>
+                        <div class="bar-bg"><div id="trustFill" class="trust-fill" style="width:50%"></div></div>
+                        <span id="trustValue">50</span>%
+                    </div>
+                    <div class="phase-progress">
+                        <span>ФАЗА <span id="phaseNum">1</span>/8</span>
+                        <div class="bar-bg"><div id="phaseFill" class="phase-fill" style="width:0%"></div></div>
+                    </div>
+                </div>
+                <div class="phase-map" id="phaseList"></div>
+            </div>
+            <!-- правая колонка -->
+            <div class="right-panel">
+                <div class="mission-box">
+                    <div class="mission-header">
+                        <span><i class="fas fa-dice-d6"></i> ТЕКУЩЕЕ ЗАДАНИЕ</span>
+                        <span id="phaseNameBadge">ФАЗА 0</span>
+                    </div>
+                    <div class="quest" id="questText">Загрузка...</div>
+                    <div id="dynamicZone" class="dynamic-zone"></div>
+                    <div class="action-buttons">
+                        <button id="completeBtn" class="btn-primary"><i class="fas fa-check-double"></i> ВЫПОЛНИТЬ</button>
+                        <button id="nextBtn" class="btn-secondary" disabled><i class="fas fa-forward"></i> ДАЛЕЕ</button>
+                    </div>
+                    <div class="system-comment" id="systemComment">
+                        <i class="fas fa-robot"></i> Система: вы здесь. Это уже ошибка.
+                    </div>
+                </div>
+                <div class="chat-tool">
+                    <i class="fas fa-comments"></i> Чат: <strong>!помощь</strong> — подсказка (возможно, ложная)
+                    <button id="hintBtn" class="btn-hint"><i class="fas fa-question-circle"></i> ВЗЯТЬ</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Модалка выполнения задания -->
-    <div id="task-modal" class="modal hidden">
+    <!-- модалки -->
+    <div id="finalModal" class="modal hidden">
         <div class="modal-content">
-            <h2><i class="fas fa-dice-d6"></i> Испытание арены</h2>
-            <p id="task-description"></p>
-            <div class="modal-buttons">
-                <button id="task-success" class="btn-success">✅ Успех</button>
-                <button id="task-fail" class="btn-danger">❌ Провал</button>
-            </div>
+            <h2>🔮 ФИНАЛЬНЫЙ ВЫБОР</h2>
+            <p id="finalText"></p>
+            <button id="safeFinal" class="modal-btn">ЗАБРАТЬ</button>
+            <button id="riskFinal" class="modal-btn risk">ДОКАЗАТЬ, ЧТО Я УМНЕЕ</button>
         </div>
     </div>
-
-    <!-- Модалка окончания боя -->
-    <div id="end-modal" class="modal hidden">
+    <div id="infoModal" class="modal hidden">
         <div class="modal-content">
-            <h2 id="end-title"></h2>
-            <p id="end-message"></p>
-            <button id="end-reset-btn" class="btn-neon">Начать новую битву</button>
+            <h3 id="infoTitle"></h3>
+            <p id="infoMsg"></p>
+            <button id="closeInfo" class="modal-btn">ПОНЯЛ</button>
+        </div>
+    </div>
+    <div id="hintModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>💡 ПОДСКАЗКА СИСТЕМЫ</h3>
+            <p id="hintMsg"></p>
+            <button id="closeHint" class="modal-btn">ЗАКРЫТЬ</button>
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
