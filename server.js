@@ -3,12 +3,12 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Статика из папки public
-app.use(express.static(path.join(__dirname, 'public')));
+// Раздаём статику из текущей папки (index.html, style.css, script.js лежат рядом)
+app.use(express.static(__dirname));
 
-// Все запросы -> index.html из public
+// Все остальные запросы отдаём index.html
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
