@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ИГРА РАЗУМА · Казино‑триллер</title>
+    <title>ИГРА РАЗУМА · Психологическая атака</title>
     <style>
         * {
             margin: 0;
@@ -200,8 +200,9 @@
             display: flex;
             gap: 20px;
             margin: 28px 0 20px;
+            flex-wrap: wrap;
         }
-        .btn-primary, .btn-secondary {
+        .btn-primary, .btn-secondary, .btn-explain {
             padding: 12px 28px;
             border-radius: 60px;
             font-weight: bold;
@@ -223,6 +224,11 @@
             color: #0f0;
             border: 1px solid #0f0;
         }
+        .btn-explain {
+            background: #1a1a2a;
+            color: #0ff;
+            border: 1px solid #0ff;
+        }
         .system-comment {
             background: #000000cc;
             padding: 14px;
@@ -238,6 +244,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .btn-hint {
             background: #0f0;
@@ -293,7 +301,7 @@
     <div class="glitch-overlay"></div>
     <div class="container">
         <div class="status-bar">
-            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.4.0 · КАЗИНО‑ТРИЛЛЕР</div>
+            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.5.0 · ПСИХОЛОГИЧЕСКАЯ АТАКА</div>
             <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОСИТЬ СОЗНАНИЕ</button>
         </div>
         <div class="main-grid">
@@ -330,6 +338,7 @@
                     <div id="dynamicZone" class="dynamic-zone"></div>
                     <div class="action-buttons">
                         <button id="completeBtn" class="btn-primary"><i class="fas fa-check-double"></i> ВЫПОЛНИТЬ</button>
+                        <button id="explainBtn" class="btn-explain"><i class="fas fa-microphone-alt"></i> ОБЪЯСНИТЬ ВЫБОР</button>
                         <button id="nextBtn" class="btn-secondary"><i class="fas fa-forward"></i> ДАЛЕЕ</button>
                     </div>
                     <div class="system-comment" id="systemComment">
@@ -398,7 +407,7 @@
                 4: ["Система: ты дошёл до конца.","Система: ты не победил, ты просто дошёл.","Система: ты пытался быть умнее.","Система: ты предсказуем.","Система: финальный выбор определит всё."]
             };
 
-            // ========== ПРОСТЫЕ ЗАДАНИЯ (спины в конкретных слотах) ==========
+            // ========== ПРОСТЫЕ ЗАДАНИЯ (спины) ==========
             const SIMPLE_TASKS = [
                 { text: "Сделай 100 спинов в Dog House", stressDelta: 3, trustDelta: 1 },
                 { text: "Сделай 80 спинов в Gates of Olympus", stressDelta: 2, trustDelta: 2 },
@@ -412,7 +421,7 @@
                 { text: "Сделай 110 спинов в Wild West Gold", stressDelta: 5, trustDelta: 0 }
             ];
 
-            // ========== ПСИХОЛОГИЧЕСКИЕ ЗАДАНИЯ (выбор) ==========
+            // ========== ПСИХОЛОГИЧЕСКИЕ ЗАДАНИЯ ==========
             const CHOICE_TASKS = [
                 { text: "Ты уверен, что хочешь думать? Иногда лучше просто выбрать.", 
                   options: ["🟢 Сделать 50 спинов (безопасно)", "🔴 Сделать 30 спинов с x2 ставки (риск)"], 
@@ -460,7 +469,8 @@
                 lastChoices: [],
                 patternCounter: 0,
                 fastDecisions: 0,
-                hintUsed: false
+                hintUsed: false,
+                history: []   // новая память системы
             };
 
             let game = {
@@ -478,7 +488,12 @@
                 },
                 lastWasSkipOffer: false,
                 pendingTaskModifier: null,
-                currentTaskType: null  // 'simple' или 'choice'
+                currentTaskType: null,
+                meta: {
+                    trap: null,
+                    uiSwapped: false,
+                    crashed: false
+                }
             };
 
             let currentTask = null;
@@ -502,7 +517,8 @@
                 hintBtn: document.getElementById('hintBtn'),
                 riskStat: document.getElementById('riskStat'),
                 safeStat: document.getElementById('safeStat'),
-                mistakeStat: document.getElementById('mistakeStat')
+                mistakeStat: document.getElementById('mistakeStat'),
+                explainBtn: document.getElementById('explainBtn')
             };
 
             // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
@@ -643,6 +659,82 @@
                 game.profile.lastAnswerTime = Date.now();
             }
 
+            // ========== АНАЛИЗ ПОВЕДЕНИЯ (ПАМЯТЬ СИСТЕМЫ) ==========
+            function analyzePlayerBehavior() {
+                if (player.history.length < 4) return;
+
+                const last = player.history.slice(-4);
+                const riskCount = last.filter(x => x.choice === 1).length;
+                const safeCount = last.filter(x => x.choice === 0).length;
+
+                if (riskCount >= 3) {
+                    game.meta.trap = "antiRisk";
+                    showSystemMessage("Ты снова выберешь риск. Я проверю это.", true);
+                }
+                if (safeCount >= 3) {
+                    game.meta.trap = "antiSafe";
+                    showSystemMessage("Ты прячешься за безопасностью. Это не поможет.", true);
+                }
+                if (player.fastDecisions > 3) {
+                    game.meta.trap = "antiFast";
+                    showSystemMessage("Ты слишком быстрый. Значит, ты не думаешь.", true);
+                }
+            }
+
+            // ========== META-ЛОВУШКИ ==========
+            function applyMetaTrap(task, chosenIndex) {
+                if (!game.meta.trap) return;
+
+                switch(game.meta.trap) {
+                    case "antiRisk":
+                        if (chosenIndex === 1) {
+                            showSystemMessage("💀 Предсказуемо. Ты попался.", true);
+                            game.stress += 15;
+                            game.trust -= 10;
+                        }
+                        break;
+                    case "antiSafe":
+                        if (chosenIndex === 0) {
+                            showSystemMessage("💀 Снова безопасность? Слабость.", true);
+                            game.stress += 10;
+                            game.trust -= 5;
+                        }
+                        break;
+                    case "antiFast":
+                        showSystemMessage("💀 Ты ответил слишком быстро. Ошибка.", true);
+                        game.stress += 12;
+                        game.trust -= 6;
+                        break;
+                }
+                game.meta.trap = null;
+                updateUI();
+            }
+
+            // ========== ПОДМЕНА КНОПОК ==========
+            function maybeSwapChoices(task) {
+                if (Math.random() < 0.25) {
+                    showSystemMessage("⚠️ Интерфейс обновлён", true);
+                    const temp = task.options[0];
+                    task.options[0] = task.options[1];
+                    task.options[1] = temp;
+                    game.meta.uiSwapped = true;
+                }
+            }
+
+            // ========== ФЕЙКОВЫЙ КРАШ (1 раз за игру) ==========
+            function maybeFakeCrash() {
+                if (game.meta.crashed) return;
+                if (Math.random() < 0.05 && game.stage >= 2) {
+                    game.meta.crashed = true;
+                    showSystemMessage("⚠️ КРИТИЧЕСКАЯ ОШИБКА...", true);
+                    setTimeout(() => {
+                        document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:40vh;'>SYSTEM FAILURE</h1>";
+                    }, 1000);
+                    setTimeout(() => location.reload(), 2000);
+                }
+            }
+
+            // ========== ПРИМЕНЕНИЕ ПОСЛЕДСТВИЙ ВЫБОРА ==========
             function applyChoiceConsequences(task, chosenIndex) {
                 let stressDelta = 0, trustDelta = 0;
                 if (task.stressA !== undefined && task.stressB !== undefined) {
@@ -715,10 +807,7 @@
 
             function renderSimpleTask(task) {
                 els.dynamicZone.innerHTML = "";
-                // Для простого задания кнопка "ВЫПОЛНИТЬ" будет активна
-                // а зона динамическая пустая
                 els.completeBtn.disabled = false;
-                // Привязываем обработчик на кнопку "ВЫПОЛНИТЬ"
                 els.completeBtn.onclick = () => {
                     applySimpleTask(task);
                     game.completedMissions.push({ stage: game.stage, missionId: game.missionIdx });
@@ -749,11 +838,18 @@
                     btn.style.borderRadius = "40px";
                     btn.style.cursor = "pointer";
                     btn.style.fontWeight = "bold";
-                    btn.style.fontFamily = "monospace";
                     btn.onclick = () => {
                         const isRiskChoice = opt.includes("🔴") || opt.includes("риск") || (idx === 1 && task.type === "risk_safe");
                         updatePlayerProfile(isRiskChoice ? "risk" : "safe", idx, task);
                         applyChoiceConsequences(task, idx);
+                        applyMetaTrap(task, idx);   // мета-ловушка
+                        // Сохраняем в историю
+                        player.history.push({
+                            choice: idx,
+                            type: task.type,
+                            timestamp: Date.now()
+                        });
+                        analyzePlayerBehavior();
                         game.completedMissions.push({ stage: game.stage, missionId: game.missionIdx });
                         game.missionIdx++;
                         saveGame();
@@ -767,13 +863,17 @@
                     btnContainer.appendChild(btn);
                 });
                 els.dynamicZone.appendChild(btnContainer);
+                if (game.meta.uiSwapped) {
+                    triggerGlitch();
+                    game.meta.uiSwapped = false;
+                }
                 // Для заданий-выборов кнопка "ВЫПОЛНИТЬ" не нужна
                 els.completeBtn.onclick = () => {
                     showSystemMessage("Выбери один из вариантов выше.");
                 };
             }
 
-            // ========== МЕХАНИКА "СОБЛАЗН" (пропустить/усложнить) ==========
+            // ========== МЕХАНИКА "СОБЛАЗН" ==========
             function showSkipModal() {
                 const modal = document.getElementById('skipModal');
                 modal.classList.remove('hidden');
@@ -847,7 +947,9 @@
                     currentTask = simpleTask;
                     renderSimpleTask(simpleTask);
                 } else {
-                    const choiceTask = generateChoiceTask();
+                    let choiceTask = generateChoiceTask();
+                    // Подмена кнопок ДО отрисовки
+                    maybeSwapChoices(choiceTask);
                     els.questText.innerText = choiceTask.text;
                     game.currentTaskType = 'choice';
                     currentTask = choiceTask;
@@ -857,6 +959,8 @@
                 if (game.pendingTaskModifier === "hard") {
                     showSystemMessage("⚠️ УСЛОЖНЁННЫЙ РЕЖИМ АКТИВЕН!", true);
                 }
+                // Проверка на фейковый краш
+                maybeFakeCrash();
             }
 
             function finishGame() {
@@ -917,7 +1021,8 @@
                     trust: game.trust,
                     profile: game.profile,
                     player: player,
-                    lastWasSkipOffer: game.lastWasSkipOffer
+                    lastWasSkipOffer: game.lastWasSkipOffer,
+                    meta: game.meta
                 }));
             }
 
@@ -931,13 +1036,14 @@
                     game.stress = data.stress;
                     game.trust = data.trust;
                     game.profile = data.profile || { risky:0, safe:0, mistakes:0, speed:0, lastAnswerTime:Date.now() };
-                    player = data.player || { riskLevel:0, trustSystem:50, stress:0, lastChoices:[], patternCounter:0, fastDecisions:0 };
+                    player = data.player || { riskLevel:0, trustSystem:50, stress:0, lastChoices:[], patternCounter:0, fastDecisions:0, history:[] };
                     game.lastWasSkipOffer = data.lastWasSkipOffer || false;
+                    game.meta = data.meta || { trap: null, uiSwapped: false, crashed: false };
                 }
                 if(game.stage >= STAGES.length) game.stage = STAGES.length - 1;
             }
 
-            // ========== СТРАШНЫЕ ЭФФЕКТЫ ==========
+            // ========== СТРАШНЫЕ ФОНОВЫЕ ЭФФЕКТЫ ==========
             let scareInterval = null;
             function startRandomScares() {
                 if (scareInterval) clearInterval(scareInterval);
@@ -968,6 +1074,17 @@
                 }, 30000);
             }
 
+            // ========== КНОПКА "ОБЪЯСНИТЬ ВЫБОР" ==========
+            function initExplainButton() {
+                els.explainBtn.onclick = () => {
+                    showSystemMessage("📢 Ты пытаешься убедить других. Это интересно.", true);
+                    game.trust = Math.min(100, game.trust + 5);
+                    game.stress = Math.min(100, game.stress + 2);
+                    updateUI();
+                    saveGame();
+                };
+            }
+
             // ========== ИНИЦИАЛИЗАЦИЯ ==========
             function init() {
                 loadGame();
@@ -975,6 +1092,7 @@
                 loadCurrentTask();
                 startRandomScares();
                 startRandomGlitches();
+                initExplainButton();
                 window.audioCtx = null;
                 document.body.addEventListener('click', () => {
                     if(!window.audioCtx && window.AudioContext) {
@@ -987,7 +1105,7 @@
                 els.hintBtn.addEventListener('click', showHint);
                 document.getElementById('closeHint')?.addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
                 document.getElementById('closeInfo')?.addEventListener('click', () => document.getElementById('infoModal').classList.add('hidden'));
-                console.log("Игра разума 4.0 — Казино-триллер: простые спин-задания + психологические выборы");
+                console.log("Игра разума 5.0 — Психологическая атака: память, ловушки, подмена кнопок, краш, кнопка объяснения. Без таймеров.");
             }
             init();
         })();
