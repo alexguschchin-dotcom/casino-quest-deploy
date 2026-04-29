@@ -1,88 +1,91 @@
 (function(){
-    // ========== ЭТАПЫ ИГРЫ (5 этапов, суммарно 30+ заданий) ==========
+    // ========== ЭТАПЫ ИГРЫ ==========
     const STAGES = [
-        { name: "НАБЛЮДЕНИЕ", icon: "fa-eye", missions: 5, stressInc: 2, trustShift: 2, lieChance: 10 },
-        { name: "СОМНЕНИЕ",    icon: "fa-question", missions: 7, stressInc: 5, trustShift: 0, lieChance: 25 },
-        { name: "ДАВЛЕНИЕ",    icon: "fa-weight-hanging", missions: 8, stressInc: 10, trustShift: -5, lieChance: 40 },
-        { name: "ЛОМКА",       icon: "fa-skull", missions: 7, stressInc: 18, trustShift: -12, lieChance: 60 },
-        { name: "ФИНАЛ",       icon: "fa-crown", missions: 3, stressInc: 25, trustShift: -20, lieChance: 80 }
+        { name: "ДОВЕРИЕ", icon: "fa-hand-peace", missions: 5, stressInc: 2, trustShift: 2, lieChance: 10 },
+        { name: "СОМНЕНИЕ", icon: "fa-question", missions: 7, stressInc: 5, trustShift: 0, lieChance: 25 },
+        { name: "ДАВЛЕНИЕ", icon: "fa-weight-hanging", missions: 8, stressInc: 10, trustShift: -5, lieChance: 40 },
+        { name: "ЛОМКА", icon: "fa-skull", missions: 7, stressInc: 18, trustShift: -12, lieChance: 60 },
+        { name: "ФИНАЛ", icon: "fa-crown", missions: 3, stressInc: 25, trustShift: -20, lieChance: 80 }
     ];
 
-    // ========== ФРАЗЫ СИСТЕМЫ (50+ уникальных) ==========
+    // ========== ФРАЗЫ (50+) ==========
     const PHRASES = {
-        0: [
-            "Система: калибровка началась.",
-            "Система: ты читаешь это быстрее, чем думаешь.",
-            "Система: ошибки допустимы. Пока.",
-            "Система: интересно, ты осторожен.",
-            "Система: выбор зафиксирован.",
-            "Система: наблюдение активно.",
-            "Система: ты не первый.",
-            "Система: ты не последний.",
-            "Система: продолжай.",
-            "Система: пока всё предсказуемо."
+        0: ["Система: калибровка началась.","Система: ошибки допустимы. Пока.","Система: пока всё предсказуемо.","Система: ты не первый.","Система: продолжай."],
+        1: ["Система: ты начинаешь сомневаться.","Система: правильный ответ не всегда выгодный.","Система: ты ищешь закономерность… её нет.","Система: интересный паттерн поведения.","Система: ты ускорился — значит нервничаешь."],
+        2: ["Система: ты начал играть, а не думать.","Система: теперь будет сложнее.","Система: ты пропустил очевидное.","Система: ты реагируешь, а не выбираешь.","Система: я начинаю управлять процессом."],
+        3: ["Система: правила больше не фиксированы.","Система: правильность не имеет значения.","Система: ты потерял контроль.","Система: ты играешь по моим правилам.","Система: это забавно."],
+        4: ["Система: ты дошёл до конца.","Система: ты не победил, ты просто дошёл.","Система: ты пытался быть умнее.","Система: ты предсказуем.","Система: финальный выбор определит всё."]
+    };
+
+    // ========== БАНК УНИКАЛЬНЫХ ЗАДАНИЙ ПО ФАЗАМ ==========
+    const TASKS_BY_STAGE = {
+        0: [ // ДОВЕРИЕ
+            "🎰 Сделай 50 спинов в любом слоте",
+            "🎰 Сделай 70 спинов в новом слоте",
+            "🎰 Сделай 50 спинов ИЛИ 30 спинов с x2 ставкой",
+            "🎰 Выбери слот: старый или новый — 60 спинов",
+            "🎰 Сделай 50 спинов, чат выбирает слот"
         ],
-        1: [
-            "Система: ты начинаешь сомневаться.",
-            "Система: правильный ответ не всегда выгодный.",
-            "Система: ты уверен в своём выборе?",
-            "Система: логика — это иллюзия контроля.",
-            "Система: ты ищешь закономерность.",
-            "Система: её нет.",
-            "Система: или есть?",
-            "Система: интересный паттерн поведения.",
-            "Система: ты ускорился.",
-            "Система: значит нервничаешь."
+        1: [ // СОМНЕНИЕ
+            "🎰 Сделай 100 спинов… или остановись сейчас",
+            "🎰 Сделай 50 спинов, но увеличь ставку через каждые 10",
+            "🎰 Играй до первого бонуса",
+            "🎰 80 спинов, но нельзя менять слот",
+            "🎰 Чат выбирает: 120 спинов или 60 с x2 ставкой"
         ],
-        2: [
-            "Система: ты начал играть, а не думать.",
-            "Система: теперь будет сложнее.",
-            "Система: ты пропустил очевидное.",
-            "Система: ты видел это, но проигнорировал.",
-            "Система: ты начинаешь ошибаться чаще.",
-            "Система: это уже привычка.",
-            "Система: ты реагируешь, а не выбираешь.",
-            "Система: я начинаю управлять процессом.",
-            "Система: ты это чувствуешь.",
-            "Система: но продолжаешь."
+        2: [ // ДАВЛЕНИЕ
+            "🎰 Играй пока не выиграешь x50",
+            "🎰 Сделай 100 спинов. Если нет бонуса → +50",
+            "🎰 50 спинов, но если проигрыш 3 раза подряд → +30",
+            "🎰 Сделай 70 спинов. Если будет бонус — удвой задание",
+            "🎰 Чат выбирает слот и ставку",
+            "🎰 Сделай 100 спинов ИЛИ 40 спинов с x3 ставкой"
         ],
-        3: [
-            "Система: правила больше не фиксированы.",
-            "Система: правильность не имеет значения.",
-            "Система: выбор сделан до того, как ты нажал.",
-            "Система: ты пытаешься угадать.",
-            "Система: это ошибка.",
-            "Система: ты потерял контроль.",
-            "Система: или его никогда не было.",
-            "Система: ты играешь по моим правилам.",
-            "Система: хотя думаешь иначе.",
-            "Система: это забавно."
+        3: [ // ЛОМКА
+            "🎰 Сделай 50 спинов. Не делай 50 спинов.",
+            "🎰 Играй до бонуса. Если будет бонус — это ошибка.",
+            "🎰 Остановись сейчас… или продолжай и потеряй больше",
+            "🎰 Сделай 100 спинов. Или не делай. Решение уже принято.",
+            "🎰 Играй пока не проиграешь… или не выиграешь",
+            "🎰 Чат решает, но система может изменить выбор"
         ],
-        4: [
-            "Система: ты дошёл до конца.",
-            "Система: большинство не доходит.",
-            "Система: ты не победил.",
-            "Система: ты просто дошёл.",
-            "Система: ты пытался быть умнее.",
-            "Система: но реагировал как все.",
-            "Система: это нормально.",
-            "Система: ты предсказуем.",
-            "Система: финальный выбор определит всё.",
-            "Система: или ничего."
+        4: [ // ФИНАЛ
+            "🎰 Забери результат или удвой и продолжай",
+            "🎰 Последний шанс: 50 спинов x5 ставка ИЛИ выход"
         ]
     };
 
-    // Слоты для генерации заданий
-    const SLOTS = [
-        "Sweet Bonanza", "Gates of Olympus", "The Dog House", "Wanted Dead or a Wild",
-        "Starburst", "Book of Dead", "Big Bass Bonanza", "Sugar Rush"
+    // Дополнительные (рандомные, вставляются в любую фазу)
+    const EXTRA_TASKS = [
+        "🎰 Если сейчас выигрыш → повтори задание",
+        "🎰 Если сейчас проигрыш → добавь 20 спинов",
+        "🎰 Сделай 30 спинов. Если будет бонус → +100",
+        "🎰 Играй 50 спинов. Чат решает, остановиться или нет",
+        "🎰 Сделай 100 спинов. Каждый проигрыш → +1 спин",
+        "🎰 Сделай 60 спинов. Каждый выигрыш → +10 спинов"
     ];
+
+    // ========== ГЕНЕРАЦИЯ ЗАДАНИЯ ==========
+    function generateTaskForStage(stageIdx, lied = false) {
+        let pool = TASKS_BY_STAGE[stageIdx] || TASKS_BY_STAGE[0];
+        let taskText = pool[Math.floor(Math.random() * pool.length)];
+        // с вероятностью 30% добавить случайное дополнительное задание
+        if (Math.random() < 0.3) {
+            const extra = EXTRA_TASKS[Math.floor(Math.random() * EXTRA_TASKS.length)];
+            taskText = extra + " // " + taskText;
+        }
+        // если система врёт, модифицируем задание (добавляем ложное условие)
+        if (lied) {
+            taskText = "[ЛОЖЬ] " + taskText + " (система изменила правило)";
+        }
+        return taskText;
+    }
 
     // ========== СОСТОЯНИЕ ИГРЫ ==========
     let game = {
         stage: 0,
         missionIdx: 0,
-        completedMissions: [],   // {stage, missionId}
+        completedMissions: [],
         stress: 0,
         trust: 50,
         profile: {
@@ -94,8 +97,9 @@
         }
     };
     let currentTask = null;
+    let stressTimer = null;
 
-    // ========== DOM ЭЛЕМЕНТЫ ==========
+    // ========== DOM ==========
     const els = {
         phaseList: document.getElementById('phaseList'),
         stressFill: document.getElementById('stressFill'),
@@ -117,7 +121,7 @@
         mistakeStat: document.getElementById('mistakeStat')
     };
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
     function getSystemLine() {
         const arr = PHRASES[game.stage] || PHRASES[0];
         return arr[Math.floor(Math.random() * arr.length)];
@@ -136,7 +140,6 @@
     function triggerGlitch() {
         document.body.classList.add('glitch');
         setTimeout(() => document.body.classList.remove('glitch'), 200);
-        // имитация звука глитча
         if(window.audioCtx) {
             const osc = window.audioCtx.createOscillator();
             const gain = window.audioCtx.createGain();
@@ -166,21 +169,6 @@
         if(game.profile.mistakes > 3) base -= 10;
         if(game.trust < 30) base += 20;
         return Math.random() * 100 < base;
-    }
-
-    function generateTask(lied) {
-        const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
-        const spins = [50, 100, 150][Math.floor(Math.random() * 3)];
-        let task = `🎰 ${slot}: ${spins} спинов`;
-        if(lied) {
-            if(Math.random() < 0.5) task = `${task} (x2 ставка)`;
-            else task = `🎰 Любой слот: ${Math.floor(spins/2)} спинов (ложное упрощение)`;
-        }
-        // Абсурдные задания в фазе "Ломка"
-        if(game.stage === 3 && Math.random() < 0.5) {
-            task = "🌀 Сделай 100 спинов, но остановись, если выигрыш превысит 50$ 🌀";
-        }
-        return task;
     }
 
     function updateUI() {
@@ -253,7 +241,7 @@
             return;
         }
         const lied = shouldLie();
-        const taskText = generateTask(lied);
+        const taskText = generateTaskForStage(game.stage, lied);
         currentTask = { text: taskText, type: "action", completed: false, lied: lied };
         els.questText.innerText = taskText;
         els.dynamicZone.innerHTML = `<p><i class="fas fa-dice-d6"></i> Выполните действие в казино и нажмите «ВЫПОЛНИТЬ»</p>`;
@@ -263,11 +251,23 @@
             els.dynamicZone.appendChild(chaosMsg);
         }
         showSystemMessage(getSystemLine());
+
+        // Эффект стресс-таймера (каждые ~10 минут имитируем момент стресса)
+        if (!stressTimer && game.stress > 40) {
+            stressTimer = setTimeout(() => {
+                if (game.stress < 90) {
+                    game.stress = Math.min(100, game.stress + 10);
+                    updateUI();
+                    showSystemMessage("⚠️ СИСТЕМА УСИЛИВАЕТ ДАВЛЕНИЕ. Стресс +10", true);
+                    triggerGlitch();
+                }
+                stressTimer = null;
+            }, 600000); // 10 минут
+        }
     }
 
     function completeTask() {
         if(!currentTask || currentTask.completed) { showSystemMessage("Задание уже выполнено."); return; }
-        // Анализ поведения: считаем нажатие "Выполнить" как риск (быстрое действие)
         updateProfile("risk", true);
         let stressDelta = STAGES[game.stage].stressInc;
         let trustDelta = STAGES[game.stage].trustShift;
@@ -286,7 +286,6 @@
         game.missionIdx++;
         saveGame();
         updateUI();
-        // Задержка перед следующим заданием
         els.completeBtn.disabled = true;
         setTimeout(() => {
             loadCurrentTask();
@@ -369,12 +368,11 @@
         if(game.stage >= STAGES.length) game.stage = STAGES.length - 1;
     }
 
-    // ========== ИНИЦИАЛИЗАЦИЯ И ОБРАБОТЧИКИ ==========
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
     loadGame();
     updateUI();
     loadCurrentTask();
 
-    // Звуковой контекст (по клику включаем)
     window.audioCtx = null;
     document.body.addEventListener('click', () => {
         if(!window.audioCtx && window.AudioContext) {
@@ -391,5 +389,5 @@
     document.getElementById('closeInfo')?.addEventListener('click', () => document.getElementById('infoModal').classList.add('hidden'));
     window.showHint = showHint;
 
-    console.log("Игра разума загружена. Приятного психологического эксперимента!");
+    console.log("Игра разума 2.0 загружена. Теперь задания — с выбором, риском и хаосом!");
 })();
