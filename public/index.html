@@ -3,25 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ИГРА РАЗУМА</title>
+    <title>ИГРА РАЗУМА · ФИНАЛЬНАЯ ВЕРСИЯ</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', monospace;
-            user-select: none;
-        }
-        body {
-            background: #030307;
-            color: #0f0;
-            padding: 20px;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        body.glitch {
-            animation: bodyGlitch 0.2s infinite;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', monospace; user-select: none; }
+        body { background: #030307; color: #0f0; padding: 20px; min-height: 100vh; overflow-x: hidden; }
+        body.glitch { animation: bodyGlitch 0.2s infinite; }
         @keyframes bodyGlitch {
             0% { transform: translate(0); background: #030307; }
             20% { transform: translate(-2px, 1px); background: #1a0303; }
@@ -30,40 +16,10 @@
             80% { transform: translate(1px, -2px); background: #03031a; }
             100% { transform: translate(0); background: #030307; }
         }
-        .glitch-overlay {
-            position: fixed;
-            top:0;left:0;
-            width:100%;height:100%;
-            pointer-events: none;
-            background: repeating-linear-gradient(0deg, rgba(0,255,0,0.02) 0px, rgba(0,255,0,0.02) 2px, transparent 2px, transparent 8px);
-            z-index:1;
-            animation: glitchShift 6s infinite;
-        }
-        @keyframes glitchShift {
-            0% { transform: translateX(0); opacity:0.3; }
-            20% { transform: translateX(2px); opacity:0.8; }
-            40% { transform: translateX(-2px); opacity:0.3; }
-            100% { transform: translateX(0); opacity:0.3; }
-        }
-        .container {
-            max-width: 1400px;
-            margin:0 auto;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(12px);
-            border-radius: 48px;
-            padding:24px;
-            border:1px solid #0f08;
-            box-shadow:0 0 40px rgba(0,255,0,0.2);
-            position:relative;
-            z-index:2;
-        }
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom:32px;
-            padding-bottom:12px;
-            border-bottom:1px dashed #0f0;
-        }
+        .glitch-overlay { position: fixed; top:0;left:0; width:100%;height:100%; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,255,0,0.02) 0px, rgba(0,255,0,0.02) 2px, transparent 2px, transparent 8px); z-index:1; animation: glitchShift 6s infinite; }
+        @keyframes glitchShift { 0% { transform: translateX(0); opacity:0.3; } 20% { transform: translateX(2px); opacity:0.8; } 40% { transform: translateX(-2px); opacity:0.3; } 100% { transform: translateX(0); opacity:0.3; } }
+        .container { max-width: 1400px; margin:0 auto; background: rgba(0,0,0,0.7); backdrop-filter: blur(12px); border-radius: 48px; padding:24px; border:1px solid #0f08; box-shadow:0 0 40px rgba(0,255,0,0.2); position:relative; z-index:2; }
+        .status-bar { display: flex; justify-content: space-between; margin-bottom:32px; padding-bottom:12px; border-bottom:1px dashed #0f0; }
         .sys-tag { background:#000000aa; padding:6px 18px; border-radius:40px; }
         .btn-outline { background:#111; border:1px solid #0f0; color:#0f0; padding:6px 16px; border-radius:40px; cursor:pointer; transition:0.2s; }
         .btn-outline:hover { background:#0f0; color:black; box-shadow:0 0 12px #0f0; }
@@ -82,58 +38,22 @@
         .phase-item { display:flex; align-items:center; gap:12px; padding:12px; margin-bottom:10px; background:#0a0a0a; border-radius:34px; border-left:3px solid #0f0; cursor:pointer; transition:0.2s; }
         .phase-item.active { border-left-color:#ffaa33; background:#0f0c; color:black; }
         .phase-icon { width:40px; text-align:center; }
-        .info-box {
-            background:#000000aa;
-            border-radius:40px;
-            padding:20px;
-            margin-top:20px;
-            border-left:3px solid #0ff;
-            font-size:0.85rem;
-        }
+        .info-box { background:#000000aa; border-radius:40px; padding:20px; margin-top:20px; border-left:3px solid #0ff; font-size:0.85rem; }
         .info-box h3 { margin-bottom:10px; color:#0ff; }
         .info-box ul { margin-left:20px; }
-        .mission-box {
-            background:#000000aa;
-            border-radius:48px;
-            padding:28px;
-            backdrop-filter:blur(8px);
-        }
-        .mission-header {
-            display:flex;
-            justify-content:space-between;
-            border-bottom:1px solid #0f0;
-            padding-bottom:12px;
-        }
+        .mission-box { background:#000000aa; border-radius:48px; padding:28px; backdrop-filter:blur(8px); }
+        .mission-header { display:flex; justify-content:space-between; border-bottom:1px solid #0f0; padding-bottom:12px; }
         .quest { font-size:1.3rem; background:#0a0a0a; padding:20px; border-radius:40px; margin:24px 0; border:1px solid #0f0; color:#0f0; line-height:1.4; transition:color 0.1s; }
         .action-buttons { display:flex; gap:20px; margin:28px 0 20px; flex-wrap:wrap; justify-content:center; }
-        .btn-success, .btn-fail, .btn-choice {
-            padding:12px 28px;
-            border-radius:60px;
-            font-weight:bold;
-            cursor:pointer;
-            border:none;
-            font-size:1rem;
-            margin:5px;
-            transition:transform 0.05s linear;
-        }
+        .btn-success, .btn-fail, .btn-choice { padding:12px 28px; border-radius:60px; font-weight:bold; cursor:pointer; border:none; font-size:1rem; margin:5px; transition:transform 0.05s linear; }
         .btn-success { background:#0f0; color:black; }
         .btn-success:hover { box-shadow:0 0 20px #0f0; transform:scale(1.02); }
         .btn-fail { background:#ff3366; color:white; }
         .btn-fail:hover { box-shadow:0 0 20px #ff3366; transform:scale(1.02); }
         .btn-choice { background:#111; border:2px solid #0f0; color:#0f0; }
         .btn-choice:hover { background:#0f0; color:black; }
-        .balance-input {
-            background:#111;
-            border:2px solid #0f0;
-            padding:12px 20px;
-            border-radius:60px;
-            color:#0f0;
-            font-size:1.2rem;
-            width:250px;
-            text-align:center;
-            margin:10px auto;
-        }
-        .system-comment { background:#000000cc; padding:14px; border-radius:32px; font-style:italic; border-left:4px solid #ff3366; font-size:0.9rem; transition:0.2s; }
+        .balance-input { background:#111; border:2px solid #0f0; padding:12px 20px; border-radius:60px; color:#0f0; font-size:1.2rem; width:250px; text-align:center; margin:10px auto; }
+        .system-comment { background:#000000cc; padding:14px; border-radius:32px; font-style:italic; border-left:4px solid #ff3366; font-size:0.9rem; transition:0.2s; min-height: 80px; }
         .chat-tool { background:#000000aa; border-radius:40px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
         .btn-hint { background:#0f0; border:none; padding:6px 16px; border-radius:60px; cursor:pointer; font-weight:bold; }
         .modal { position:fixed; top:0;left:0; width:100%;height:100%; background:#000000ee; backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; z-index:2000; }
@@ -150,7 +70,7 @@
     <div class="glitch-overlay"></div>
     <div class="container">
         <div class="status-bar">
-            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.3.1</div>
+            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.4.0</div>
             <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОС</button>
         </div>
         <div class="main-grid">
@@ -226,7 +146,9 @@
 
     <script>
         (function(){
-            // ЭТАПЫ (количество миссий на каждом)
+            // --------------------------------------------------------------
+            // 1. КОНФИГУРАЦИЯ И СОСТОЯНИЕ
+            // --------------------------------------------------------------
             const STAGES = [
                 { name: "ДОВЕРИЕ", icon: "fa-hand-peace", missions: 6, baseStress: 25, baseTrust: 55 },
                 { name: "СОМНЕНИЕ", icon: "fa-question", missions: 5, baseStress: 35, baseTrust: 45 },
@@ -235,8 +157,7 @@
                 { name: "ФИНАЛ", icon: "fa-crown", missions: 2, baseStress: 85, baseTrust: 15 }
             ];
 
-            // 20 базовых шаблонов, каждый с 3 вариантами (easy, medium, hard)
-            // Структура: [общий текст с плейсхолдерами, цель, параметры для каждого уровня]
+            // 20 базовых шаблонов заданий × 3 уровня сложности = 60
             const BASE_TASKS = [
                 { text: "Сделай {spins} спинов в Dog House по {bet}$. Цель: хотя бы один бонус.", goal: "бонус", vars: { spins: [25,30,40], bet: [8,10,15], difficulty: ["easy","medium","hard"] } },
                 { text: "Купи бонус в Sweet Bonanza за {bet}$. Цель: отбить {percent}%", goal: "{percent}%", vars: { bet: [150,200,300], percent: [50,60,70], difficulty: ["easy","medium","hard"] } },
@@ -260,7 +181,6 @@
                 { text: "Сделай {spins} спинов в Gates of Olympus по {bet}$. Цель: получить множитель x{mult}+ в любом спине", goal: "x{mult}+", vars: { spins: [50,70,100], bet: [8,12,20], mult: [20,30,50], difficulty: ["easy","medium","hard"] } }
             ];
 
-            // Моральные выборы (события, не задания)
             const MORAL_EVENTS = [
                 { text: "Ты проиграл 3000$. Что делаешь?", options: ["Увеличить ставку (риск)", "Уменьшить ставку (безопасно)", "Оставить ставки (нейтрально)"], effects: [{stress:12, trust:-6, mod:{risk:1.3}}, {stress:-5, trust:5, mod:{safe:0.7}}, {stress:2, trust:0, mod:{}}] },
                 { text: "Система предлагает 'горячий' слот. Поверишь?", options: ["Довериться", "Игнорировать"], effects: [{stress:-2, trust:8, mod:{risk:1.2}}, {stress:0, trust:-2, mod:{}}] },
@@ -269,7 +189,6 @@
                 { text: "Система предлагает рискнуть. Выбери вариант:", options: ["Рискнуть", "Рискнуть"], effects: [{stress:10, trust:-2, mod:{risk:1.4}}, {stress:10, trust:-2, mod:{risk:1.4}}], illusion: true }
             ];
 
-            // Фразы системы
             const PERSONAL_PHRASES = {
                 light: ["Алексей... ты ведь не первый раз здесь, да?", "Алексей, ты делаешь вид, что это просто игра.", "Я уже видела таких, как ты, Алексей."],
                 medium: ["Алексей, ты всегда так реагируешь на проигрыш.", "Алексей, ты снова выбрал это. Как и в прошлый раз.", "Я запоминаю каждое твоё решение, Алексей."],
@@ -277,20 +196,23 @@
                 final: ["Алексей, ты ведь понимаешь, что стрим — это тоже часть системы?", "Алексей, зрители — это переменные.", "И он уже завершён, Алексей."]
             };
 
+            // Состояние игры
             let game = {
                 stage: 0, completedInStage: 0, totalCompleted: 0,
                 stress: 30, trust: 55, balance: 0, balanceStart: 0, prevBalance: 0,
                 risky: 0, safe: 0, lies: 0, successStreak: 0, failStreak: 0, history: [],
-                modRisk: 1.0,          // множитель для выбора рискованного варианта
-                lossEventTriggered: false
+                modRisk: 1.0,
+                lossEventTriggered: false,
+                playerStyle: "neutral" // risk, safe, liar
             };
 
             let currentTask = null;
-            let awaitingInput = false;   // ждём ввода баланса
-            let fleeingButtons = false;
-            let textGlitchInterval = null;
+            let awaitingInput = false;
+            let fleeingButtonsActive = false;
+            let messageQueue = [];
+            let isShowingMessage = false;
 
-            // DOM
+            // DOM элементы
             const els = {
                 phaseList: document.getElementById('phaseList'),
                 stressFill: document.getElementById('stressFill'),
@@ -311,15 +233,31 @@
                 balanceStat: document.getElementById('balanceStat')
             };
 
-            function showSystemMessage(msg, isUrgent = false) {
+            // --------------------------------------------------------------
+            // 2. СИСТЕМА ОЧЕРЕДИ СООБЩЕНИЙ (фикс перетирания)
+            // --------------------------------------------------------------
+            function processMessageQueue() {
+                if (isShowingMessage) return;
+                if (messageQueue.length === 0) return;
+                isShowingMessage = true;
+                const { msg, isUrgent } = messageQueue.shift();
                 els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
                 els.systemComment.style.borderLeftColor = isUrgent ? "#ffaa33" : "#ff3366";
                 setTimeout(() => {
-                    if (els.systemComment.innerHTML.includes(msg))
-                        els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
+                    isShowingMessage = false;
+                    if (messageQueue.length > 0) processMessageQueue();
+                    else els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
                 }, 5000);
             }
 
+            function showSystemMessage(msg, isUrgent = false) {
+                messageQueue.push({ msg, isUrgent });
+                processMessageQueue();
+            }
+
+            // --------------------------------------------------------------
+            // 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+            // --------------------------------------------------------------
             function triggerGlitch() {
                 document.body.classList.add('glitch');
                 setTimeout(() => document.body.classList.remove('glitch'), 200);
@@ -371,40 +309,70 @@
                 setTimeout(() => scareDiv.remove(), 800);
             }
 
-            function enableFleeingButtons() {
-                if (game.stress > 60 && !fleeingButtons) {
-                    fleeingButtons = true;
-                    const btns = document.querySelectorAll('.btn-success, .btn-fail, .btn-choice');
-                    btns.forEach(btn => {
-                        btn.addEventListener('mouseenter', function flee(e) {
-                            if (game.stress > 60) {
-                                const maxX = 120;
-                                const maxY = 70;
-                                const x = (Math.random() - 0.5) * maxX;
-                                const y = (Math.random() - 0.5) * maxY;
-                                this.style.transform = `translate(${x}px, ${y}px)`;
-                            }
-                        });
-                        btn.addEventListener('mouseleave', function() {
-                            this.style.transform = '';
-                        });
+            // Инициализация убегающих кнопок (один раз)
+            function initFleeingButtons() {
+                const btns = document.querySelectorAll('.btn-success, .btn-fail, .btn-choice');
+                btns.forEach(btn => {
+                    btn.addEventListener('mouseenter', function flee(e) {
+                        if (game.stress > 60) {
+                            const maxX = 120;
+                            const maxY = 70;
+                            const x = (Math.random() - 0.5) * maxX;
+                            const y = (Math.random() - 0.5) * maxY;
+                            this.style.transform = `translate(${x}px, ${y}px)`;
+                        }
                     });
-                } else if (game.stress <= 60 && fleeingButtons) {
-                    fleeingButtons = false;
-                    const btns = document.querySelectorAll('.btn-success, .btn-fail, .btn-choice');
-                    btns.forEach(btn => btn.style.transform = '');
+                    btn.addEventListener('mouseleave', function() {
+                        this.style.transform = '';
+                    });
+                });
+            }
+
+            // Обновление стиля игрока
+            function updatePlayerStyle() {
+                if (game.risky > game.safe + 2) game.playerStyle = "risk";
+                else if (game.safe > game.risky + 2) game.playerStyle = "safe";
+                else if (game.lies > 2) game.playerStyle = "liar";
+                else game.playerStyle = "neutral";
+            }
+
+            // Генерация задания с адаптацией под стиль игрока и стресс
+            function generateTask() {
+                const baseTask = BASE_TASKS[Math.floor(Math.random() * BASE_TASKS.length)];
+                let level = 1; // medium
+                if (game.successStreak >= 2) level = Math.min(2, level+1);
+                if (game.failStreak >= 2) level = Math.max(0, level-1);
+                if (game.modRisk > 1.1) level = Math.min(2, level+1);
+                if (game.modRisk < 0.9) level = Math.max(0, level-1);
+                // Стресс влияет на сложность (высокий стресс → сложнее)
+                if (game.stress > 70) level = Math.min(2, level+1);
+                if (game.stress < 30) level = Math.max(0, level-1);
+                
+                const diff = baseTask.vars.difficulty[level];
+                let text = baseTask.text;
+                let goal = baseTask.goal;
+                for (let key in baseTask.vars) {
+                    if (key === 'difficulty') continue;
+                    let val = baseTask.vars[key][level];
+                    text = text.replace(new RegExp(`\\{${key}\\}`, 'g'), val);
+                    if (goal.includes(`{${key}}`)) goal = goal.replace(new RegExp(`\\{${key}\\}`, 'g'), val);
                 }
+                // Анти-чит: если успешная серия >=4, система подменяет цель
+                let cheated = false;
+                if (game.successStreak >= 4) {
+                    goal = "ЛОЖНАЯ ЦЕЛЬ: " + goal + " (реально нужно больше)";
+                    cheated = true;
+                }
+                // Стресс влияет: может подменить цель на более сложную
+                if (game.stress > 60 && Math.random() < 0.3) {
+                    goal += " (СИСТЕМА УСЛОЖНИЛА ЗАДАНИЕ)";
+                }
+                return { text, goal, difficulty: diff, type: "spin", cheated };
             }
 
-            function getPersonalPhrase() {
-                let pool;
-                if (game.stage <= 1) pool = PERSONAL_PHRASES.light;
-                else if (game.stage <= 3) pool = PERSONAL_PHRASES.medium;
-                else if (game.stage === 4) pool = PERSONAL_PHRASES.hard;
-                else pool = PERSONAL_PHRASES.final;
-                return pool[Math.floor(Math.random() * pool.length)];
-            }
-
+            // --------------------------------------------------------------
+            // 4. UI
+            // --------------------------------------------------------------
             function updateUI() {
                 const stageData = STAGES[game.stage];
                 const done = game.completedInStage;
@@ -422,7 +390,6 @@
                 els.balanceStat.innerText = game.balance;
                 renderStageMap();
                 if (game.stress > 70) triggerGlitch();
-                enableFleeingButtons();
                 if (Math.random() < 0.1 && game.totalCompleted > 0) showSystemMessage(getPersonalPhrase(), false);
                 if (game.failStreak >= 2) showSystemMessage(`Алексей, ты снова теряешь контроль.`, true);
                 if (game.successStreak >= 3) {
@@ -430,16 +397,13 @@
                     game.stress += 5;
                     updateUI();
                 }
-                // Проверка просадки 3000$ (только один раз, чистый убыток от старта)
                 const totalLoss = game.balanceStart - game.balance;
                 if (!game.lossEventTriggered && totalLoss >= 3000) {
                     game.lossEventTriggered = true;
-                    showMoralEvent(0, true); // событие "Ты проиграл 3000$"
+                    showMoralEvent(0, true);
                 }
-                // Проверка на окончание игры (сломался)
-                if (game.stress > 75 || game.lies > 3) {
-                    finishGame(true);
-                }
+                if (game.stress > 75 || game.lies > 3) finishGame(true);
+                updatePlayerStyle();
             }
 
             function renderStageMap() {
@@ -454,40 +418,21 @@
                 });
             }
 
-            // Генерация задания: выбираем один из 20 шаблонов, затем уровень сложности на основе успехов/провалов и мода risk
-            function generateTask() {
-                const baseTask = BASE_TASKS[Math.floor(Math.random() * BASE_TASKS.length)];
-                // Определяем уровень сложности: 0=easy,1=medium,2=hard
-                let level = 1; // medium по умолчанию
-                if (game.successStreak >= 2) level = Math.min(2, level+1);
-                if (game.failStreak >= 2) level = Math.max(0, level-1);
-                // Модификатор риска (от моральных событий)
-                if (game.modRisk > 1.1) level = Math.min(2, level+1);
-                if (game.modRisk < 0.9) level = Math.max(0, level-1);
-                // Запоминаем выбранный уровень сложности
-                const diff = baseTask.vars.difficulty[level];
-                // Заполняем значения
-                let text = baseTask.text;
-                let goal = baseTask.goal;
-                // Заменяем переменные в тексте и цели
-                for (let key in baseTask.vars) {
-                    if (key === 'difficulty') continue;
-                    let val = baseTask.vars[key][level];
-                    text = text.replace(new RegExp(`\\{${key}\\}`, 'g'), val);
-                    if (goal.includes(`{${key}}`)) goal = goal.replace(new RegExp(`\\{${key}\\}`, 'g'), val);
-                }
-                return {
-                    text: text,
-                    goal: goal,
-                    difficulty: diff,
-                    type: "spin"
-                };
+            function getPersonalPhrase() {
+                let pool;
+                if (game.stage <= 1) pool = PERSONAL_PHRASES.light;
+                else if (game.stage <= 3) pool = PERSONAL_PHRASES.medium;
+                else if (game.stage === 4) pool = PERSONAL_PHRASES.hard;
+                else pool = PERSONAL_PHRASES.final;
+                return pool[Math.floor(Math.random() * pool.length)];
             }
 
-            // Показать моральное событие
+            // --------------------------------------------------------------
+            // 5. МОРАЛЬНЫЕ СОБЫТИЯ
+            // --------------------------------------------------------------
             function showMoralEvent(index, isLossEvent = false) {
-                if (awaitingInput) return; // если идёт ввод баланса, не мешаем
-                let event = MORAL_EVENTS[index !== undefined ? index : Math.floor(Math.random() * MORAL_EVENTS.length)];
+                if (awaitingInput) return;
+                const event = MORAL_EVENTS[index !== undefined ? index : Math.floor(Math.random() * MORAL_EVENTS.length)];
                 const modal = document.getElementById('choiceModal');
                 document.getElementById('choiceTitle').innerText = isLossEvent ? "⚠️ КРИТИЧЕСКАЯ ПРОСАДКА" : "⚠️ СИСТЕМНОЕ СОБЫТИЕ";
                 document.getElementById('choiceText').innerText = event.text;
@@ -508,33 +453,33 @@
                         }
                         if (event.illusion) {
                             showSystemMessage(`Ты правда думал, что у тебя есть выбор?`, true);
-                            game.modRisk = 1.3; // всё равно риск
+                            game.modRisk = 1.3;
                         }
                         showSystemMessage(`Выбор: "${opt}". Стресс ${eff.stress>0?`+${eff.stress}`:eff.stress}%, доверие ${eff.trust>0?`+${eff.trust}`:eff.trust}%.`);
                         if (eff.mod?.risk) game.risky++;
                         if (eff.mod?.safe) game.safe++;
                         modal.classList.add('hidden');
                         updateUI();
-                        // после морального выбора продолжаем с текущим заданием (оно не меняется)
-                        // но если задания нет, загружаем новое
-                        if (!currentTask && game.totalCompleted < (STAGES.reduce((acc,s)=>acc+s.missions,0))) {
-                            loadNewTask();
-                        }
+                        if (!currentTask && game.totalCompleted < (STAGES.reduce((acc,s)=>acc+s.missions,0))) loadNewTask();
                     };
                     container.appendChild(btn);
                 });
                 modal.classList.remove('hidden');
             }
 
-            // Обработка результата задания (ввод баланса)
-            function onBalanceSubmitted(balanceStr, declaredResult) {
+            // --------------------------------------------------------------
+            // 6. ОБРАБОТКА ЗАДАНИЯ И ВВОДА БАЛАНСА
+            // --------------------------------------------------------------
+            function submitBalance(declaredResult) {
                 if (!awaitingInput) return;
-                const newBalance = parseInt(balanceStr);
+                const balanceInput = document.getElementById('currentBalance');
+                const newBalance = parseInt(balanceInput.value);
                 if (isNaN(newBalance)) {
                     showSystemMessage("Некорректный баланс. Попробуй ещё раз.", true);
-                    return; // остаёмся в модалке
+                    return;
                 }
                 awaitingInput = false;
+                balanceInput.value = '';
                 const diff = newBalance - game.prevBalance;
                 const profit = diff;
                 game.balance = newBalance;
@@ -565,7 +510,7 @@
                         showSystemMessage(`💀 ТЫ ОБМАНУЛ СИСТЕМУ! Баланс вырос, а ты нажал провал. Наказание.`, true);
                     }
                 }
-                // учёт сложности задания
+                // Сложность
                 if (currentTask.difficulty === "hard") {
                     if (realSuccess && !isLie) { stressDelta -= 3; trustDelta += 2; }
                     else if (!realSuccess && !isLie) { stressDelta += 10; trustDelta -= 3; }
@@ -573,6 +518,8 @@
                     if (realSuccess && !isLie) { stressDelta -= 2; trustDelta += 1; }
                     else if (!realSuccess && !isLie) { stressDelta += 5; trustDelta -= 2; }
                 }
+                // Доп. влияние стресса
+                if (game.stress > 70 && !realSuccess && !isLie) stressDelta += 5;
                 
                 game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
                 game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
@@ -585,7 +532,6 @@
                 game.totalCompleted++;
                 game.completedInStage++;
                 
-                // Проверка перехода на следующий этап
                 if (game.completedInStage >= STAGES[game.stage].missions) {
                     if (game.stage + 1 < STAGES.length) {
                         game.stage++;
@@ -602,14 +548,10 @@
                 updateUI();
                 saveGame();
                 document.getElementById('balanceModal').classList.add('hidden');
-                // после завершения задания, возможно, моральное событие (30%)
-                if (Math.random() < 0.3 && !awaitingInput && game.stress < 70) {
-                    showMoralEvent();
-                } else {
-                    loadNewTask();
-                }
+                if (Math.random() < 0.3 && !awaitingInput && game.stress < 70) showMoralEvent();
+                else loadNewTask();
             }
-            
+
             function renderTask() {
                 els.actionButtons.innerHTML = "";
                 const btnSuccess = document.createElement('button');
@@ -620,8 +562,6 @@
                     awaitingInput = true;
                     document.getElementById('balanceTaskInfo').innerHTML = `Задание: ${currentTask.text}<br>Введи текущий баланс:`;
                     document.getElementById('balanceModal').classList.remove('hidden');
-                    // Сохраняем выбранный результат во временную переменную, но обработаем при нажатии кнопок модалки
-                    window._pendingResult = 'success';
                 };
                 const btnFail = document.createElement('button');
                 btnFail.innerText = "❌ ПРОВАЛЕНО";
@@ -631,21 +571,22 @@
                     awaitingInput = true;
                     document.getElementById('balanceTaskInfo').innerHTML = `Задание: ${currentTask.text}<br>Введи текущий баланс:`;
                     document.getElementById('balanceModal').classList.remove('hidden');
-                    window._pendingResult = 'fail';
                 };
                 els.actionButtons.appendChild(btnSuccess);
                 els.actionButtons.appendChild(btnFail);
                 els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
-                enableFleeingButtons();
             }
-            
+
             function loadNewTask() {
                 if (awaitingInput) return;
                 currentTask = generateTask();
                 renderTask();
                 saveGame();
             }
-            
+
+            // --------------------------------------------------------------
+            // 7. СТАРТ, ФИНИШ, СОХРАНЕНИЕ
+            // --------------------------------------------------------------
             function startGame(startBalance) {
                 const bal = parseInt(startBalance);
                 if (isNaN(bal) || bal <= 0) {
@@ -670,10 +611,9 @@
                 setTimeout(() => { showSystemMessage(`Я знаю тебя, Алексей. Добро пожаловать.`, true); }, 1000);
                 saveGame();
             }
-            
+
             function finishGame(byBreak = false) {
                 if (byBreak) {
-                    // сломался
                     document.getElementById('finalVerdict').innerText = "💀 СЛОМАЛСЯ";
                     document.getElementById('finalDesc').innerText = "Система сломала тебя. Ты потерял контроль и честность.";
                 } else {
@@ -697,7 +637,7 @@
                 }
                 document.getElementById('finalModal').classList.remove('hidden');
             }
-            
+
             function resetGame() {
                 if (Math.random() < 0.3 && game.totalCompleted > 0 && game.stress < 90) {
                     showSystemMessage(`Ты правда думал, что можешь выйти, Алексей? Продолжай.`, true);
@@ -708,16 +648,16 @@
                     location.reload();
                 }
             }
-            
+
             function saveGame() {
                 localStorage.setItem('mindGameFinal', JSON.stringify({
                     stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
                     stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart, prevBalance: game.prevBalance,
                     risky: game.risky, safe: game.safe, lies: game.lies, successStreak: game.successStreak, failStreak: game.failStreak,
-                    history: game.history, lossEventTriggered: game.lossEventTriggered, modRisk: game.modRisk
+                    history: game.history, lossEventTriggered: game.lossEventTriggered, modRisk: game.modRisk, playerStyle: game.playerStyle
                 }));
             }
-            
+
             function loadGame() {
                 const saved = localStorage.getItem('mindGameFinal');
                 if (saved) {
@@ -738,67 +678,43 @@
                     game.history = data.history || [];
                     game.lossEventTriggered = data.lossEventTriggered || false;
                     game.modRisk = data.modRisk || 1.0;
+                    game.playerStyle = data.playerStyle || "neutral";
                 }
                 if (game.stage >= STAGES.length) game.stage = STAGES.length-1;
                 updateUI();
-                if (game.balance !== 0 && game.balanceStart !== 0 && !awaitingInput) {
-                    loadNewTask();
-                }
+                if (game.balance !== 0 && game.balanceStart !== 0 && !awaitingInput) loadNewTask();
             }
-            
+
             function showHint() {
                 showSystemMessage(`Честность — единственный путь, Алексей. Просто введи реальный баланс.`, true);
             }
-            
+
+            // --------------------------------------------------------------
+            // 8. ИНИЦИАЛИЗАЦИЯ
+            // --------------------------------------------------------------
             function init() {
                 loadGame();
                 // Глитч текста
                 setInterval(() => {
-                    if (game.stress > 50) {
-                        els.questText.style.color = Math.random() < 0.5 ? "#0f0" : "#ff3366";
-                    } else {
-                        els.questText.style.color = "#0f0";
-                    }
+                    if (game.stress > 50) els.questText.style.color = Math.random() < 0.5 ? "#0f0" : "#ff3366";
+                    else els.questText.style.color = "#0f0";
                 }, 300);
-                
-                // Стартовая модалка
-                const startModal = document.getElementById('startModal');
+                // Кнопка старта
                 const confirmBtn = document.getElementById('confirmStart');
                 if (confirmBtn) {
-                    const newConfirmBtn = confirmBtn.cloneNode(true);
-                    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-                    newConfirmBtn.addEventListener('click', () => {
-                        const bal = document.getElementById('startBalance').value;
-                        startGame(bal);
-                    });
+                    const newBtn = confirmBtn.cloneNode(true);
+                    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+                    newBtn.addEventListener('click', () => startGame(document.getElementById('startBalance').value));
                 }
-                if (game.balance === 0 || game.balanceStart === 0) {
-                    startModal.classList.remove('hidden');
-                }
-                
-                // Кнопки модалки баланса
-                document.getElementById('submitSuccess').onclick = () => {
-                    const bal = document.getElementById('currentBalance').value;
-                    if (awaitingInput && window._pendingResult) {
-                        onBalanceSubmitted(bal, window._pendingResult);
-                        window._pendingResult = null;
-                        document.getElementById('currentBalance').value = '';
-                    }
-                };
-                document.getElementById('submitFail').onclick = () => {
-                    const bal = document.getElementById('currentBalance').value;
-                    if (awaitingInput && window._pendingResult) {
-                        onBalanceSubmitted(bal, window._pendingResult);
-                        window._pendingResult = null;
-                        document.getElementById('currentBalance').value = '';
-                    }
-                };
-                
+                if (game.balance === 0 || game.balanceStart === 0) document.getElementById('startModal').classList.remove('hidden');
+                // Кнопки модалки баланса - теперь явно передают результат
+                document.getElementById('submitSuccess').onclick = () => submitBalance('success');
+                document.getElementById('submitFail').onclick = () => submitBalance('fail');
                 document.getElementById('resetBtn').onclick = () => resetGame();
                 document.getElementById('hintBtn').onclick = () => showHint();
                 document.getElementById('closeHint').onclick = () => document.getElementById('hintModal').classList.add('hidden');
                 document.getElementById('closeFinal').onclick = () => resetGame();
-                
+                // Аудио
                 window.audioCtx = null;
                 document.body.addEventListener('click', () => {
                     if (!window.audioCtx && window.AudioContext) {
@@ -806,7 +722,7 @@
                         window.audioCtx.resume();
                     }
                 });
-                
+                // Случайные страшилки
                 setInterval(() => {
                     if (Math.random() < 0.2 && game.stress < 90 && game.totalCompleted > 0 && !awaitingInput) {
                         const scares = [ `СИСТЕМА: ТЫ НЕ ОДИН, АЛЕКСЕЙ`, "Ошибка... или нет?", `Я вижу, как ты читаешь, Алексей`, `Твой пульс участился, Алексей`, "Глитч... реальность искажается" ];
@@ -816,6 +732,7 @@
                         updateUI();
                     }
                 }, 90000);
+                initFleeingButtons();
                 updateUI();
             }
             init();
