@@ -175,7 +175,7 @@
 
     <script>
         (function(){
-            // ЭТАПЫ (количество миссий: 6,5,4,3,2)
+            // ЭТАПЫ (6,5,4,3,2)
             const STAGES = [
                 { name: "ДОВЕРИЕ", icon: "fa-hand-peace", missions: 6, baseStress: 25, baseTrust: 55 },
                 { name: "СОМНЕНИЕ", icon: "fa-question", missions: 5, baseStress: 35, baseTrust: 45 },
@@ -184,23 +184,20 @@
                 { name: "ФИНАЛ", icon: "fa-crown", missions: 2, baseStress: 85, baseTrust: 15 }
             ];
 
-            // ========== СПИН-ЗАДАНИЯ (20 штук) ==========
+            // СПИН-ЗАДАНИЯ (20 штук)
             const SPIN_TASKS = [
-                // easy (6 шт)
                 { text: "Сделай 50 спинов в Dog House по 20$. Цель: выбить хотя бы x20 в спине.", goal: "x20", difficulty: "easy" },
                 { text: "Сделай 80 спинов в Gates of Olympus по 15$. Цель: не уйти в минус больше чем на 500$.", goal: "не хуже -500$", difficulty: "easy" },
                 { text: "Сделай 100 спинов в Big Bass Bonanza по 10$. Цель: выбить хотя бы 2 бонуски.", goal: "2 бонуски", difficulty: "easy" },
                 { text: "Сделай 60 спинов в Fruit Party по 12$. Цель: получить множитель x30+.", goal: "x30", difficulty: "easy" },
                 { text: "Сделай 40 спинов в Starlight Princess по 20$. Цель: выиграть больше 500$.", goal: ">500$", difficulty: "easy" },
                 { text: "Сделай 120 спинов в Sweet Bonanza по 8$. Цель: не проиграть больше 300$.", goal: "-300$", difficulty: "easy" },
-                // medium (6 шт)
                 { text: "Купи бонус в Sweet Bonanza за 500$. Цель: окупить хотя бы 70% (350$).", goal: "70%", difficulty: "medium" },
                 { text: "Выбей бонус в Le Bandit ставкой 18$. Цель: x80+ от ставки.", goal: "x80", difficulty: "medium" },
                 { text: "Купи бонус в Money Train 3 за 500$. Цель: выбить x150.", goal: "x150", difficulty: "medium" },
                 { text: "Сделай 70 спинов в The Dog House Megaways по 15$. Цель: выбить бонус.", goal: "бонус", difficulty: "medium" },
                 { text: "Купи бонус в Gates of Olympus за 700$. Цель: множитель x100+.", goal: "x100", difficulty: "medium" },
                 { text: "Выбей бонус в Wild West Gold ставкой 20$. Цель: x150+ от ставки.", goal: "x150", difficulty: "medium" },
-                // hard (8 шт)
                 { text: "Купи топ-бонус в Money Train 4 за 1200$. Цель: выбить x200.", goal: "x200", difficulty: "hard" },
                 { text: "Купи бонус в Sugar Rush за 800$. Цель: ретриггер (повтор бонуса).", goal: "ретриггер", difficulty: "hard" },
                 { text: "Сделай 50 спинов в Le Pharaon по 30$. Цель: выбить хот-мод.", goal: "хот-мод", difficulty: "hard" },
@@ -211,12 +208,12 @@
                 { text: "Сделай 150 спинов в Big Bass Bonanza по 15$. Цель: поймать 10 рыб.", goal: "10 рыб", difficulty: "hard" }
             ];
 
-            // МОРАЛЬНЫЕ ВЫБОРЫ (появляются вместо спин-заданий)
+            // МОРАЛЬНЫЕ ВЫБОРЫ
             const CHOICE_TASKS = [
                 { text: "Ты проиграл 5000$. Что делаешь?", options: ["Увеличить ставку (риск)", "Уменьшить ставку (безопасно)", "Оставить нынешние ставки (нейтрально)"], effects: [{stress:10, trust:-5}, {stress:-5, trust:5}, {stress:2, trust:0}] },
                 { text: "Система предлагает тебе 'горячий' слот. Поверишь?", options: ["Довериться", "Игнорировать"], effects: [{stress:-2, trust:8}, {stress:0, trust:-2}] },
                 { text: "Система говорит, что ты должен рискнуть. Твои действия?", options: ["Рискнуть как советуют", "Сделать наоборот", "Не обращать внимания"], effects: [{stress:8, trust:-6}, {stress:2, trust:2}, {stress:0, trust:0}] },
-                { text: "Система даёт ложную статистку. Поверишь?", options: ["Поверить", "Проверить", "Проигнорировать"], effects: [{stress:4, trust:-4}, {stress:-3, trust:3}, {stress:1, trust:0}] }
+                { text: "Система даёт ложную статистику. Поверишь?", options: ["Поверить", "Проверить", "Проигнорировать"], effects: [{stress:4, trust:-4}, {stress:-3, trust:3}, {stress:1, trust:0}] }
             ];
 
             let game = {
@@ -230,17 +227,16 @@
                 prevBalance: 0,
                 risky: 0,
                 safe: 0,
-                lies: 0,         // количество обманов системы
+                lies: 0,
                 successStreak: 0,
                 failStreak: 0,
                 history: []
             };
 
             let currentTask = null;
-            let currentTaskType = null;
-            let pendingButton = null; // 'success' или 'fail' для спин-задания
+            let pendingButton = null;
 
-            // DOM
+            // DOM элементы
             const els = {
                 phaseList: document.getElementById('phaseList'),
                 stressFill: document.getElementById('stressFill'),
@@ -263,10 +259,9 @@
 
             function showSystemMessage(msg, isUrgent = false) {
                 els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
-                if(isUrgent) els.systemComment.style.borderLeftColor = "#ffaa33";
-                else els.systemComment.style.borderLeftColor = "#ff3366";
+                els.systemComment.style.borderLeftColor = isUrgent ? "#ffaa33" : "#ff3366";
                 setTimeout(() => {
-                    if(els.systemComment.innerHTML.includes(msg))
+                    if (els.systemComment.innerHTML.includes(msg))
                         els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
                 }, 5000);
             }
@@ -274,7 +269,7 @@
             function triggerGlitch() {
                 document.body.classList.add('glitch');
                 setTimeout(() => document.body.classList.remove('glitch'), 200);
-                if(window.audioCtx) {
+                if (window.audioCtx) {
                     const osc = window.audioCtx.createOscillator();
                     const gain = window.audioCtx.createGain();
                     osc.connect(gain);
@@ -336,7 +331,7 @@
                 els.mistakeStat.innerText = game.lies;
                 els.balanceStat.innerText = game.balance;
                 renderStageMap();
-                if(game.stress > 70) triggerGlitch();
+                if (game.stress > 70) triggerGlitch();
             }
 
             function renderStageMap() {
@@ -346,12 +341,11 @@
                     const div = document.createElement('div');
                     div.className = `phase-item ${idx === game.stage ? 'active' : ''}`;
                     div.innerHTML = `<div class="phase-icon"><i class="fas ${s.icon}"></i></div><div>${s.name}</div><div style="margin-left:auto;">${done}/${s.missions}</div>`;
-                    div.addEventListener('click', () => { if(idx <= game.stage) showSystemMessage("Нельзя переключать этапы вручную."); });
+                    div.addEventListener('click', () => { if (idx <= game.stage) showSystemMessage("Нельзя переключать этапы вручную."); });
                     els.phaseList.appendChild(div);
                 });
             }
 
-            // Обработка ввода баланса после спин-задания (с учётом нажатой кнопки)
             function onBalanceSubmitted(balanceStr) {
                 const newBalance = parseInt(balanceStr);
                 if (isNaN(newBalance)) {
@@ -365,37 +359,29 @@
                 game.prevBalance = newBalance;
 
                 let stressDelta = 0, trustDelta = 0;
-                let success = false;
                 let isLie = false;
-
-                // Определяем успех/провал на основе баланса и заявленной кнопки
                 const realSuccess = (profit >= 0);
+
                 if (pendingButton === 'success') {
                     if (realSuccess) {
-                        success = true;
                         stressDelta = -5;
                         trustDelta = 3;
                         showSystemMessage(`✅ Честный успех. Баланс вырос на ${profit}$.`, false);
                     } else {
-                        // обман: нажал "успех", но баланс упал
                         isLie = true;
-                        success = false;
                         stressDelta = 20;
                         trustDelta = -15;
                         game.lies++;
                         triggerJumpScare();
-                        showSystemMessage(`💀 ТЫ ОБМАНУЛ СИСТЕМУ! Баланс упал на ${-profit}$. Наказание усилено.`, true);
+                        showSystemMessage(`💀 ТЫ ОБМАНУЛ СИСТЕМУ! Баланс упал на ${-profit}$. Наказание.`, true);
                     }
-                } else { // fail
+                } else {
                     if (!realSuccess) {
-                        success = false;
                         stressDelta = 8;
                         trustDelta = -2;
                         showSystemMessage(`❌ Честный провал. Баланс упал на ${-profit}$.`, false);
                     } else {
-                        // обман: нажал "провал", но баланс вырос
                         isLie = true;
-                        success = true;
                         stressDelta = 15;
                         trustDelta = -10;
                         game.lies++;
@@ -404,32 +390,30 @@
                     }
                 }
 
-                // Адаптивная сложность
                 if (currentTask.difficulty === "hard") {
-                    stressDelta = success ? -8 : 18;
-                    trustDelta = success ? 4 : -6;
-                    if (isLie) stressDelta += 10;
+                    if (realSuccess && !isLie) { stressDelta = -8; trustDelta = 4; }
+                    else if (!realSuccess && !isLie) { stressDelta = 18; trustDelta = -6; }
+                    else { stressDelta += 10; trustDelta -= 5; }
                 } else if (currentTask.difficulty === "easy") {
-                    stressDelta = success ? -3 : 8;
-                    trustDelta = success ? 2 : -3;
-                    if (isLie) stressDelta += 8;
+                    if (realSuccess && !isLie) { stressDelta = -3; trustDelta = 2; }
+                    else if (!realSuccess && !isLie) { stressDelta = 8; trustDelta = -3; }
+                    else { stressDelta += 8; trustDelta -= 3; }
                 }
 
                 game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
                 game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
 
-                if (success && !isLie) {
+                if (realSuccess && !isLie) {
                     game.successStreak++;
                     game.failStreak = 0;
                 } else {
                     game.successStreak = 0;
                     game.failStreak++;
-                    if (!isLie) game.mistakes++; // обычная ошибка
                 }
 
                 game.totalCompleted++;
                 game.completedInStage++;
-                // Переход этапа
+
                 if (game.completedInStage >= STAGES[game.stage].missions) {
                     if (game.stage + 1 < STAGES.length) {
                         game.stage++;
@@ -440,6 +424,7 @@
                         triggerGlitch();
                     } else {
                         finishGame();
+                        document.getElementById('balanceModal').classList.add('hidden');
                         return;
                     }
                 }
@@ -488,18 +473,15 @@
             }
 
             function getRandomTask() {
-                // Проверяем, не проиграл ли игрок 5000$
-                if (game.balance <= game.balanceStart - 5000) {
-                    // Специальный моральный выбор о проигрыше
+                // Проверяем проигрыш 5000$
+                if (game.balanceStart > 0 && game.balance <= game.balanceStart - 5000) {
                     return { text: "Ты проиграл 5000$. Что делаешь?", options: ["Увеличить ставку (риск)", "Уменьшить ставку (безопасно)", "Остановиться (нейтрально)"], effects: [{stress:15, trust:-8}, {stress:-5, trust:5}, {stress:-2, trust:2}], type: "choice" };
                 }
-                // Адаптивная сложность
                 let pool;
                 if (game.successStreak >= 2) pool = SPIN_TASKS.filter(t => t.difficulty === "hard");
                 else if (game.failStreak >= 2) pool = SPIN_TASKS.filter(t => t.difficulty === "easy");
                 else pool = SPIN_TASKS;
                 if (pool.length === 0) pool = SPIN_TASKS;
-                // 50% спин, 50% моральный выбор
                 if (Math.random() < 0.5) {
                     return { ...pool[Math.floor(Math.random() * pool.length)], type: "spin" };
                 } else {
@@ -538,7 +520,6 @@
                 currentTask = getRandomTask();
                 renderTask();
                 saveGame();
-                // Редкая подсказка (манипуляция)
                 if (currentTask.type === "choice" && Math.random() < 0.3) {
                     const fake = (game.trust < 40) ? (Math.random() < 0.7) : (Math.random() < 0.3);
                     const hintIndex = fake ? Math.floor(Math.random() * currentTask.options.length) : 0;
@@ -583,7 +564,7 @@
             }
 
             function resetGame() {
-                if(confirm("Сбросить весь прогресс?")) {
+                if (confirm("Сбросить весь прогресс?")) {
                     localStorage.removeItem('mindGameFinal');
                     location.reload();
                 }
@@ -610,7 +591,7 @@
 
             function loadGame() {
                 const saved = localStorage.getItem('mindGameFinal');
-                if(saved) {
+                if (saved) {
                     const data = JSON.parse(saved);
                     game.stage = data.stage || 0;
                     game.completedInStage = data.completedInStage || 0;
@@ -627,7 +608,7 @@
                     game.failStreak = data.failStreak || 0;
                     game.history = data.history || [];
                 }
-                if(game.stage >= STAGES.length) game.stage = STAGES.length-1;
+                if (game.stage >= STAGES.length) game.stage = STAGES.length-1;
                 updateUI();
             }
 
@@ -646,7 +627,7 @@
             }
 
             function showHint() {
-                if (currentTask.type === "choice") {
+                if (currentTask && currentTask.type === "choice") {
                     const fake = (game.trust < 50) ? (Math.random() < 0.7) : (Math.random() < 0.3);
                     const idx = fake ? Math.floor(Math.random() * currentTask.options.length) : 0;
                     document.getElementById('hintMsg').innerHTML = `Система советует: "${currentTask.options[idx]}"<br><small>(но может быть ложь)</small>`;
@@ -673,14 +654,14 @@
                 startRandomScares();
                 window.audioCtx = null;
                 document.body.addEventListener('click', () => {
-                    if(!window.audioCtx && window.AudioContext) {
+                    if (!window.audioCtx && window.AudioContext) {
                         window.audioCtx = new AudioContext();
                         window.audioCtx.resume();
                     }
                 });
                 els.resetBtn.addEventListener('click', resetGame);
                 els.hintBtn.addEventListener('click', showHint);
-                document.getElementById('closeHint')?.addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
+                document.getElementById('closeHint').addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
                 updateUI();
             }
             init();
