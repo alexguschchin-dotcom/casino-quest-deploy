@@ -129,7 +129,7 @@
             border-radius:60px;
             color:#0f0;
             font-size:1.2rem;
-            width:200px;
+            width:250px;
             text-align:center;
             margin:10px auto;
         }
@@ -137,7 +137,7 @@
         .chat-tool { background:#000000aa; border-radius:40px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
         .btn-hint { background:#0f0; border:none; padding:6px 16px; border-radius:60px; cursor:pointer; font-weight:bold; }
         .modal { position:fixed; top:0;left:0; width:100%;height:100%; background:#000000ee; backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; z-index:2000; }
-        .modal-content { background:#0a0a0a; border:2px solid #0f0; border-radius:60px; padding:32px; max-width:500px; width:90%; text-align:center; color:#0f0; }
+        .modal-content { background:#0a0a0a; border:2px solid #0f0; border-radius:60px; padding:32px; max-width:550px; width:90%; text-align:center; color:#0f0; }
         .modal-btn { background:#0f0; border:none; padding:10px 24px; border-radius:40px; margin:12px; cursor:pointer; font-weight:bold; }
         .risk { background:#ff3366; color:white; }
         .hidden { display:none; }
@@ -168,7 +168,7 @@
                         <li>Ты против системы, которая анализирует каждое твоё решение.</li>
                         <li>Выполняй задания в казино, затем вводи текущий баланс.</li>
                         <li>Кнопки «ВЫПОЛНЕНО» / «ПРОВАЛЕНО» — твоя оценка.</li>
-                        <li>Стресс ↑ от провалов, доверие ↑ если не врёшь.</li>
+                        <li>Стресс ↑ от провалов, доверие ↑ если честен.</li>
                         <li>Иногда вместо спин-задания — моральный выбор.</li>
                         <li>При высоком стрессе интерфейс начинает глючить: кнопки убегают, текст мерцает.</li>
                     </ul>
@@ -261,7 +261,7 @@
                 { text: "Система предлагает рискнуть. Выбери вариант:", options: ["Рискнуть", "Рискнуть"], effects: [{stress:10, trust:-2}, {stress:10, trust:-2}], illusion: true }
             ];
 
-            // ПЕРСОНАЛИЗИРОВАННЫЕ ФРАЗЫ (имя АЛЕКСЕЙ)
+            // ПЕРСОНАЛИЗИРОВАННЫЕ ФРАЗЫ
             const PERSONAL_PHRASES = {
                 light: [
                     "Алексей... ты ведь не первый раз здесь, да?",
@@ -437,8 +437,7 @@
                 else if (game.stage <= 3) pool = PERSONAL_PHRASES.medium;
                 else if (game.stage === 4) pool = PERSONAL_PHRASES.hard;
                 else pool = PERSONAL_PHRASES.final;
-                const randomPhrase = pool[Math.floor(Math.random() * pool.length)];
-                return randomPhrase;
+                return pool[Math.floor(Math.random() * pool.length)];
             }
 
             function updateUI() {
@@ -460,33 +459,26 @@
                 if (game.stress > 70) triggerGlitch();
                 enableFleeingButtons();
 
-                // Редкая фраза
                 if (Math.random() < 0.1 && game.totalCompleted > 0) {
-                    const phrase = getPersonalPhrase();
-                    showSystemMessage(phrase, false);
+                    showSystemMessage(getPersonalPhrase(), false);
                 }
-
-                // Серия фейлов
                 if (game.failStreak >= 2) {
                     showSystemMessage(`Алексей, ты снова теряешь контроль.`, true);
                 }
-                // Резкое падение баланса
                 const balanceDrop = game.prevBalance - game.balance;
                 if (balanceDrop > 1000 && game.totalCompleted > 0) {
                     showSystemMessage(`Ты это почувствовал, Алексей?`, true);
                 }
-                // Долгая игра
                 if (game.totalCompleted > 10 && Math.random() < 0.3) {
                     showSystemMessage(`Алексей, ты уже давно здесь.`, true);
                 }
-                // Стабильная серия
                 if (game.successStreak >= 3) {
                     showSystemMessage(`Слишком стабильно, Алексей... Это подозрительно.`, true);
                     game.stress += 5;
                     updateUI();
                 }
 
-                // ВАУ-МОМЕНТЫ
+                // ВАУ-моменты
                 if (game.totalCompleted === 3) {
                     showSystemMessage(`Алексей, ты думаешь, они смотрят тебя ради побед?`, true);
                     setTimeout(() => {
@@ -628,7 +620,11 @@
                 pendingButton = buttonType;
                 document.getElementById('balanceTaskInfo').innerHTML = `После задания: ${currentTask.text}<br>Введи текущий баланс:`;
                 document.getElementById('balanceModal').classList.remove('hidden');
-                document.getElementById('submitBalance').onclick = () => {
+                // Убираем старый обработчик, чтобы не накапливалось
+                const submitBtn = document.getElementById('submitBalance');
+                const newSubmit = submitBtn.cloneNode(true);
+                submitBtn.parentNode.replaceChild(newSubmit, submitBtn);
+                newSubmit.onclick = () => {
                     const bal = document.getElementById('currentBalance').value;
                     onBalanceSubmitted(bal);
                 };
@@ -868,13 +864,12 @@
                 startTextGlitch();
                 if (game.balance === 0 || game.balanceStart === 0) {
                     document.getElementById('startModal').classList.remove('hidden');
+                    // Прямой обработчик на кнопку, без лишних клонов
                     const startBtn = document.getElementById('confirmStart');
-                    const newStartBtn = startBtn.cloneNode(true);
-                    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
-                    newStartBtn.addEventListener('click', () => {
+                    startBtn.onclick = () => {
                         const startBal = document.getElementById('startBalance').value;
                         startGame(startBal);
-                    });
+                    };
                 } else {
                     loadNewTask();
                 }
@@ -887,14 +882,10 @@
                     }
                 });
                 const resetBtn = document.getElementById('resetBtn');
-                const newResetBtn = resetBtn.cloneNode(true);
-                resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
-                newResetBtn.addEventListener('click', () => resetGame());
+                resetBtn.onclick = () => resetGame();
                 const hintBtn = document.getElementById('hintBtn');
-                const newHintBtn = hintBtn.cloneNode(true);
-                hintBtn.parentNode.replaceChild(newHintBtn, hintBtn);
-                newHintBtn.addEventListener('click', showHint);
-                document.getElementById('closeHint').addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
+                hintBtn.onclick = () => showHint();
+                document.getElementById('closeHint').onclick = () => document.getElementById('hintModal').classList.add('hidden');
                 updateUI();
             }
             init();
