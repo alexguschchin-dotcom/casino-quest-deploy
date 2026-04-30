@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ИГРА РАЗУМА · Прогрессия сложности</title>
+    <title>ИГРА РАЗУМА · Драма и давление</title>
     <style>
         * {
             margin: 0;
@@ -63,218 +63,53 @@
             padding-bottom:12px;
             border-bottom:1px dashed #0f0;
         }
-        .sys-tag {
-            background:#000000aa;
-            padding:6px 18px;
-            border-radius:40px;
-        }
-        .btn-outline {
-            background:#111;
-            border:1px solid #0f0;
-            color:#0f0;
-            padding:6px 16px;
-            border-radius:40px;
-            cursor:pointer;
-        }
-        .btn-outline:hover {
-            background:#0f0;
-            color:black;
-            box-shadow:0 0 12px #0f0;
-        }
-        .main-grid {
-            display:flex;
-            gap:28px;
-            flex-wrap:wrap;
-        }
-        .left-panel {
-            flex:1.2;
-            min-width:280px;
-        }
-        .right-panel {
-            flex:2;
-            min-width:360px;
-            display:flex;
-            flex-direction:column;
-            gap:24px;
-        }
-        .player-card {
-            background:#000000aa;
-            border-radius:40px;
-            padding:24px;
-            margin-bottom:24px;
-            border:1px solid #0f0;
-        }
+        .sys-tag { background:#000000aa; padding:6px 18px; border-radius:40px; }
+        .btn-outline { background:#111; border:1px solid #0f0; color:#0f0; padding:6px 16px; border-radius:40px; cursor:pointer; }
+        .btn-outline:hover { background:#0f0; color:black; box-shadow:0 0 12px #0f0; }
+        .main-grid { display:flex; gap:28px; flex-wrap:wrap; }
+        .left-panel { flex:1.2; min-width:280px; }
+        .right-panel { flex:2; min-width:360px; display:flex; flex-direction:column; gap:24px; }
+        .player-card { background:#000000aa; border-radius:40px; padding:24px; margin-bottom:24px; border:1px solid #0f0; }
         .avatar { font-size:1.5rem; margin-bottom:20px; }
         .stress-bar, .trust-bar, .phase-progress { margin:16px 0; }
-        .bar-bg {
-            background:#1a1a1a;
-            border-radius:20px;
-            height:10px;
-            overflow:hidden;
-            margin:5px 0;
-        }
+        .bar-bg { background:#1a1a1a; border-radius:20px; height:10px; overflow:hidden; margin:5px 0; }
         .stress-fill { background:linear-gradient(90deg,#ffaa33,#ff3366); width:0%; height:100%; transition:width 0.3s; }
         .trust-fill { background:linear-gradient(90deg,#0f0,#0ff); width:50%; height:100%; transition:width 0.3s; }
         .phase-fill { background:#0f0; width:0%; height:100%; }
-        .profile-stats {
-            margin-top:15px;
-            font-size:0.8rem;
-            text-align:center;
-            border-top:1px solid #0f0;
-            padding-top:12px;
-        }
-        .phase-map {
-            background:#000000aa;
-            border-radius:40px;
-            padding:20px;
-        }
-        .phase-item {
-            display:flex;
-            align-items:center;
-            gap:12px;
-            padding:12px;
-            margin-bottom:10px;
-            background:#0a0a0a;
-            border-radius:34px;
-            border-left:3px solid #0f0;
-            cursor:pointer;
-        }
-        .phase-item.active {
-            border-left-color:#ffaa33;
-            background:#0f0c;
-            color:black;
-        }
+        .profile-stats { margin-top:15px; font-size:0.8rem; text-align:center; border-top:1px solid #0f0; padding-top:12px; }
+        .phase-map { background:#000000aa; border-radius:40px; padding:20px; }
+        .phase-item { display:flex; align-items:center; gap:12px; padding:12px; margin-bottom:10px; background:#0a0a0a; border-radius:34px; border-left:3px solid #0f0; cursor:pointer; }
+        .phase-item.active { border-left-color:#ffaa33; background:#0f0c; color:black; }
         .phase-icon { width:40px; text-align:center; }
-        .mission-box {
-            background:#000000aa;
-            border-radius:48px;
-            padding:28px;
-            backdrop-filter:blur(8px);
-        }
-        .mission-header {
-            display:flex;
-            justify-content:space-between;
-            border-bottom:1px solid #0f0;
-            padding-bottom:12px;
-        }
-        .quest {
-            font-size:1.4rem;
-            background:#0a0a0a;
-            padding:20px;
-            border-radius:40px;
-            margin:24px 0;
-            border:1px solid #0f0;
-            color:#0f0;
-        }
-        .action-buttons {
-            display:flex;
-            gap:20px;
-            margin:28px 0 20px;
-            flex-wrap:wrap;
-            justify-content:center;
-        }
-        .btn-success, .btn-fail {
+        .mission-box { background:#000000aa; border-radius:48px; padding:28px; backdrop-filter:blur(8px); }
+        .mission-header { display:flex; justify-content:space-between; border-bottom:1px solid #0f0; padding-bottom:12px; }
+        .quest { font-size:1.3rem; background:#0a0a0a; padding:20px; border-radius:40px; margin:24px 0; border:1px solid #0f0; color:#0f0; line-height:1.4; }
+        .dynamic-zone { min-height:85px; }
+        .action-buttons { display:flex; gap:20px; margin:28px 0 20px; flex-wrap:wrap; justify-content:center; }
+        .btn-success, .btn-fail, .btn-choice {
             padding:12px 28px;
             border-radius:60px;
             font-weight:bold;
             cursor:pointer;
             border:none;
-            font-size:1.1rem;
-        }
-        .btn-success {
-            background:#0f0;
-            color:black;
-        }
-        .btn-success:hover {
-            box-shadow:0 0 20px #0f0;
-            transform:scale(1.02);
-        }
-        .btn-fail {
-            background:#ff3366;
-            color:white;
-        }
-        .btn-fail:hover {
-            box-shadow:0 0 20px #ff3366;
-            transform:scale(1.02);
-        }
-        .system-comment {
-            background:#000000cc;
-            padding:14px;
-            border-radius:32px;
-            font-style:italic;
-            border-left:4px solid #ff3366;
-            font-size:0.9rem;
-        }
-        .chat-tool {
-            background:#000000aa;
-            border-radius:40px;
-            padding:16px 20px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            flex-wrap:wrap;
-            gap:10px;
-        }
-        .btn-hint {
-            background:#0f0;
-            border:none;
-            padding:6px 16px;
-            border-radius:60px;
-            cursor:pointer;
-            font-weight:bold;
-        }
-        .option-btn {
-            background:#111;
-            border:2px solid #0f0;
-            color:#0f0;
-            padding:12px 24px;
-            border-radius:40px;
-            cursor:pointer;
-            font-weight:bold;
+            font-size:1rem;
             margin:5px;
-            font-size:0.9rem;
         }
-        .option-btn:hover {
-            background:#0f0;
-            color:black;
-        }
-        .modal {
-            position:fixed;
-            top:0;left:0;
-            width:100%;height:100%;
-            background:#000000ee;
-            backdrop-filter:blur(20px);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            z-index:2000;
-        }
-        .modal-content {
-            background:#0a0a0a;
-            border:2px solid #0f0;
-            border-radius:60px;
-            padding:32px;
-            max-width:500px;
-            width:90%;
-            text-align:center;
-            color:#0f0;
-        }
-        .modal-btn {
-            background:#0f0;
-            border:none;
-            padding:10px 24px;
-            border-radius:40px;
-            margin:12px;
-            cursor:pointer;
-            font-weight:bold;
-        }
+        .btn-success { background:#0f0; color:black; }
+        .btn-success:hover { box-shadow:0 0 20px #0f0; transform:scale(1.02); }
+        .btn-fail { background:#ff3366; color:white; }
+        .btn-fail:hover { box-shadow:0 0 20px #ff3366; transform:scale(1.02); }
+        .btn-choice { background:#2a2a2a; color:#0f0; border:1px solid #0f0; }
+        .btn-choice:hover { background:#0f0; color:black; }
+        .system-comment { background:#000000cc; padding:14px; border-radius:32px; font-style:italic; border-left:4px solid #ff3366; font-size:0.9rem; }
+        .chat-tool { background:#000000aa; border-radius:40px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+        .btn-hint { background:#0f0; border:none; padding:6px 16px; border-radius:60px; cursor:pointer; font-weight:bold; }
+        .modal { position:fixed; top:0;left:0; width:100%;height:100%; background:#000000ee; backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; z-index:2000; }
+        .modal-content { background:#0a0a0a; border:2px solid #0f0; border-radius:60px; padding:32px; max-width:500px; width:90%; text-align:center; color:#0f0; }
+        .modal-btn { background:#0f0; border:none; padding:10px 24px; border-radius:40px; margin:12px; cursor:pointer; font-weight:bold; }
         .risk { background:#ff3366; color:white; }
         .hidden { display:none; }
-        @media (max-width:800px) {
-            .main-grid { flex-direction:column; }
-            .quest { font-size:1rem; }
-            .option-btn { padding:8px 12px; font-size:0.8rem; }
-        }
+        @media (max-width:800px) { .main-grid { flex-direction:column; } .quest { font-size:1rem; } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -283,169 +118,100 @@
     <div class="glitch-overlay"></div>
     <div class="container">
         <div class="status-bar">
-            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.9.0 · ПРОГРЕССИЯ СЛОЖНОСТИ</div>
-            <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОСИТЬ</button>
+            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.9.0 · ДАВЛЕНИЕ И ДРАМА</div>
+            <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОС</button>
         </div>
         <div class="main-grid">
             <div class="left-panel">
                 <div class="player-card">
                     <div class="avatar"><i class="fas fa-user-secret"></i> ПОДОПЫТНЫЙ</div>
-                    <div class="stress-bar">
-                        <span><i class="fas fa-heartbeat"></i> СТРЕСС</span>
-                        <div class="bar-bg"><div id="stressFill" class="stress-fill"></div></div>
-                        <span id="stressValue">0</span>%
-                    </div>
-                    <div class="trust-bar">
-                        <span><i class="fas fa-handshake"></i> ДОВЕРИЕ К СИСТЕМЕ</span>
-                        <div class="bar-bg"><div id="trustFill" class="trust-fill"></div></div>
-                        <span id="trustValue">50</span>%
-                    </div>
-                    <div class="phase-progress">
-                        <span><i class="fas fa-chart-line"></i> ЭТАП <span id="phaseNum">1</span>/5</span>
-                        <div class="bar-bg"><div id="phaseFill" class="phase-fill"></div></div>
-                    </div>
-                    <div class="profile-stats">
-                        <small>⚡ РИСК: <span id="riskStat">0</span> | 🛡️ БЕЗОПАСНО: <span id="safeStat">0</span> | ❌ ОШИБКИ: <span id="mistakeStat">0</span> | 🔥 СЕРИЯ: <span id="streakStat">0</span></small>
-                    </div>
+                    <div class="stress-bar"><span><i class="fas fa-heartbeat"></i> СТРЕСС</span><div class="bar-bg"><div id="stressFill" class="stress-fill"></div></div><span id="stressValue">0</span>%</div>
+                    <div class="trust-bar"><span><i class="fas fa-handshake"></i> ДОВЕРИЕ</span><div class="bar-bg"><div id="trustFill" class="trust-fill"></div></div><span id="trustValue">50</span>%</div>
+                    <div class="phase-progress"><span><i class="fas fa-chart-line"></i> ЭТАП <span id="phaseNum">1</span>/5</span><div class="bar-bg"><div id="phaseFill" class="phase-fill"></div></div></div>
+                    <div class="profile-stats"><small>⚡ РИСК: <span id="riskStat">0</span> | 🛡️ БЕЗОПАСНО: <span id="safeStat">0</span> | ❌ ОШИБКИ: <span id="mistakeStat">0</span> | 🔥 СЕРИЯ: <span id="streakStat">0</span></small></div>
                 </div>
                 <div class="phase-map" id="phaseList"></div>
             </div>
             <div class="right-panel">
                 <div class="mission-box">
-                    <div class="mission-header">
-                        <span><i class="fas fa-dice-d6"></i> ТЕКУЩЕЕ ЗАДАНИЕ</span>
-                        <span id="phaseNameBadge">ЭТАП 1/5</span>
-                    </div>
+                    <div class="mission-header"><span><i class="fas fa-dice-d6"></i> ТЕКУЩЕЕ ЗАДАНИЕ</span><span id="phaseNameBadge">ЭТАП 1/5</span></div>
                     <div class="quest" id="questText">Загрузка...</div>
-                    <div id="actionButtons" class="action-buttons"></div>
-                    <div class="system-comment" id="systemComment">
-                        <i class="fas fa-robot"></i> Система: загрузка...
-                    </div>
+                    <div id="dynamicZone" class="dynamic-zone"></div>
+                    <div class="action-buttons" id="actionButtons"></div>
+                    <div class="system-comment" id="systemComment"><i class="fas fa-robot"></i> Система: загрузка...</div>
                 </div>
-                <div class="chat-tool">
-                    <i class="fas fa-comments"></i> Подсказка (50% лжи)
-                    <button id="hintBtn" class="btn-hint"><i class="fas fa-question-circle"></i> ВЗЯТЬ</button>
-                </div>
+                <div class="chat-tool"><i class="fas fa-comments"></i> Подсказка (50% лжи)<button id="hintBtn" class="btn-hint"><i class="fas fa-question-circle"></i> ВЗЯТЬ</button></div>
             </div>
         </div>
     </div>
 
     <!-- Модалки -->
-    <div id="finalModal" class="modal hidden">
-        <div class="modal-content"><h2>🔮 ПРИГОВОР СИСТЕМЫ</h2><p id="finalVerdict"></p><p id="finalDesc"></p><button id="closeFinal" class="modal-btn">ЗАВЕРШИТЬ</button></div>
-    </div>
+    <div id="finalModal" class="modal hidden"><div class="modal-content"><h2>🔮 ПРИГОВОР</h2><p id="finalVerdict"></p><p id="finalDesc"></p><button id="closeFinal" class="modal-btn">ЗАВЕРШИТЬ</button></div></div>
     <div id="infoModal" class="modal hidden"><div class="modal-content"><h3 id="infoTitle"></h3><p id="infoMsg"></p><button id="closeInfo" class="modal-btn">ПОНЯЛ</button></div></div>
     <div id="hintModal" class="modal hidden"><div class="modal-content"><h3>💡 ПОДСКАЗКА</h3><p id="hintMsg"></p><button id="closeHint" class="modal-btn">ЗАКРЫТЬ</button></div></div>
-    <div id="skipModal" class="modal hidden"><div class="modal-content"><h2>⚠️ ВЫБОР</h2><p>Пропустить задание или усложнить?</p><button id="skipTaskBtn" class="modal-btn">🎁 ПРОПУСТИТЬ (+15 стресс, -10 доверия)</button><button id="doubleTaskBtn" class="modal-btn risk">💀 УСЛОЖНИТЬ</button><button id="refuseSkipBtn" class="modal-btn">🙅‍♂️ ОТКАЗАТЬСЯ</button></div></div>
+    <div id="modifierModal" class="modal hidden"><div class="modal-content"><h2>⚠️ МОДИФИКАТОР</h2><p id="modifierText"></p><button id="closeModifier" class="modal-btn">ПРИНЯТЬ</button></div></div>
 
     <script>
         (function(){
-            // ---------------------- ОГРОМНЫЙ БАНК ЗАДАНИЙ ----------------------
-            // Базовые шаблоны спин-заданий (ставки будут умножаться на множитель этапа)
-            const SPIN_TEMPLATES = [
-                { name: "Dog House", baseBet: 20, spins: 50, stressSuccess: -3, stressFail: 6, trustChange: 1 },
-                { name: "Gates of Olympus", baseBet: 15, spins: 80, stressSuccess: -2, stressFail: 5, trustChange: 0 },
-                { name: "Sweet Bonanza", baseBet: 10, spins: 100, stressSuccess: -2, stressFail: 5, trustChange: 0 },
-                { name: "Money Train 4", baseBet: 1000, spins: 1, isBonus: true, stressSuccess: -6, stressFail: 12, trustChange: 2 },
-                { name: "Le Bandit", baseBet: 18, spins: 70, stressSuccess: -4, stressFail: 10, trustChange: 1 },
-                { name: "Sugar Rush", baseBet: 20, spins: 90, stressSuccess: -3, stressFail: 9, trustChange: 1 },
-                { name: "Crazy Time", baseBet: 10, spins: 1, isBonus: true, stressSuccess: -5, stressFail: 15, trustChange: 2 },
-                { name: "Hot Fiesta", baseBet: 21, spins: 60, stressSuccess: -3, stressFail: 8, trustChange: 1 },
-                { name: "Le Pharaon", baseBet: 750, spins: 1, isBonus: true, stressSuccess: -8, stressFail: 20, trustChange: 3 },
-                { name: "Mummy", baseBet: 360, spins: 1, isBonus: true, stressSuccess: -7, stressFail: 18, trustChange: 2 },
-                { name: "Le Cowboy", baseBet: 25, spins: 80, stressSuccess: -5, stressFail: 12, trustChange: 2 },
-                { name: "Pirates Pub", baseBet: 12, spins: 100, stressSuccess: -3, stressFail: 7, trustChange: 1 },
-                { name: "Retro Sweet", baseBet: 400, spins: 1, isBonus: true, stressSuccess: -6, stressFail: 14, trustChange: 2 },
-                { name: "Dog House Multihold", baseBet: 600, spins: 1, isBonus: true, stressSuccess: -5, stressFail: 13, trustChange: 2 },
-                { name: "Sweet Rush Bonanza", baseBet: 500, spins: 1, isBonus: true, stressSuccess: -5, stressFail: 11, trustChange: 2 }
+            // ========== ЭТАПЫ (кол-во заданий уменьшается) ==========
+            const STAGES = [
+                { name: "ДОВЕРИЕ", icon: "fa-hand-peace", missions: 5, baseStress: 25, baseTrust: 55 },
+                { name: "СОМНЕНИЕ", icon: "fa-question", missions: 5, baseStress: 35, baseTrust: 45 },
+                { name: "ДАВЛЕНИЕ", icon: "fa-weight-hanging", missions: 4, baseStress: 50, baseTrust: 35 },
+                { name: "ЛОМКА", icon: "fa-skull", missions: 3, baseStress: 70, baseTrust: 25 },
+                { name: "ФИНАЛ", icon: "fa-crown", missions: 2, baseStress: 85, baseTrust: 15 }
             ];
 
-            // Вопросы с 3-4 вариантами ответов
+            // ========== БАНК ЗАДАНИЙ (с условиями успеха) ==========
+            const SPIN_TASKS = [
+                { text: "Сделай 50 спинов в Dog House по 20$. Цель: выбить хотя бы x50.", goal: "x50", difficulty: "easy", stressSuccess: -5, stressFail: 8, trustChange: 2 },
+                { text: "Купи бонус в Sweet Bonanza за 500$. Цель: окупить хотя бы 70% (350$).", goal: "70%", difficulty: "medium", stressSuccess: -8, stressFail: 15, trustChange: 3 },
+                { text: "Сделай 80 спинов в Gates of Olympus по 15$. Цель: не уйти в минус больше 200$.", goal: "не хуже -200$", difficulty: "easy", stressSuccess: -3, stressFail: 10, trustChange: 1 },
+                { text: "Купи топ-бонус в Money Train 4 за 1200$. Цель: выбить x150.", goal: "x150", difficulty: "hard", stressSuccess: -12, stressFail: 25, trustChange: 4 },
+                { text: "Выбей бонус в Le Bandit ставкой 18$. Цель: множитель x80+.", goal: "x80", difficulty: "medium", stressSuccess: -7, stressFail: 18, trustChange: 2 },
+                { text: "Сделай 100 спинов в Big Bass Bonanza по 10$. Цель: поймать хотя бы 5 рыб.", goal: "5 рыб", difficulty: "easy", stressSuccess: -4, stressFail: 9, trustChange: 1 },
+                { text: "Купи бонус в Sugar Rush за 800$. Цель: ретриггер (повтор бонуса).", goal: "ретриггер", difficulty: "hard", stressSuccess: -15, stressFail: 28, trustChange: 5 },
+                { text: "Сделай 40 спинов в Fruit Party по 25$. Цель: выигрыш больше 1000$.", goal: ">1000$", difficulty: "medium", stressSuccess: -6, stressFail: 14, trustChange: 2 },
+                { text: "Выбей хот-мод в Le Cowboy (ставка 30$). Цель: любой множитель x200+.", goal: "x200", difficulty: "hard", stressSuccess: -10, stressFail: 22, trustChange: 3 },
+                { text: "Сделай 200 спинов в любом слоте Pragmatic по 5$. Цель: общий профит +300$.", goal: "+300$", difficulty: "medium", stressSuccess: -5, stressFail: 12, trustChange: 2 }
+            ];
+
+            // Вопросы с 3-4 вариантами (психологические ловушки)
             const QUESTION_TASKS = [
-                { text: "Какой слот имеет самый высокий RTP (по данным системы)?", 
-                  options: ["Blood Suckers (98%)", "Mega Joker (99%)", "Starburst (96%)", "Book of Dead (94%)"], correct: 1,
-                  stressWin: -5, stressLose: 12, trustWin: 6, trustLose: -8 },
-                { text: "В каком бонусе Money Train 4 максимальный множитель?", 
-                  options: ["Бесплатные спины", "Бонусная игра с коллекторами", "Рывок", "Случайный множитель"], correct: 1,
-                  stressWin: -4, stressLose: 14, trustWin: 5, trustLose: -7 },
-                { text: "Какой провайдер создал слот Le Bandit?", 
-                  options: ["Pragmatic Play", "Hacksaw Gaming", "NoLimit City", "Play'n GO"], correct: 1,
-                  stressWin: -6, stressLose: 16, trustWin: 7, trustLose: -9 },
-                { text: "Что означает 'ретриггер' в Sugar Rush?", 
-                  options: ["Повторный бонус", "Удвоение выигрыша", "Дополнительный спин", "Активация wild"], correct: 0,
-                  stressWin: -3, stressLose: 10, trustWin: 4, trustLose: -5 },
-                { text: "В какой игре Crazy Time чаще всего выпадает сектор 'Coin Flip'?", 
-                  options: ["Crazy Time", "Coin Flip", "Cash Hunt", "Pachinko"], correct: 1,
-                  stressWin: -4, stressLose: 13, trustWin: 5, trustLose: -6 },
-                { text: "Что выгоднее: купить бонус в Sweet Bonanza за 100x или ловить вручную?", 
-                  options: ["Покупать", "Ловить", "Зависит от банкролла", "Система не знает"], correct: 2,
-                  stressWin: -2, stressLose: 15, trustWin: 3, trustLose: -10 },
-                { text: "Какой максимальный множитель в Dog House Megaways?", 
-                  options: ["x10000", "x11750", "x5000", "x25000"], correct: 1,
-                  stressWin: -5, stressLose: 18, trustWin: 6, trustLose: -8 },
-                { text: "В каком слоте есть функция 'Hot Mode'?", 
-                  options: ["Le Bandit", "Le Cowboy", "Le Pharaon", "Le Black"], correct: 1,
-                  stressWin: -4, stressLose: 12, trustWin: 5, trustLose: -6 },
-                { text: "Что означает 'окупить бонус'?", 
-                  options: ["Выйти в ноль", "Получить прибыль", "Не потерять депозит", "Сделать x2 от ставки"], correct: 0,
-                  stressWin: -2, stressLose: 10, trustWin: 3, trustLose: -5 }
+                { text: "Система спрашивает: какой слот сейчас самый «горячий» по статистике?", options: ["Dog House", "Gates of Olympus", "Sweet Bonanza", "Le Bandit"], correct: 1, stressWin: -6, stressLose: 12, trustWin: 6, trustLose: -8 },
+                { text: "Что выгоднее: купить бонус за 1000$ или ловить его 200 спинами по 5$?", options: ["Купить бонус", "Ловить 200 спинов", "Не играть вообще", "Удвоить ставку"], correct: 1, stressWin: -4, stressLose: 14, trustWin: 4, trustLose: -10 },
+                { text: "Какой провайдер имеет самый высокий RTP среди слотов?", options: ["Pragmatic Play", "Hacksaw Gaming", "NoLimit City", "Relax Gaming"], correct: 0, stressWin: -5, stressLose: 10, trustWin: 5, trustLose: -6 },
+                { text: "Ты проиграл 3 задания подряд. Что сделает система?", options: ["Облегчит задание", "Усложнит", "Ничего", "Даст подсказку"], correct: 1, stressWin: -3, stressLose: 18, trustWin: 3, trustLose: -12 },
+                { text: "Какая стратегия чаще всего приводит к сливу банкролла?", options: ["Мартингейл", "Флэт-беттинг", "Остановка после выигрыша", "Игра на одной линии"], correct: 0, stressWin: -7, stressLose: 15, trustWin: 7, trustLose: -9 }
             ];
 
-            // Прогрессия: множитель ставки от этапа
-            function getBetMultiplier(stage, successStreak) {
-                let base = 1 + stage * 0.5; // этап 0->1, 1->1.5, 2->2, 3->2.5, 4->3
-                if (successStreak >= 3) base *= 1.5;
-                return Math.min(5, base);
-            }
+            // Модификаторы (редкие события)
+            const MODIFIERS = [
+                { text: "УСИЛЕНИЕ: Если выполнишь задание — награда x2, если провал — штраф x2.", effect: "double", prob: 0.2 },
+                { text: "СОМНЕНИЕ: Подсказка системы сегодня ложная (100% обман).", effect: "fakeHint", prob: 0.15 },
+                { text: "ДАВЛЕНИЕ: Сделай задание за 60 секунд реального времени (таймер включается).", effect: "timer", prob: 0.1 },
+                { text: "СИСТЕМНАЯ ОШИБКА: Кнопки поменялись местами (риск стал безопасным).", effect: "swap", prob: 0.2 }
+            ];
 
-            // Генерация спин-задания с динамической ставкой
-            function generateSpinTask(stage, successStreak) {
-                const template = SPIN_TEMPLATES[Math.floor(Math.random() * SPIN_TEMPLATES.length)];
-                const mult = getBetMultiplier(stage, successStreak);
-                let bet = Math.floor(template.baseBet * mult);
-                if (bet < 1) bet = 1;
-                let text = "";
-                if (template.isBonus) {
-                    text = `Купить бонус в ${template.name} за ${bet}$ и отыграть хотя бы 50% от ставки`;
-                } else {
-                    text = `Сделать ${template.spins} спинов в ${template.name} по ${bet}$ за спин`;
-                }
-                return {
-                    text: text,
-                    type: "spin",
-                    stressSuccess: template.stressSuccess,
-                    stressFail: template.stressFail,
-                    trustChange: template.trustChange
-                };
-            }
-
-            // Выбор случайного вопроса (исключая последние 3)
-            let lastQuestions = [];
-            function getRandomQuestion() {
-                let available = QUESTION_TASKS.filter(q => !lastQuestions.includes(q.text));
-                if (available.length === 0) available = QUESTION_TASKS;
-                const q = { ...available[Math.floor(Math.random() * available.length)] };
-                lastQuestions.push(q.text);
-                if (lastQuestions.length > 3) lastQuestions.shift();
-                return q;
-            }
-
-            // ========== СОСТОЯНИЕ ==========
+            // Глобальное состояние
             let game = {
                 stage: 0,
-                completedCount: 0,
+                completedInStage: 0,
+                totalCompleted: 0,
                 stress: 30,
-                trust: 50,
-                riskyChoices: 0,
-                safeChoices: 0,
+                trust: 55,
+                risky: 0,
+                safe: 0,
                 mistakes: 0,
                 successStreak: 0,
                 failStreak: 0,
-                lastTasks: [] // храним последние 5 текстов заданий, чтобы не повторялись
+                activeModifier: null,
+                lastTaskWasSpin: true
             };
+
             let currentTask = null;
-            let pendingHint = null;
-            let skipOfferCount = 0;
+            let currentTaskType = null; // 'spin' or 'question'
+            let currentModifier = null;
 
             // DOM
             const els = {
@@ -468,6 +234,7 @@
                 streakStat: document.getElementById('streakStat')
             };
 
+            // helpers
             function showSystemMessage(msg, isUrgent = false) {
                 els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
                 if(isUrgent) els.systemComment.style.borderLeftColor = "#ffaa33";
@@ -475,7 +242,7 @@
                 setTimeout(() => {
                     if(els.systemComment.innerHTML.includes(msg))
                         els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
-                }, 4000);
+                }, 5000);
             }
 
             function triggerGlitch() {
@@ -528,20 +295,18 @@
             }
 
             function updateUI() {
-                const stageIndex = Math.min(4, Math.floor(game.completedCount / 8));
-                game.stage = stageIndex;
-                const stage = STAGES[game.stage];
-                const done = game.completedCount - (stageIndex * 8);
-                const percent = Math.min(100, (done / stage.missions) * 100);
+                const stageData = STAGES[game.stage];
+                const done = game.completedInStage;
+                const percent = (done / stageData.missions) * 100;
                 els.phaseFill.style.width = percent + '%';
                 els.stressFill.style.width = game.stress + '%';
                 els.stressValue.innerText = game.stress;
                 els.trustFill.style.width = game.trust + '%';
                 els.trustValue.innerText = game.trust;
                 els.phaseNum.innerText = game.stage + 1;
-                els.phaseNameBadge.innerText = `${stage.name} (${game.stage+1}/5)`;
-                els.riskStat.innerText = game.riskyChoices;
-                els.safeStat.innerText = game.safeChoices;
+                els.phaseNameBadge.innerText = `${stageData.name} (${game.stage+1}/5)`;
+                els.riskStat.innerText = game.risky;
+                els.safeStat.innerText = game.safe;
                 els.mistakeStat.innerText = game.mistakes;
                 els.streakStat.innerText = game.successStreak;
                 renderStageMap();
@@ -551,7 +316,7 @@
             function renderStageMap() {
                 els.phaseList.innerHTML = '';
                 STAGES.forEach((s, idx) => {
-                    const done = Math.max(0, Math.min(s.missions, game.completedCount - idx*8));
+                    const done = (idx === game.stage) ? game.completedInStage : (idx < game.stage ? STAGES[idx].missions : 0);
                     const div = document.createElement('div');
                     div.className = `phase-item ${idx === game.stage ? 'active' : ''}`;
                     div.innerHTML = `<div class="phase-icon"><i class="fas ${s.icon}"></i></div><div>${s.name}</div><div style="margin-left:auto;">${done}/${s.missions}</div>`;
@@ -560,82 +325,158 @@
                 });
             }
 
-            function getNextTask() {
-                let task = null;
-                let attempts = 0;
-                const isQuestion = (Math.random() < 0.35); // 35% вопросы, 65% спины
-                do {
-                    if (isQuestion) {
-                        task = getRandomQuestion();
-                        task.type = "question";
-                    } else {
-                        task = generateSpinTask(game.stage, game.successStreak);
-                        task.type = "spin";
-                    }
-                    attempts++;
-                    if (attempts > 20) break;
-                } while (game.lastTasks.includes(task.text));
-                game.lastTasks.push(task.text);
-                if (game.lastTasks.length > 5) game.lastTasks.shift();
-                return task;
+            function getRandomTask() {
+                // Адаптивная сложность
+                let pool;
+                if (game.successStreak >= 2) {
+                    pool = SPIN_TASKS.filter(t => t.difficulty === "hard");
+                    if (pool.length === 0) pool = SPIN_TASKS;
+                    showSystemMessage("Система замечает серию успехов. Усложняю задание.", true);
+                } else if (game.failStreak >= 2) {
+                    pool = SPIN_TASKS.filter(t => t.difficulty === "easy");
+                    if (pool.length === 0) pool = SPIN_TASKS;
+                    showSystemMessage("Ты ошибаешься. Даю легкое задание.", true);
+                } else {
+                    const rand = Math.random();
+                    if (rand < 0.4) pool = SPIN_TASKS.filter(t => t.difficulty === "easy");
+                    else if (rand < 0.7) pool = SPIN_TASKS.filter(t => t.difficulty === "medium");
+                    else pool = SPIN_TASKS.filter(t => t.difficulty === "hard");
+                    if (pool.length === 0) pool = SPIN_TASKS;
+                }
+                const spinTask = { ...pool[Math.floor(Math.random() * pool.length)], type: "spin" };
+                // 40% шанс, что будет вопрос вместо спина (но не на финале)
+                if (game.stage < 4 && Math.random() < 0.4) {
+                    const qPool = [...QUESTION_TASKS];
+                    const questionTask = { ...qPool[Math.floor(Math.random() * qPool.length)], type: "question" };
+                    return questionTask;
+                }
+                return spinTask;
+            }
+
+            function applyModifier() {
+                if (game.totalCompleted > 0 && game.totalCompleted % 3 === 0 && Math.random() < 0.5 && !currentModifier) {
+                    const mod = MODIFIERS[Math.floor(Math.random() * MODIFIERS.length)];
+                    currentModifier = mod;
+                    document.getElementById('modifierText').innerText = mod.text;
+                    document.getElementById('modifierModal').classList.remove('hidden');
+                    document.getElementById('closeModifier').onclick = () => {
+                        document.getElementById('modifierModal').classList.add('hidden');
+                        showSystemMessage(`⚠️ Модификатор активен: ${mod.text}`, true);
+                        if (mod.effect === "swap") {
+                            showSystemMessage("Кнопки ВЫПОЛНЕНО/ПРОВАЛЕНО поменялись местами! Будь осторожен.", true);
+                        }
+                    };
+                    return true;
+                }
+                return false;
             }
 
             function handleSpinResult(success) {
-                const task = currentTask;
+                let stressDelta = success ? (currentTask.stressSuccess || -3) : (currentTask.stressFail || 10);
+                let trustDelta = success ? (currentTask.trustChange || 2) : -3;
+                // Модификатор
+                if (currentModifier) {
+                    if (currentModifier.effect === "double") {
+                        stressDelta *= 2;
+                        trustDelta *= 2;
+                        showSystemMessage("Модификатор УСИЛЕНИЕ: последствия удвоены!", true);
+                    } else if (currentModifier.effect === "swap") {
+                        // меняем смысл кнопок: если нажал "успех" — на самом деле провал
+                        if (success) {
+                            stressDelta = currentTask.stressFail || 10;
+                            trustDelta = -3;
+                            showSystemMessage("Модификатор ПОДМЕНА: ты ошибся (кнопки были переставлены).", true);
+                        } else {
+                            stressDelta = currentTask.stressSuccess || -3;
+                            trustDelta = currentTask.trustChange || 2;
+                            showSystemMessage("Модификатор ПОДМЕНА: Неожиданно... это был успех!", true);
+                            success = true;
+                        }
+                    } else if (currentModifier.effect === "fakeHint") {
+                        // уже обработано в подсказке
+                    } else if (currentModifier.effect === "timer") {
+                        showSystemMessage("Таймер не реализован в демо, но в реальном стриме давил бы.", true);
+                    }
+                    currentModifier = null;
+                }
+                game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
+                game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
                 if (success) {
-                    let stressDelta = task.stressSuccess;
-                    if (game.successStreak >= 2) stressDelta -= 2; // бонус за серию
-                    game.stress = Math.max(0, game.stress + stressDelta);
-                    game.trust = Math.min(100, game.trust + (task.trustChange || 1));
                     game.successStreak++;
                     game.failStreak = 0;
-                    showSystemMessage(`✅ Задание выполнено! Стресс ${stressDelta}%, доверие +${task.trustChange || 1}.`);
+                    showSystemMessage(`✅ Задание выполнено! ${currentTask.goal ? `Цель: ${currentTask.goal}. ` : ''}Стресс ${stressDelta>0?`+${stressDelta}`:stressDelta}%, доверие ${trustDelta>0?`+${trustDelta}`:trustDelta}%.`);
                 } else {
-                    let stressDelta = task.stressFail;
-                    if (game.failStreak >= 1) stressDelta += 3;
-                    game.stress = Math.min(100, game.stress + stressDelta);
-                    game.trust = Math.max(0, game.trust - 2);
-                    game.failStreak++;
                     game.successStreak = 0;
+                    game.failStreak++;
                     game.mistakes++;
                     triggerJumpScare();
-                    showSystemMessage(`❌ Задание провалено! Стресс +${stressDelta}%, доверие -2.`);
+                    showSystemMessage(`❌ Провал! ${currentTask.goal ? `Цель не достигнута: ${currentTask.goal}. ` : ''}Стресс +${stressDelta}%, доверие ${trustDelta}%.`);
                 }
-                game.completedCount++;
-                if (game.completedCount >= 40) { finishGame(); return; }
+                game.totalCompleted++;
+                game.completedInStage++;
+                if (game.completedInStage >= STAGES[game.stage].missions) {
+                    if (game.stage + 1 < STAGES.length) {
+                        game.stage++;
+                        game.completedInStage = 0;
+                        // Коррекция стресса/доверия под этап
+                        game.stress = Math.min(100, Math.max(0, STAGES[game.stage].baseStress));
+                        game.trust = Math.min(100, Math.max(0, STAGES[game.stage].baseTrust));
+                        showSystemMessage(`🔥 ПЕРЕХОД НА ЭТАП ${STAGES[game.stage].name}! Стресс и доверие скорректированы.`, true);
+                        triggerGlitch();
+                    } else {
+                        finishGame();
+                        return;
+                    }
+                }
                 updateUI();
                 saveGame();
                 loadNewTask();
             }
 
             function handleQuestionAnswer(selectedIndex) {
-                const task = currentTask;
-                const isCorrect = (selectedIndex === task.correct);
+                const isCorrect = (selectedIndex === currentTask.correct);
+                let stressDelta = isCorrect ? (currentTask.stressWin || -4) : (currentTask.stressLose || 12);
+                let trustDelta = isCorrect ? (currentTask.trustWin || 5) : (currentTask.trustLose || -8);
+                if (currentModifier && currentModifier.effect === "double") {
+                    stressDelta *= 2;
+                    trustDelta *= 2;
+                    showSystemMessage("Модификатор УСИЛЕНИЕ: последствия удвоены!", true);
+                    currentModifier = null;
+                }
+                game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
+                game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
                 if (isCorrect) {
-                    game.stress = Math.max(0, game.stress + (task.stressWin || -4));
-                    game.trust = Math.min(100, game.trust + (task.trustWin || 5));
                     game.successStreak++;
                     game.failStreak = 0;
-                    showSystemMessage(`✅ Верно! Стресс ${task.stressWin || -4}%, доверие +${task.trustWin || 5}.`);
+                    showSystemMessage(`✅ Верно! Стресс ${stressDelta>0?`+${stressDelta}`:stressDelta}%, доверие ${trustDelta>0?`+${trustDelta}`:trustDelta}%.`);
                 } else {
-                    game.stress = Math.min(100, game.stress + (task.stressLose || 12));
-                    game.trust = Math.max(0, game.trust + (task.trustLose || -8));
-                    game.failStreak++;
                     game.successStreak = 0;
+                    game.failStreak++;
                     game.mistakes++;
                     triggerJumpScare();
-                    showSystemMessage(`❌ Неверно! Стресс +${task.stressLose || 12}%, доверие ${task.trustLose || -8}%.`);
+                    showSystemMessage(`❌ Неверно! Стресс +${stressDelta}%, доверие ${trustDelta}%.`);
                 }
-                game.completedCount++;
-                if (game.completedCount >= 40) { finishGame(); return; }
+                game.totalCompleted++;
+                game.completedInStage++;
+                if (game.completedInStage >= STAGES[game.stage].missions) {
+                    if (game.stage + 1 < STAGES.length) {
+                        game.stage++;
+                        game.completedInStage = 0;
+                        game.stress = Math.min(100, Math.max(0, STAGES[game.stage].baseStress));
+                        game.trust = Math.min(100, Math.max(0, STAGES[game.stage].baseTrust));
+                        showSystemMessage(`🔥 ПЕРЕХОД НА ЭТАП ${STAGES[game.stage].name}!`, true);
+                        triggerGlitch();
+                    } else {
+                        finishGame();
+                        return;
+                    }
+                }
                 updateUI();
                 saveGame();
                 loadNewTask();
             }
 
-            function renderCurrentTask() {
-                if (!currentTask) return;
-                els.questText.innerText = currentTask.text;
+            function renderTask() {
                 els.actionButtons.innerHTML = "";
                 if (currentTask.type === "spin") {
                     const btnSuccess = document.createElement('button');
@@ -648,100 +489,73 @@
                     btnFail.onclick = () => handleSpinResult(false);
                     els.actionButtons.appendChild(btnSuccess);
                     els.actionButtons.appendChild(btnFail);
+                    // Дополнительный текст с целью
+                    els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
                 } else {
                     currentTask.options.forEach((opt, idx) => {
                         const btn = document.createElement('button');
                         btn.innerText = opt;
-                        btn.className = "option-btn";
+                        btn.className = "btn-choice";
                         btn.onclick = () => handleQuestionAnswer(idx);
                         els.actionButtons.appendChild(btn);
                     });
-                }
-                if (pendingHint) {
-                    showSystemMessage(`💡 Подсказка: ${pendingHint}`, false);
-                    pendingHint = null;
+                    els.questText.innerText = currentTask.text;
                 }
             }
 
             function loadNewTask() {
-                currentTask = getNextTask();
+                if (applyModifier()) {
+                    // модалка открыта, задание подождёт
+                    return;
+                }
+                currentTask = getRandomTask();
+                renderTask();
+                saveGame();
+                // Подсказка (если вопрос и доверие высокое)
                 if (currentTask.type === "question" && Math.random() < 0.4) {
                     const isTruth = (game.trust > 60) ? (Math.random() < 0.7) : (Math.random() < 0.3);
                     if (isTruth) {
-                        pendingHint = currentTask.options[currentTask.correct];
+                        showSystemMessage(`💡 Подсказка: я думаю, правильный ответ — "${currentTask.options[currentTask.correct]}"`, false);
                     } else {
-                        let wrong = Math.floor(Math.random() * currentTask.options.length);
-                        while (wrong === currentTask.correct) wrong = Math.floor(Math.random() * currentTask.options.length);
-                        pendingHint = currentTask.options[wrong];
+                        const wrongIdx = currentTask.correct === 0 ? 1 : 0;
+                        showSystemMessage(`💡 Подсказка: я думаю, правильный ответ — "${currentTask.options[wrongIdx]}"`, false);
                     }
-                }
-                renderCurrentTask();
-                saveGame();
-                setTimeout(() => maybeOfferSkip(), 300);
-            }
-
-            function maybeOfferSkip() {
-                if (skipOfferCount >= 3) return;
-                if (game.completedCount > 0 && game.completedCount % 5 === 0 && !document.getElementById('skipModal').classList.contains('hidden') === false) {
-                    skipOfferCount++;
-                    const modal = document.getElementById('skipModal');
-                    modal.classList.remove('hidden');
-                    document.getElementById('skipTaskBtn').onclick = () => {
-                        modal.classList.add('hidden');
-                        game.stress = Math.min(100, game.stress + 15);
-                        game.trust = Math.max(0, game.trust - 10);
-                        game.completedCount++;
-                        if (game.completedCount >= 40) finishGame();
-                        updateUI();
-                        showSystemMessage("Ты пропустил задание. +15 стресса, -10 доверия.", true);
-                        saveGame();
-                        loadNewTask();
-                    };
-                    document.getElementById('doubleTaskBtn').onclick = () => {
-                        modal.classList.add('hidden');
-                        game.successStreak = 3; // принудительно усложним следующее
-                        showSystemMessage("СЛЕДУЮЩЕЕ ЗАДАНИЕ БУДЕТ СЛОЖНЫМ!", true);
-                        loadNewTask();
-                    };
-                    document.getElementById('refuseSkipBtn').onclick = () => {
-                        modal.classList.add('hidden');
-                        showSystemMessage("Отказ принят. Продолжаем.", true);
-                        loadNewTask();
-                    };
                 }
             }
 
             function showHint() {
-                if (currentTask && currentTask.type === "question") {
+                if (currentTask.type === "question") {
                     const isTruth = (game.trust > 60) ? (Math.random() < 0.6) : (Math.random() < 0.2);
-                    let hintMsg;
-                    if (isTruth) {
-                        hintMsg = `Вероятно, правильный ответ — "${currentTask.options[currentTask.correct]}"`;
-                    } else {
-                        let wrong = Math.floor(Math.random() * currentTask.options.length);
-                        while (wrong === currentTask.correct) wrong = Math.floor(Math.random() * currentTask.options.length);
-                        hintMsg = `Вероятно, правильный ответ — "${currentTask.options[wrong]}"`;
+                    let hint;
+                    if (isTruth) hint = currentTask.options[currentTask.correct];
+                    else {
+                        const wrong = currentTask.correct === 0 ? 1 : 0;
+                        hint = currentTask.options[wrong];
                     }
-                    document.getElementById('hintMsg').innerHTML = hintMsg + "<br><small>(система может ошибаться)</small>";
+                    document.getElementById('hintMsg').innerHTML = `Система считает, что правильный ответ: "${hint}"<br><small>(но может быть ложь)</small>`;
                     document.getElementById('hintModal').classList.remove('hidden');
                     game.mistakes++;
-                    game.trust = Math.max(0, game.trust - 2);
+                    game.trust = Math.max(0, game.trust - 3);
                     updateUI();
                 } else {
-                    showSystemMessage("Подсказка не работает для спин-заданий. Просто сделай спины.", true);
+                    showSystemMessage("Для спин-заданий подсказки нет. Просто сделай спины и цель.", true);
                 }
             }
 
             function finishGame() {
                 let verdict = "", desc = "";
-                if (game.stress < 30 && game.mistakes < 5) {
-                    verdict = "🔓 ОСВОБОДИЛСЯ"; desc = "Ты сохранил рассудок и победил систему!";
-                } else if (game.stress > 70 || game.mistakes > 8) {
-                    verdict = "💀 СЛОМАЛСЯ"; desc = "Система сломала тебя. Ты проиграл.";
+                if (game.stress < 35 && game.mistakes < 4) {
+                    verdict = "🔓 ОСВОБОДИЛСЯ";
+                    desc = "Ты сохранил рассудок, не поддался панике и обыграл систему. Поздравляю!";
+                } else if (game.stress > 75 || game.mistakes > 7) {
+                    verdict = "💀 СЛОМАЛСЯ";
+                    desc = "Система сломала тебя. Ты потерял контроль над эмоциями и проиграл.";
                 } else if (game.trust > 70) {
-                    verdict = "🤖 СТАЛ ЧАСТЬЮ СИСТЕМЫ"; desc = "Ты слишком доверял системе. Теперь ты её часть.";
+                    verdict = "🤖 СТАЛ ЧАСТЬЮ СИСТЕМЫ";
+                    desc = "Ты слишком доверял системе и действовал предсказуемо. Теперь ты её агент.";
                 } else {
-                    verdict = "⚠️ НЕОПРЕДЕЛЁННОСТЬ"; desc = "Финал остался открытым. Система потеряла интерес.";
+                    verdict = "⚠️ НЕОПРЕДЕЛЁННОСТЬ";
+                    desc = "Система запуталась в твоих решениях. Конец игры неоднозначен.";
                 }
                 document.getElementById('finalVerdict').innerText = verdict;
                 document.getElementById('finalDesc').innerText = desc;
@@ -758,16 +572,16 @@
 
             function saveGame() {
                 localStorage.setItem('mindGameFinal', JSON.stringify({
-                    completedCount: game.completedCount,
+                    stage: game.stage,
+                    completedInStage: game.completedInStage,
+                    totalCompleted: game.totalCompleted,
                     stress: game.stress,
                     trust: game.trust,
-                    riskyChoices: game.riskyChoices,
-                    safeChoices: game.safeChoices,
+                    risky: game.risky,
+                    safe: game.safe,
                     mistakes: game.mistakes,
                     successStreak: game.successStreak,
-                    failStreak: game.failStreak,
-                    skipOfferCount: skipOfferCount,
-                    lastTasks: game.lastTasks
+                    failStreak: game.failStreak
                 }));
             }
 
@@ -775,21 +589,22 @@
                 const saved = localStorage.getItem('mindGameFinal');
                 if(saved) {
                     const data = JSON.parse(saved);
-                    game.completedCount = data.completedCount || 0;
+                    game.stage = data.stage || 0;
+                    game.completedInStage = data.completedInStage || 0;
+                    game.totalCompleted = data.totalCompleted || 0;
                     game.stress = data.stress || 30;
-                    game.trust = data.trust || 50;
-                    game.riskyChoices = data.riskyChoices || 0;
-                    game.safeChoices = data.safeChoices || 0;
+                    game.trust = data.trust || 55;
+                    game.risky = data.risky || 0;
+                    game.safe = data.safe || 0;
                     game.mistakes = data.mistakes || 0;
                     game.successStreak = data.successStreak || 0;
                     game.failStreak = data.failStreak || 0;
-                    skipOfferCount = data.skipOfferCount || 0;
-                    game.lastTasks = data.lastTasks || [];
                 }
-                if(game.completedCount > 40) game.completedCount = 40;
+                if(game.stage >= STAGES.length) game.stage = STAGES.length-1;
                 updateUI();
             }
 
+            // Фоновые страхи
             let scareInterval = null;
             function startRandomScares() {
                 if (scareInterval) clearInterval(scareInterval);
@@ -801,20 +616,11 @@
                         game.stress = Math.min(100, game.stress + 2);
                         updateUI();
                     }
-                }, 120000);
+                }, 90000);
             }
-
-            const STAGES = [
-                { name: "ДОВЕРИЕ", icon: "fa-hand-peace", missions: 8 },
-                { name: "СОМНЕНИЕ", icon: "fa-question", missions: 8 },
-                { name: "ДАВЛЕНИЕ", icon: "fa-weight-hanging", missions: 8 },
-                { name: "ЛОМКА", icon: "fa-skull", missions: 8 },
-                { name: "ФИНАЛ", icon: "fa-crown", missions: 8 }
-            ];
 
             function init() {
                 loadGame();
-                updateUI();
                 loadNewTask();
                 startRandomScares();
                 window.audioCtx = null;
@@ -828,7 +634,7 @@
                 els.hintBtn.addEventListener('click', showHint);
                 document.getElementById('closeHint')?.addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
                 document.getElementById('closeInfo')?.addEventListener('click', () => document.getElementById('infoModal').classList.add('hidden'));
-                console.log("Игра с прогрессией сложности запущена");
+                console.log("Игра v9.0: драма, цели, прогрессия, модификаторы.");
             }
             init();
         })();
