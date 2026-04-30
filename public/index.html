@@ -129,7 +129,7 @@
             border-radius:60px;
             color:#0f0;
             font-size:1.2rem;
-            width:250px;
+            width:200px;
             text-align:center;
             margin:10px auto;
         }
@@ -137,7 +137,7 @@
         .chat-tool { background:#000000aa; border-radius:40px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
         .btn-hint { background:#0f0; border:none; padding:6px 16px; border-radius:60px; cursor:pointer; font-weight:bold; }
         .modal { position:fixed; top:0;left:0; width:100%;height:100%; background:#000000ee; backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; z-index:2000; }
-        .modal-content { background:#0a0a0a; border:2px solid #0f0; border-radius:60px; padding:32px; max-width:550px; width:90%; text-align:center; color:#0f0; }
+        .modal-content { background:#0a0a0a; border:2px solid #0f0; border-radius:60px; padding:32px; max-width:500px; width:90%; text-align:center; color:#0f0; }
         .modal-btn { background:#0f0; border:none; padding:10px 24px; border-radius:40px; margin:12px; cursor:pointer; font-weight:bold; }
         .risk { background:#ff3366; color:white; }
         .hidden { display:none; }
@@ -168,7 +168,7 @@
                         <li>Ты против системы, которая анализирует каждое твоё решение.</li>
                         <li>Выполняй задания в казино, затем вводи текущий баланс.</li>
                         <li>Кнопки «ВЫПОЛНЕНО» / «ПРОВАЛЕНО» — твоя оценка.</li>
-                        <li>Стресс ↑ от провалов, доверие ↑ если честен.</li>
+                        <li>Стресс ↑ от провалов, доверие ↑ если не врёшь.</li>
                         <li>Иногда вместо спин-задания — моральный выбор.</li>
                         <li>При высоком стрессе интерфейс начинает глючить: кнопки убегают, текст мерцает.</li>
                     </ul>
@@ -257,11 +257,10 @@
                 { text: "Система предлагает тебе 'горячий' слот. Поверишь?", options: ["Довериться", "Игнорировать"], effects: [{stress:-2, trust:8}, {stress:0, trust:-2}] },
                 { text: "Система говорит, что ты должен рискнуть. Твои действия?", options: ["Рискнуть как советуют", "Сделать наоборот", "Не обращать внимания"], effects: [{stress:8, trust:-6}, {stress:2, trust:2}, {stress:0, trust:0}] },
                 { text: "Система даёт ложную статистику. Поверишь?", options: ["Поверить", "Проверить", "Проигнорировать"], effects: [{stress:4, trust:-4}, {stress:-3, trust:3}, {stress:1, trust:0}] },
-                // Иллюзия выбора: обе кнопки одинаковые
                 { text: "Система предлагает рискнуть. Выбери вариант:", options: ["Рискнуть", "Рискнуть"], effects: [{stress:10, trust:-2}, {stress:10, trust:-2}], illusion: true }
             ];
 
-            // ПЕРСОНАЛИЗИРОВАННЫЕ ФРАЗЫ
+            // ПЕРСОНАЛИЗИРОВАННЫЕ ФРАЗЫ (имя АЛЕКСЕЙ)
             const PERSONAL_PHRASES = {
                 light: [
                     "Алексей... ты ведь не первый раз здесь, да?",
@@ -437,7 +436,8 @@
                 else if (game.stage <= 3) pool = PERSONAL_PHRASES.medium;
                 else if (game.stage === 4) pool = PERSONAL_PHRASES.hard;
                 else pool = PERSONAL_PHRASES.final;
-                return pool[Math.floor(Math.random() * pool.length)];
+                const randomPhrase = pool[Math.floor(Math.random() * pool.length)];
+                return randomPhrase;
             }
 
             function updateUI() {
@@ -460,8 +460,10 @@
                 enableFleeingButtons();
 
                 if (Math.random() < 0.1 && game.totalCompleted > 0) {
-                    showSystemMessage(getPersonalPhrase(), false);
+                    const phrase = getPersonalPhrase();
+                    showSystemMessage(phrase, false);
                 }
+
                 if (game.failStreak >= 2) {
                     showSystemMessage(`Алексей, ты снова теряешь контроль.`, true);
                 }
@@ -478,7 +480,6 @@
                     updateUI();
                 }
 
-                // ВАУ-моменты
                 if (game.totalCompleted === 3) {
                     showSystemMessage(`Алексей, ты думаешь, они смотрят тебя ради побед?`, true);
                     setTimeout(() => {
@@ -620,11 +621,11 @@
                 pendingButton = buttonType;
                 document.getElementById('balanceTaskInfo').innerHTML = `После задания: ${currentTask.text}<br>Введи текущий баланс:`;
                 document.getElementById('balanceModal').classList.remove('hidden');
-                // Убираем старый обработчик, чтобы не накапливалось
+                // Убираем старый обработчик, ставим новый
                 const submitBtn = document.getElementById('submitBalance');
-                const newSubmit = submitBtn.cloneNode(true);
-                submitBtn.parentNode.replaceChild(newSubmit, submitBtn);
-                newSubmit.onclick = () => {
+                const newSubmitBtn = submitBtn.cloneNode(true);
+                submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+                newSubmitBtn.onclick = () => {
                     const bal = document.getElementById('currentBalance').value;
                     onBalanceSubmitted(bal);
                 };
@@ -862,17 +863,22 @@
             function init() {
                 loadGame();
                 startTextGlitch();
+
+                // Показываем стартовую модалку, если баланс не задан
                 if (game.balance === 0 || game.balanceStart === 0) {
                     document.getElementById('startModal').classList.remove('hidden');
-                    // Прямой обработчик на кнопку, без лишних клонов
-                    const startBtn = document.getElementById('confirmStart');
-                    startBtn.onclick = () => {
-                        const startBal = document.getElementById('startBalance').value;
-                        startGame(startBal);
-                    };
+                    const confirmBtn = document.getElementById('confirmStart');
+                    // Убираем старые обработчики, ставим новый напрямую
+                    const newConfirmBtn = confirmBtn.cloneNode(true);
+                    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                    newConfirmBtn.addEventListener('click', function() {
+                        const bal = document.getElementById('startBalance').value;
+                        startGame(bal);
+                    });
                 } else {
                     loadNewTask();
                 }
+
                 startRandomScares();
                 window.audioCtx = null;
                 document.body.addEventListener('click', () => {
@@ -881,11 +887,20 @@
                         window.audioCtx.resume();
                     }
                 });
+
+                // Кнопка сброса
                 const resetBtn = document.getElementById('resetBtn');
-                resetBtn.onclick = () => resetGame();
+                const newResetBtn = resetBtn.cloneNode(true);
+                resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+                newResetBtn.addEventListener('click', () => resetGame());
+
+                // Кнопка подсказки
                 const hintBtn = document.getElementById('hintBtn');
-                hintBtn.onclick = () => showHint();
-                document.getElementById('closeHint').onclick = () => document.getElementById('hintModal').classList.add('hidden');
+                const newHintBtn = hintBtn.cloneNode(true);
+                hintBtn.parentNode.replaceChild(newHintBtn, hintBtn);
+                newHintBtn.addEventListener('click', showHint);
+
+                document.getElementById('closeHint').addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
                 updateUI();
             }
             init();
