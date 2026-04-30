@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ИГРА РАЗУМА · Психологическая атака</title>
+    <title>ИГРА РАЗУМА · Психологическая атака с чатом</title>
     <style>
         * {
             margin: 0;
@@ -191,10 +191,28 @@
             margin: 24px 0;
             border: 1px solid #0f0;
             word-break: break-word;
-            transition: all 0.1s;
+            color: #0f0;
         }
         .dynamic-zone {
             min-height: 85px;
+        }
+        /* Кнопки выбора заданий – видимые */
+        .dynamic-zone button {
+            background: #111;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 12px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .dynamic-zone button:hover {
+            background: #0f0;
+            color: black;
+            box-shadow: 0 0 12px #0f0;
         }
         .action-buttons {
             display: flex;
@@ -274,6 +292,7 @@
             max-width: 500px;
             width: 90%;
             text-align: center;
+            color: #0f0;
         }
         .modal-btn {
             background: #0f0;
@@ -301,7 +320,7 @@
     <div class="glitch-overlay"></div>
     <div class="container">
         <div class="status-bar">
-            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.5.0 · ПСИХОЛОГИЧЕСКАЯ АТАКА</div>
+            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.6.0 · ВОВЛЕЧЕНИЕ ЧАТА</div>
             <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОСИТЬ СОЗНАНИЕ</button>
         </div>
         <div class="main-grid">
@@ -323,7 +342,7 @@
                         <div class="bar-bg"><div id="phaseFill" class="phase-fill"></div></div>
                     </div>
                     <div class="profile-stats">
-                        <small>⚡ РИСК: <span id="riskStat">0</span> | 🛡️ БЕЗОПАСНО: <span id="safeStat">0</span> | ❌ ОШИБКИ: <span id="mistakeStat">0</span></small>
+                        <small>⚡ РИСК: <span id="riskStat">0</span> | 🛡️ БЕЗОПАСНО: <span id="safeStat">0</span> | ❌ ОШИБКИ: <span id="mistakeStat">0</span> | 🔥 СЕРИЯ: <span id="streakStat">0</span></small>
                     </div>
                 </div>
                 <div class="phase-map" id="phaseList"></div>
@@ -358,9 +377,8 @@
         <div class="modal-content">
             <h2>🔮 ПРИГОВОР СИСТЕМЫ</h2>
             <p id="finalVerdict"></p>
-            <p>Забрать приз или доказать, что вы умнее?</p>
-            <button id="safeFinal" class="modal-btn">ЗАБРАТЬ</button>
-            <button id="riskFinal" class="modal-btn risk">ДОКАЗАТЬ</button>
+            <p id="finalDesc"></p>
+            <button id="closeFinal" class="modal-btn">ЗАВЕРШИТЬ</button>
         </div>
     </div>
     <div id="infoModal" class="modal hidden">
@@ -384,6 +402,14 @@
             <button id="skipTaskBtn" class="modal-btn">🎁 ПРОПУСТИТЬ (+15 стресс, -10 доверия)</button>
             <button id="doubleTaskBtn" class="modal-btn risk">💀 УСЛОЖНИТЬ (x2 риск и награда)</button>
             <button id="refuseSkipBtn" class="modal-btn">🙅‍♂️ ОТКАЗАТЬСЯ</button>
+        </div>
+    </div>
+    <div id="chatVoteModal" class="modal hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-users"></i> ЧАТ РЕШАЕТ!</h2>
+            <p>Зрители голосуют за твой следующий ход. Но система может подделать 30% голосов...</p>
+            <button id="voteSafe" class="modal-btn">🟢 БЕЗОПАСНО</button>
+            <button id="voteRisk" class="modal-btn risk">🔴 РИСК</button>
         </div>
     </div>
 
@@ -458,7 +484,10 @@
                   type: "noluck", stressA: 5, stressB: 8, trustA: -5, trustB: -2 },
                 { text: "Чат голосует, но 30% голосов — подделка. Доверишься?", 
                   options: ["🗳️ Довериться чату", "🤖 Игнорировать (100 спинов самому)"], 
-                  type: "paranoia", stressA: 10, stressB: 4, trustA: -10, trustB: 5 }
+                  type: "paranoia", stressA: 10, stressB: 4, trustA: -10, trustB: 5 },
+                { text: "В чате 3 агента системы. Они уже проголосовали.", 
+                  options: ["🤖 Сделать как агенты", "🙅‍♂️ Сделать наоборот"], 
+                  type: "agents", stressA: 6, stressB: 2, trustA: -5, trustB: 7 }
             ];
 
             // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
@@ -470,7 +499,9 @@
                 patternCounter: 0,
                 fastDecisions: 0,
                 hintUsed: false,
-                history: []   // новая память системы
+                history: [],
+                streak: 0,
+                mistakesCount: 0
             };
 
             let game = {
@@ -492,11 +523,16 @@
                 meta: {
                     trap: null,
                     uiSwapped: false,
-                    crashed: false
-                }
+                    crashed: false,
+                    fakeWinShown: false,
+                    fakeStats: false,
+                    statsInterval: null
+                },
+                streakCount: 0
             };
 
             let currentTask = null;
+            let pendingChoiceCallback = null; // для голосования чата
 
             // DOM элементы
             const els = {
@@ -518,7 +554,8 @@
                 riskStat: document.getElementById('riskStat'),
                 safeStat: document.getElementById('safeStat'),
                 mistakeStat: document.getElementById('mistakeStat'),
-                explainBtn: document.getElementById('explainBtn')
+                explainBtn: document.getElementById('explainBtn'),
+                streakStat: document.getElementById('streakStat')
             };
 
             // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
@@ -593,15 +630,23 @@
                 const done = game.completedMissions.filter(m => m.stage === game.stage).length;
                 const percent = (done / stage.missions) * 100;
                 els.phaseFill.style.width = percent + '%';
-                els.stressFill.style.width = game.stress + '%';
-                els.stressValue.innerText = game.stress;
-                els.trustFill.style.width = game.trust + '%';
-                els.trustValue.innerText = game.trust;
+                // ОТОБРАЖЕНИЕ СТАТОВ (с возможной ложью)
+                let displayStress = game.stress;
+                let displayTrust = game.trust;
+                if (game.meta.fakeStats) {
+                    displayStress = Math.min(100, Math.max(0, game.stress + (Math.random() * 10 - 5)));
+                    displayTrust = Math.min(100, Math.max(0, game.trust + (Math.random() * 10 - 5)));
+                }
+                els.stressFill.style.width = displayStress + '%';
+                els.stressValue.innerText = Math.floor(displayStress);
+                els.trustFill.style.width = displayTrust + '%';
+                els.trustValue.innerText = Math.floor(displayTrust);
                 els.phaseNum.innerText = game.stage + 1;
                 els.phaseNameBadge.innerText = `${stage.name} (${game.stage+1}/5)`;
                 els.riskStat.innerText = game.profile.risky;
                 els.safeStat.innerText = game.profile.safe;
                 els.mistakeStat.innerText = game.profile.mistakes;
+                els.streakStat.innerText = game.streakCount;
                 renderStageMap();
                 if(game.stress > 70) triggerGlitch();
             }
@@ -659,14 +704,45 @@
                 game.profile.lastAnswerTime = Date.now();
             }
 
-            // ========== АНАЛИЗ ПОВЕДЕНИЯ (ПАМЯТЬ СИСТЕМЫ) ==========
+            // Детект тильта
+            function detectTilt() {
+                if(game.stress > 70 && player.fastDecisions > 5) {
+                    showSystemMessage("💀 Ты в тильте. Теперь ты ошибаешься чаще.", true);
+                    game.meta.trap = "tiltMode";
+                }
+            }
+
+            // Управление серией
+            function updateStreak(success) {
+                if (success) {
+                    game.streakCount++;
+                    if (game.streakCount >= 3) {
+                        showSystemMessage(`🎉 Серия ${game.streakCount}! -10 стресса.`, true);
+                        game.stress = Math.max(0, game.stress - 10);
+                        updateUI();
+                        game.streakCount = 0;
+                    }
+                } else {
+                    if (game.streakCount > 0) {
+                        showSystemMessage(`❌ Серия прервана!`, true);
+                    }
+                    game.streakCount = 0;
+                    // наказание за 3 ошибки подряд (mistakes)
+                    if (game.profile.mistakes > 0 && game.profile.mistakes % 3 === 0) {
+                        triggerJumpScare();
+                        game.stress = Math.min(100, game.stress + 10);
+                        updateUI();
+                    }
+                }
+                updateUI();
+            }
+
+            // Анализ поведения
             function analyzePlayerBehavior() {
                 if (player.history.length < 4) return;
-
                 const last = player.history.slice(-4);
                 const riskCount = last.filter(x => x.choice === 1).length;
                 const safeCount = last.filter(x => x.choice === 0).length;
-
                 if (riskCount >= 3) {
                     game.meta.trap = "antiRisk";
                     showSystemMessage("Ты снова выберешь риск. Я проверю это.", true);
@@ -679,12 +755,12 @@
                     game.meta.trap = "antiFast";
                     showSystemMessage("Ты слишком быстрый. Значит, ты не думаешь.", true);
                 }
+                detectTilt();
             }
 
-            // ========== META-ЛОВУШКИ ==========
+            // Мета-ловушки
             function applyMetaTrap(task, chosenIndex) {
                 if (!game.meta.trap) return;
-
                 switch(game.meta.trap) {
                     case "antiRisk":
                         if (chosenIndex === 1) {
@@ -705,12 +781,16 @@
                         game.stress += 12;
                         game.trust -= 6;
                         break;
+                    case "tiltMode":
+                        game.stress += 5;
+                        showSystemMessage("💀 Тильт усиливает ошибки.", true);
+                        break;
                 }
                 game.meta.trap = null;
                 updateUI();
             }
 
-            // ========== ПОДМЕНА КНОПОК ==========
+            // Подмена кнопок
             function maybeSwapChoices(task) {
                 if (Math.random() < 0.25) {
                     showSystemMessage("⚠️ Интерфейс обновлён", true);
@@ -721,7 +801,7 @@
                 }
             }
 
-            // ========== ФЕЙКОВЫЙ КРАШ (1 раз за игру) ==========
+            // Фейковый краш
             function maybeFakeCrash() {
                 if (game.meta.crashed) return;
                 if (Math.random() < 0.05 && game.stage >= 2) {
@@ -734,8 +814,37 @@
                 }
             }
 
-            // ========== ПРИМЕНЕНИЕ ПОСЛЕДСТВИЙ ВЫБОРА ==========
-            function applyChoiceConsequences(task, chosenIndex) {
+            // Редкое событие: фальшивый выигрыш
+            function maybeFakeWin() {
+                if (game.meta.fakeWinShown) return;
+                if (Math.random() < 0.1 && game.stage >= 1) {
+                    game.meta.fakeWinShown = true;
+                    showSystemMessage("🎉 ВЫ ВЫИГРАЛИ +1000$!", true);
+                    setTimeout(() => {
+                        showSystemMessage("❌ Это была проверка системы. Вы ничего не получили.", true);
+                        triggerGlitch();
+                    }, 2000);
+                }
+            }
+
+            // Ложные статы (включение/выключение)
+            function startFakeStats() {
+                if (game.meta.statsInterval) clearInterval(game.meta.statsInterval);
+                game.meta.statsInterval = setInterval(() => {
+                    if (Math.random() < 0.2 && game.stress > 30) {
+                        game.meta.fakeStats = true;
+                        updateUI();
+                        setTimeout(() => {
+                            game.meta.fakeStats = false;
+                            updateUI();
+                            showSystemMessage("Статистика восстановлена.", false);
+                        }, 3000);
+                    }
+                }, 60000);
+            }
+
+            // Применение последствий выбора
+            function applyChoiceConsequences(task, chosenIndex, wasSuccess = true) {
                 let stressDelta = 0, trustDelta = 0;
                 if (task.stressA !== undefined && task.stressB !== undefined) {
                     stressDelta = chosenIndex === 0 ? task.stressA : task.stressB;
@@ -751,11 +860,13 @@
                     trustDelta -= 8;
                     showSystemMessage("⚠️ Система изменила правила. Последствия усилены.", true);
                     triggerGlitch();
+                    wasSuccess = false;
                 }
                 if (task.type === "inversion" && player.patternCounter > 0) {
                     stressDelta += 10;
                     trustDelta -= 10;
                     showSystemMessage("💀 Ты попался на фальшивую закономерность.", true);
+                    wasSuccess = false;
                 }
                 if (game.pendingTaskModifier === "hard") {
                     stressDelta *= 2;
@@ -770,6 +881,7 @@
                 updateUI();
                 showSystemMessage(`Результат: стресс ${stressDelta>0?'+'+stressDelta:stressDelta}, доверие ${trustDelta>0?'+'+trustDelta:trustDelta}`);
                 if (stressDelta > 10) triggerGlitch();
+                updateStreak(wasSuccess);
                 saveGame();
             }
 
@@ -786,6 +898,7 @@
                 game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
                 updateUI();
                 showSystemMessage(`✅ Задание выполнено: стресс ${stressDelta>0?'+'+stressDelta:stressDelta}, доверие ${trustDelta>0?'+'+trustDelta:trustDelta}`);
+                updateStreak(true);
                 saveGame();
             }
 
@@ -805,6 +918,36 @@
                 return { ...task };
             }
 
+            // Голосование чата (фейковая механика)
+            function showChatVote(callback) {
+                const modal = document.getElementById('chatVoteModal');
+                modal.classList.remove('hidden');
+                const realChoice = { value: null };
+                document.getElementById('voteSafe').onclick = () => {
+                    realChoice.value = 0;
+                    modal.classList.add('hidden');
+                    const fakeInfluence = Math.random() < 0.3;
+                    let finalChoice = realChoice.value;
+                    if (fakeInfluence) {
+                        finalChoice = Math.random() < 0.5 ? 0 : 1;
+                        showSystemMessage("📢 Система подделала 30% голосов! Результат изменён.", true);
+                    }
+                    callback(finalChoice);
+                };
+                document.getElementById('voteRisk').onclick = () => {
+                    realChoice.value = 1;
+                    modal.classList.add('hidden');
+                    const fakeInfluence = Math.random() < 0.3;
+                    let finalChoice = realChoice.value;
+                    if (fakeInfluence) {
+                        finalChoice = Math.random() < 0.5 ? 0 : 1;
+                        showSystemMessage("📢 Система подделала 30% голосов! Результат изменён.", true);
+                    }
+                    callback(finalChoice);
+                };
+            }
+
+            // Отрисовка заданий
             function renderSimpleTask(task) {
                 els.dynamicZone.innerHTML = "";
                 els.completeBtn.disabled = false;
@@ -832,33 +975,35 @@
                 task.options.forEach((opt, idx) => {
                     const btn = document.createElement('button');
                     btn.innerText = opt;
-                    btn.style.background = "#0a0a0a";
-                    btn.style.border = "1px solid #0f0";
-                    btn.style.padding = "12px 24px";
-                    btn.style.borderRadius = "40px";
-                    btn.style.cursor = "pointer";
-                    btn.style.fontWeight = "bold";
                     btn.onclick = () => {
                         const isRiskChoice = opt.includes("🔴") || opt.includes("риск") || (idx === 1 && task.type === "risk_safe");
                         updatePlayerProfile(isRiskChoice ? "risk" : "safe", idx, task);
-                        applyChoiceConsequences(task, idx);
-                        applyMetaTrap(task, idx);   // мета-ловушка
-                        // Сохраняем в историю
-                        player.history.push({
-                            choice: idx,
-                            type: task.type,
-                            timestamp: Date.now()
-                        });
-                        analyzePlayerBehavior();
-                        game.completedMissions.push({ stage: game.stage, missionId: game.missionIdx });
-                        game.missionIdx++;
-                        saveGame();
-                        updateUI();
-                        els.completeBtn.disabled = true;
-                        setTimeout(() => {
-                            loadCurrentTask();
-                            els.completeBtn.disabled = false;
-                        }, 1500);
+                        // Механика чата: иногда принудительное голосование
+                        if (task.type === "social" || task.type === "paranoia" || Math.random() < 0.2) {
+                            showChatVote((finalIdx) => {
+                                const finalIsRisk = (finalIdx === 1);
+                                updatePlayerProfile(finalIsRisk ? "risk" : "safe", finalIdx, task);
+                                applyChoiceConsequences(task, finalIdx);
+                                applyMetaTrap(task, finalIdx);
+                                player.history.push({ choice: finalIdx, type: task.type, timestamp: Date.now() });
+                                analyzePlayerBehavior();
+                                game.completedMissions.push({ stage: game.stage, missionId: game.missionIdx });
+                                game.missionIdx++;
+                                saveGame();
+                                updateUI();
+                                setTimeout(() => loadCurrentTask(), 1500);
+                            });
+                        } else {
+                            applyChoiceConsequences(task, idx);
+                            applyMetaTrap(task, idx);
+                            player.history.push({ choice: idx, type: task.type, timestamp: Date.now() });
+                            analyzePlayerBehavior();
+                            game.completedMissions.push({ stage: game.stage, missionId: game.missionIdx });
+                            game.missionIdx++;
+                            saveGame();
+                            updateUI();
+                            setTimeout(() => loadCurrentTask(), 1500);
+                        }
                     };
                     btnContainer.appendChild(btn);
                 });
@@ -867,13 +1012,12 @@
                     triggerGlitch();
                     game.meta.uiSwapped = false;
                 }
-                // Для заданий-выборов кнопка "ВЫПОЛНИТЬ" не нужна
                 els.completeBtn.onclick = () => {
                     showSystemMessage("Выбери один из вариантов выше.");
                 };
             }
 
-            // ========== МЕХАНИКА "СОБЛАЗН" ==========
+            // Пропуск задания
             function showSkipModal() {
                 const modal = document.getElementById('skipModal');
                 modal.classList.remove('hidden');
@@ -901,7 +1045,7 @@
                 };
             }
 
-            // ========== ОСНОВНАЯ ЛОГИКА ЗАГРУЗКИ ЗАДАНИЙ ==========
+            // Загрузка текущего задания
             function loadCurrentTask() {
                 const stage = STAGES[game.stage];
                 if (game.missionIdx >= stage.missions) {
@@ -910,7 +1054,6 @@
                         game.missionIdx = 0;
                         saveGame();
                         updateUI();
-                        // случайный перескок этапа (20% шанс)
                         if (Math.random() < 0.2 && game.stage + 1 < STAGES.length) {
                             const newStage = Math.floor(Math.random() * STAGES.length);
                             showSystemMessage(`⚠️ СБОЙ СИСТЕМЫ... переброс на этап ${STAGES[newStage].name}`, true);
@@ -932,13 +1075,11 @@
                     loadCurrentTask();
                     return;
                 }
-                // Предложение пропустить раз в 5-6 заданий
                 if (game.completedMissions.length > 0 && game.completedMissions.length % 5 === 0 && !game.lastWasSkipOffer) {
                     game.lastWasSkipOffer = true;
                     showSkipModal();
                     return;
                 }
-                // 50% на простое задание, 50% на психологический выбор
                 const isSimple = Math.random() < 0.5;
                 if (isSimple) {
                     const simpleTask = generateSimpleTask();
@@ -948,7 +1089,6 @@
                     renderSimpleTask(simpleTask);
                 } else {
                     let choiceTask = generateChoiceTask();
-                    // Подмена кнопок ДО отрисовки
                     maybeSwapChoices(choiceTask);
                     els.questText.innerText = choiceTask.text;
                     game.currentTaskType = 'choice';
@@ -959,27 +1099,38 @@
                 if (game.pendingTaskModifier === "hard") {
                     showSystemMessage("⚠️ УСЛОЖНЁННЫЙ РЕЖИМ АКТИВЕН!", true);
                 }
-                // Проверка на фейковый краш
                 maybeFakeCrash();
+                maybeFakeWin();
             }
 
+            // Финальные концовки (реальные)
             function finishGame() {
                 let verdict = "";
-                if(game.profile.risky > game.profile.safe + 3) verdict = "Ты постоянно рисковал. Система предсказала каждый твой шаг.";
-                else if(game.profile.mistakes > 5) verdict = "Ты делал много ошибок. Система использовала их против тебя.";
-                else if(game.profile.speed > 10) verdict = "Ты ускорялся, когда нервничал. Это было предсказуемо.";
-                else verdict = "Ты пытался быть умным, но просто реагировал. Предсказуемо.";
+                let desc = "";
+                const totalMistakes = game.profile.mistakes;
+                const finalStress = game.stress;
+                const trustHigh = game.trust > 70;
+                const riskHigh = game.profile.risky > game.profile.safe + 3;
+                const safeHigh = game.profile.safe > game.profile.risky + 3;
+                if (finalStress < 30 && totalMistakes < 3) {
+                    verdict = "🔓 ОСВОБОДИЛСЯ";
+                    desc = "Ты сохранил холодный рассудок и не поддался давлению. Система проиграла. Ты свободен.";
+                } else if (finalStress > 70 || totalMistakes > 5) {
+                    verdict = "💀 СЛОМАЛСЯ";
+                    desc = "Система сломала тебя. Ты потерял контроль. Эксперимент завершён.";
+                } else if (trustHigh && safeHigh) {
+                    verdict = "🤖 СТАЛ ЧАСТЬЮ СИСТЕМЫ";
+                    desc = "Ты слишком доверял системе и выбирал безопасность. Теперь ты агент системы.";
+                } else {
+                    verdict = "⚠️ НЕОПРЕДЕЛЁННОСТЬ";
+                    desc = "Ты метался между выбором и сомнением. Система оставила тебя в подвешенном состоянии.";
+                }
                 document.getElementById('finalVerdict').innerText = verdict;
+                document.getElementById('finalDesc').innerText = desc;
                 document.getElementById('finalModal').classList.remove('hidden');
-                document.getElementById('safeFinal').onclick = () => {
+                document.getElementById('closeFinal').onclick = () => {
                     document.getElementById('finalModal').classList.add('hidden');
-                    showInfo("ФИНАЛ", "Ты выбрал безопасность. Система: «Предсказуемо. Эксперимент завершён.»");
-                };
-                document.getElementById('riskFinal').onclick = () => {
-                    document.getElementById('finalModal').classList.add('hidden');
-                    const success = Math.random() < 0.4;
-                    if(success) showInfo("ПОБЕДА", "Система дала сбой. Ты доказал, что человек умнее машины.");
-                    else showInfo("ПОРАЖЕНИЕ", "Система смеётся. Но была ли это честная игра?");
+                    showInfo("КОНЕЦ", "Спасибо за игру. Нажми сброс для новой попытки.");
                 };
             }
 
@@ -1022,7 +1173,8 @@
                     profile: game.profile,
                     player: player,
                     lastWasSkipOffer: game.lastWasSkipOffer,
-                    meta: game.meta
+                    meta: { crashed: game.meta.crashed, fakeWinShown: game.meta.fakeWinShown },
+                    streakCount: game.streakCount
                 }));
             }
 
@@ -1036,14 +1188,16 @@
                     game.stress = data.stress;
                     game.trust = data.trust;
                     game.profile = data.profile || { risky:0, safe:0, mistakes:0, speed:0, lastAnswerTime:Date.now() };
-                    player = data.player || { riskLevel:0, trustSystem:50, stress:0, lastChoices:[], patternCounter:0, fastDecisions:0, history:[] };
+                    player = data.player || { riskLevel:0, trustSystem:50, stress:0, lastChoices:[], patternCounter:0, fastDecisions:0, history:[], streak:0, mistakesCount:0 };
                     game.lastWasSkipOffer = data.lastWasSkipOffer || false;
-                    game.meta = data.meta || { trap: null, uiSwapped: false, crashed: false };
+                    game.meta.crashed = data.meta?.crashed || false;
+                    game.meta.fakeWinShown = data.meta?.fakeWinShown || false;
+                    game.streakCount = data.streakCount || 0;
                 }
                 if(game.stage >= STAGES.length) game.stage = STAGES.length - 1;
             }
 
-            // ========== СТРАШНЫЕ ФОНОВЫЕ ЭФФЕКТЫ ==========
+            // Фоновые эффекты
             let scareInterval = null;
             function startRandomScares() {
                 if (scareInterval) clearInterval(scareInterval);
@@ -1074,7 +1228,7 @@
                 }, 30000);
             }
 
-            // ========== КНОПКА "ОБЪЯСНИТЬ ВЫБОР" ==========
+            // Кнопка объяснения
             function initExplainButton() {
                 els.explainBtn.onclick = () => {
                     showSystemMessage("📢 Ты пытаешься убедить других. Это интересно.", true);
@@ -1085,13 +1239,14 @@
                 };
             }
 
-            // ========== ИНИЦИАЛИЗАЦИЯ ==========
+            // Инициализация
             function init() {
                 loadGame();
                 updateUI();
                 loadCurrentTask();
                 startRandomScares();
                 startRandomGlitches();
+                startFakeStats();
                 initExplainButton();
                 window.audioCtx = null;
                 document.body.addEventListener('click', () => {
@@ -1105,7 +1260,7 @@
                 els.hintBtn.addEventListener('click', showHint);
                 document.getElementById('closeHint')?.addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
                 document.getElementById('closeInfo')?.addEventListener('click', () => document.getElementById('infoModal').classList.add('hidden'));
-                console.log("Игра разума 5.0 — Психологическая атака: память, ловушки, подмена кнопок, краш, кнопка объяснения. Без таймеров.");
+                console.log("Игра разума 6.0 — Полное вовлечение чата, серии, реальные концовки, ложные статы, голосования.");
             }
             init();
         })();
