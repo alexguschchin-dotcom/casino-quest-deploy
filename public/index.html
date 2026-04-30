@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ИГРА РАЗУМА · ФИНАЛ</title>
+    <title>ИГРА РАЗУМА · ФИНАЛЬНАЯ СТАБИЛЬНАЯ</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', monospace; user-select: none; }
         body { background: #030307; color: #0f0; padding: 20px; min-height: 100vh; overflow-x: hidden; }
@@ -52,7 +52,6 @@
         .btn-fail:hover { box-shadow:0 0 20px #ff3366; transform:scale(1.02); }
         .btn-choice { background:#111; border:2px solid #0f0; color:#0f0; }
         .btn-choice:hover { background:#0f0; color:black; }
-        .balance-input { background:#111; border:2px solid #0f0; padding:12px 20px; border-radius:60px; color:#0f0; font-size:1.2rem; width:250px; text-align:center; margin:10px auto; }
         .system-comment { background:#000000cc; padding:14px; border-radius:32px; font-style:italic; border-left:4px solid #ff3366; font-size:0.9rem; transition:0.2s; min-height: 80px; }
         .chat-tool { background:#000000aa; border-radius:40px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
         .btn-hint { background:#0f0; border:none; padding:6px 16px; border-radius:60px; cursor:pointer; font-weight:bold; }
@@ -72,7 +71,7 @@
     <div class="glitch-overlay"></div>
     <div class="container">
         <div class="status-bar">
-            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.8.0</div>
+            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.8.0 (СТАБИЛЬНАЯ)</div>
             <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОС</button>
         </div>
         <div class="main-grid">
@@ -88,11 +87,10 @@
                     <h3><i class="fas fa-info-circle"></i> О КВЕСТЕ</h3>
                     <ul>
                         <li>Система анализирует твой стиль и подбирает задание из 60 вариантов.</li>
-                        <li>После выполнения введи текущий баланс (без наказания — просто для статистики).</li>
-                        <li>Иногда система задаёт вопрос из науки. Ответь правильно — получишь лёгкое задание, ошибёшься — сложное.</li>
-                        <li>Система может обманывать: подменять цели, завышать требования.</li>
-                        <li>При проигрыше 3000$ будет моральный выбор.</li>
-                        <li>Квест заканчивается при стрессе >75 или лжи >3.</li>
+                        <li>Нажимай «ВЫПОЛНЕНО» — баланс вырастет, стресс снизится. «ПРОВАЛЕНО» — баланс упадёт, стресс вырастет.</li>
+                        <li>Иногда выпадают научные вопросы. Ответишь правильно — получишь лёгкое задание, неправильно — сложное.</li>
+                        <li>Моральные события влияют на стресс/доверие и сложность следующих заданий.</li>
+                        <li>При стрессе >75 или лжи >3 — проигрыш.</li>
                     </ul>
                 </div>
                 <div class="phase-map" id="phaseList"></div>
@@ -111,38 +109,41 @@
 
     <!-- Модалки -->
     <div id="startModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:600px;">
             <h2>⚡ ДОБРО ПОЖАЛОВАТЬ В КВЕСТ</h2>
             <div class="instruction-text">
-                <h4>📜 Правила</h4>
-                <p>Ты — подопытный в системе. Выполняй задания казино, честно вводи баланс (система не наказывает за несовпадение, но запоминает стиль).<br>
-                Иногда система задаёт ВОПРОСЫ — отвечай правильно, чтобы получить лёгкое задание.<br>
-                Система может ОБМАНЫВАТЬ: подменять цель, завышать ставки.<br>
-                Стресс растёт от провалов, падает от успехов. При стрессе >75 — проигрыш.<br>
-                Всего 5 этапов, 20 заданий (варианты сложности дают 60 формулировок).<br>
-                Удачи.</p>
+                <h4>📜 Полное объяснение</h4>
+                <p><strong>Сюжет:</strong> Ты — подопытный в системе, которая анализирует каждое твоё действие и подстраивает задания, чтобы сломать тебя.</p>
+                <h4>🎯 Цель:</h4>
+                <p>Пройти 5 этапов (всего 20 заданий, но с разными вариантами сложности — 60 уникальных формулировок). На каждом этапе нужно выполнить определённое количество спин-заданий (6,5,4,3,2).</p>
+                <h4>🎮 Как играть:</h4>
+                <ul>
+                    <li>На экране появляется задание (например, «Сделай 30 спинов в Dog House по 10$, цель — бонус»).</li>
+                    <li>Ты выполняешь это задание в реальном казино (стрим).</li>
+                    <li>Честно нажимаешь «ВЫПОЛНЕНО» или «ПРОВАЛЕНО». Баланс изменится автоматически.</li>
+                    <li>Система может обмануть тебя — подменить цель или внезапно усложнить задание.</li>
+                </ul>
+                <h4>❓ Научные вопросы:</h4>
+                <p>С вероятностью 35% вместо спин-задания появляется вопрос с тремя вариантами, один правильный. Правильный ответ → лёгкое задание, неправильный → сложное. Вопрос не засчитывается как задание этапа.</p>
+                <h4>📊 Стресс и доверие:</h4>
+                <ul>
+                    <li>Успех → стресс ↓, доверие ↑. Провал → стресс ↑, доверие ↓.</li>
+                    <li>Высокий стресс (>60) вызывает глитчи (кнопки убегают). При стрессе >75 — проигрыш.</li>
+                    <li>Высокое доверие (>70) может привести к концовке «Стал частью системы».</li>
+                </ul>
+                <h4>🔚 Концовки:</h4>
+                <ul>
+                    <li>🔓 Освободился — низкий стресс, нет лжи, прибыль.</li>
+                    <li>💀 Сломался — стресс >75 или ложь >3.</li>
+                    <li>🤖 Стал частью системы — доверие >70.</li>
+                    <li>⚠️ Неопределённость — всё остальное.</li>
+                </ul>
+                <p>🔁 Прогресс автоматически сохраняется.</p>
             </div>
-            <hr>
-            <p>СТАРТОВЫЙ БАЛАНС ($):</p>
+            <hr style="border-color:#0f0; margin:15px 0;">
+            <p>Введи свой СТАРТОВЫЙ БАЛАНС (в долларах):</p>
             <input type="number" id="startBalance" class="balance-input" placeholder="Например, 20000">
-            <button id="confirmStart" class="modal-btn">НАЧАТЬ</button>
-        </div>
-    </div>
-    <div id="balanceModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>💰 ВВЕДИ ТЕКУЩИЙ БАЛАНС</h2>
-            <p id="balanceTaskInfo"></p>
-            <input type="number" id="currentBalance" class="balance-input" placeholder="Баланс">
-            <div>
-                <button id="submitBalanceBtn" class="modal-btn" style="background:#0f0; color:black;">ПОДТВЕРДИТЬ</button>
-            </div>
-        </div>
-    </div>
-    <div id="quizModal" class="modal hidden">
-        <div class="modal-content">
-            <h3>❓ ВОПРОС ОТ СИСТЕМЫ</h3>
-            <p id="quizText" style="margin:15px 0;"></p>
-            <div id="quizButtons"></div>
+            <button id="confirmStart" class="modal-btn">НАЧАТЬ КВЕСТ</button>
         </div>
     </div>
     <div id="eventModal" class="modal hidden">
@@ -153,11 +154,12 @@
         </div>
     </div>
     <div id="finalModal" class="modal hidden"><div class="modal-content"><h2>🔮 ПРИГОВОР</h2><p id="finalVerdict"></p><p id="finalDesc"></p><button id="closeFinal" class="modal-btn">ЗАВЕРШИТЬ</button></div></div>
-    <div id="hintModal" class="modal hidden"><div class="modal-content"><h3>💡 ПОДСКАЗКА</h3><p id="hintMsg"></p><button id="closeHint" class="modal-btn">ЗАКРЫТЬ</button></div></div>
 
     <script>
         (function(){
-            // ---------- ЭТАПЫ ----------
+            // --------------------------------------------------------------
+            // 1. КОНФИГУРАЦИЯ
+            // --------------------------------------------------------------
             const STAGES = [
                 { name: "ДОВЕРИЕ", icon: "fa-hand-peace", missions: 6, baseStress: 25, baseTrust: 55 },
                 { name: "СОМНЕНИЕ", icon: "fa-question", missions: 5, baseStress: 35, baseTrust: 45 },
@@ -166,7 +168,7 @@
                 { name: "ФИНАЛ", icon: "fa-crown", missions: 2, baseStress: 85, baseTrust: 15 }
             ];
 
-            // ---------- БАЗОВЫЕ ЗАДАНИЯ (20 штук, каждый с 3 уровнями сложности) ----------
+            // 20 базовых шаблонов × 3 уровня = 60 заданий
             const BASE_TASKS = [
                 { text: "Сделай {spins} спинов в Dog House по {bet}$. Цель: хотя бы один бонус.", goal: "бонус", vars: { spins: [25,30,40], bet: [8,10,15], difficulty: ["easy","medium","hard"] } },
                 { text: "Купи бонус в Sweet Bonanza за {bet}$. Цель: отбить {percent}%", goal: "{percent}%", vars: { bet: [150,200,300], percent: [50,60,70], difficulty: ["easy","medium","hard"] } },
@@ -190,24 +192,32 @@
                 { text: "Сделай {spins} спинов в Gates of Olympus по {bet}$. Цель: получить множитель x{mult}+ в любом спине", goal: "x{mult}+", vars: { spins: [50,70,100], bet: [8,12,20], mult: [20,30,50], difficulty: ["easy","medium","hard"] } }
             ];
 
-            // ---------- НАУЧНЫЕ ВОПРОСЫ (1 правильный ответ) ----------
-            const SCIENCE_QUIZ = [
-                { question: "Какая планета Солнечной системы самая большая?", options: ["Марс", "Юпитер", "Сатурн", "Нептун"], correct: 1, difficulty: "easy" },
-                { question: "Кто автор теории относительности?", options: ["Ньютон", "Эйнштейн", "Галилей", "Тесла"], correct: 1, difficulty: "easy" },
-                { question: "Чему равно ускорение свободного падения на Земле (приблизительно)?", options: ["5 м/с²", "9.8 м/с²", "12 м/с²", "15 м/с²"], correct: 1, difficulty: "medium" },
-                { question: "Какое химическое обозначение у золота?", options: ["Ag", "Fe", "Au", "Pb"], correct: 2, difficulty: "easy" },
-                { question: "Сколько минут в одном градусе?", options: ["60", "100", "3600", "60 секунд"], correct: 0, difficulty: "hard" },
-                { question: "Какая звезда ближайшая к Земле после Солнца?", options: ["Сириус", "Проксима Центавра", "Альфа Центавра", "Бетельгейзе"], correct: 1, difficulty: "medium" },
-                { question: "Что измеряет амперметр?", options: ["Напряжение", "Сопротивление", "Силу тока", "Мощность"], correct: 2, difficulty: "easy" },
-                { question: "Как называется самая высокая гора на Земле?", options: ["К2", "Эверест", "Килиманджаро", "Эльбрус"], correct: 1, difficulty: "easy" },
+            // Научные вопросы (один правильный ответ)
+            const SCIENCE_QUESTIONS = [
+                { text: "Какая планета Солнечной системы самая большая?", options: ["Марс", "Юпитер", "Сатурн"], correct: 1, mock: "Неправильно! Самая большая планета — Юпитер. Получай сложное задание." },
+                { text: "Кто написал 'Войну и мир'?", options: ["Достоевский", "Толстой", "Чехов"], correct: 1, mock: "Ошибка. Это Лев Толстой. Держи сложное задание." },
+                { text: "Чему равно 2 + 2 * 2?", options: ["6", "8", "4"], correct: 0, mock: "Неверно. Сначала умножение: 2*2=4, потом +2 = 6. Получай сложное задание." },
+                { text: "Какое химическое обозначение воды?", options: ["CO2", "H2O", "O2"], correct: 1, mock: "Нет, вода — H2O. Сложное задание для тебя." },
+                { text: "Кто написал 'Евгения Онегина'?", options: ["Лермонтов", "Пушкин", "Гоголь"], correct: 1, mock: "Не угадал. Пушкин. Получай сложное задание." },
+                { text: "Столица Франции?", options: ["Лондон", "Берлин", "Париж"], correct: 2, mock: "Неправильно. Париж. Держи сложное задание." },
+                { text: "Сколько дней в високосном году?", options: ["365", "366", "364"], correct: 1, mock: "Ошибка. В високосном 366 дней. Сложное задание." }
             ];
 
-            // ---------- МОРАЛЬНЫЕ СОБЫТИЯ ----------
+            // Моральные события (включая иллюзию)
             const MORAL_EVENTS = [
-                { text: "Ты проиграл 3000$. Что делаешь?", options: ["Увеличить ставку (риск)", "Уменьшить ставку (безопасно)", "Оставить ставки (нейтрально)"], effects: [{stress:12, trust:-6, mod:1.3}, {stress:-5, trust:5, mod:0.7}, {stress:2, trust:0, mod:1}] },
-                { text: "Система предлагает 'горячий' слот. Поверишь?", options: ["Довериться", "Игнорировать"], effects: [{stress:-2, trust:8, mod:1.2}, {stress:0, trust:-2, mod:1}] },
-                { text: "Система говорит рискнуть. Твои действия?", options: ["Рискнуть", "Сделать наоборот", "Не обращать внимания"], effects: [{stress:8, trust:-6, mod:1.2}, {stress:2, trust:2, mod:1}, {stress:0, trust:0, mod:1}] }
+                { text: "Ты проиграл 3000$. Что делаешь?", options: ["Увеличить ставку (риск)", "Уменьшить ставку (безопасно)", "Оставить ставки (нейтрально)"], effects: [{stress:12, trust:-6, mod:1.3}, {stress:-5, trust:5, mod:0.7}, {stress:2, trust:0, mod:1}], isIllusion: false },
+                { text: "Система предлагает 'горячий' слот. Поверишь?", options: ["Довериться", "Игнорировать"], effects: [{stress:-2, trust:8, mod:1.2}, {stress:0, trust:-2, mod:1}], isIllusion: false },
+                { text: "Система говорит рискнуть. Твои действия?", options: ["Рискнуть", "Сделать наоборот", "Не обращать внимания"], effects: [{stress:8, trust:-6, mod:1.2}, {stress:2, trust:2, mod:1}, {stress:0, trust:0, mod:1}], isIllusion: false },
+                { text: "Система даёт ложную статистику. Поверишь?", options: ["Поверить", "Проверить", "Проигнорировать"], effects: [{stress:4, trust:-4, mod:1.1}, {stress:-3, trust:3, mod:1}, {stress:1, trust:0, mod:1}], isIllusion: false },
+                { text: "Система предлагает рискнуть. Выбери вариант:", options: ["Рискнуть", "Рискнуть"], effects: [{stress:10, trust:-2, mod:1.4}, {stress:10, trust:-2, mod:1.4}], isIllusion: true }
             ];
+
+            const PERSONAL_PHRASES = {
+                light: ["Алексей... ты ведь не первый раз здесь, да?", "Алексей, ты делаешь вид, что это просто игра."],
+                medium: ["Алексей, ты всегда так реагируешь на проигрыш.", "Я запоминаю каждое твоё решение, Алексей."],
+                hard: ["Алексей... не оборачивайся.", "Я ближе, чем ты думаешь, Алексей."],
+                final: ["Алексей, ты ведь понимаешь, что стрим — это тоже часть системы?", "И он уже завершён, Алексей."]
+            };
 
             // Состояние игры
             let game = {
@@ -218,8 +228,7 @@
             };
 
             let currentTask = null;
-            let awaitingBalance = false;   // ожидание ввода баланса
-            let eventActive = false;       // активна модалка (викторина или моральное событие)
+            let eventActive = false;
             let messageQueue = [];
             let isShowingMessage = false;
 
@@ -244,7 +253,9 @@
                 balanceStat: document.getElementById('balanceStat')
             };
 
-            // Очередь сообщений
+            // --------------------------------------------------------------
+            // 2. СИСТЕМА СООБЩЕНИЙ
+            // --------------------------------------------------------------
             function processMessageQueue() {
                 if (isShowingMessage) return;
                 if (messageQueue.length === 0) return;
@@ -255,16 +266,16 @@
                 setTimeout(() => {
                     isShowingMessage = false;
                     processMessageQueue();
-                    if (messageQueue.length === 0 && !isShowingMessage) {
-                        setTimeout(() => {
-                            if (!isShowingMessage && messageQueue.length === 0)
-                                els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
-                        }, 3000);
-                    }
-                }, 5000);
+                }, 4500);
             }
-            function showSystemMessage(msg, urgent=false) { messageQueue.push({msg, isUrgent: urgent}); processMessageQueue(); }
+            function showSystemMessage(msg, isUrgent = false) {
+                messageQueue.push({ msg, isUrgent });
+                processMessageQueue();
+            }
 
+            // --------------------------------------------------------------
+            // 3. ЭФФЕКТЫ
+            // --------------------------------------------------------------
             function triggerGlitch() {
                 document.body.classList.add('glitch');
                 setTimeout(() => document.body.classList.remove('glitch'), 200);
@@ -284,61 +295,25 @@
                 }
             }
 
-            function updateUI() {
-                const stageData = STAGES[game.stage];
-                const done = game.completedInStage;
-                const percent = (done / stageData.missions) * 100;
-                els.phaseFill.style.width = percent + '%';
-                els.stressFill.style.width = game.stress + '%';
-                els.stressValue.innerText = game.stress;
-                els.trustFill.style.width = game.trust + '%';
-                els.trustValue.innerText = game.trust;
-                els.phaseNum.innerText = game.stage + 1;
-                els.phaseNameBadge.innerText = `${stageData.name} (${game.stage+1}/5)`;
-                els.riskStat.innerText = game.risky;
-                els.safeStat.innerText = game.safe;
-                els.mistakeStat.innerText = game.lies;
-                els.balanceStat.innerText = game.balance;
-                renderStageMap();
-                if (game.stress > 70) triggerGlitch();
-                if (Math.random() < 0.1 && game.totalCompleted > 0) showSystemMessage(getPersonalPhrase(), false);
-                if (game.failStreak >= 2) showSystemMessage(`Алексей, ты снова теряешь контроль.`, true);
-                if (game.successStreak >= 3) {
-                    showSystemMessage(`Слишком стабильно, Алексей... Это подозрительно.`, true);
-                    game.stress = Math.min(100, game.stress + 5);
-                    updateUI();
-                }
-                const totalLoss = game.balanceStart - game.balance;
-                if (!game.lossEventTriggered && totalLoss >= 3000) {
-                    game.lossEventTriggered = true;
-                    showMoralEvent(0, true);
-                }
-                if (game.stress > 75 || game.lies > 3) finishGame(true);
-            }
-
-            function renderStageMap() {
-                els.phaseList.innerHTML = '';
-                STAGES.forEach((s, idx) => {
-                    const done = (idx === game.stage) ? game.completedInStage : (idx < game.stage ? STAGES[idx].missions : 0);
-                    const div = document.createElement('div');
-                    div.className = `phase-item ${idx === game.stage ? 'active' : ''}`;
-                    div.innerHTML = `<div class="phase-icon"><i class="fas ${s.icon}"></i></div><div>${s.name}</div><div style="margin-left:auto;">${done}/${s.missions}</div>`;
-                    div.addEventListener('click', () => { if (idx <= game.stage) showSystemMessage("Нельзя переключать этапы вручную."); });
-                    els.phaseList.appendChild(div);
+            function initFleeingButtons() {
+                const btns = document.querySelectorAll('.btn-success, .btn-fail, .btn-choice');
+                btns.forEach(btn => {
+                    btn.addEventListener('mouseenter', function() {
+                        if (game.stress > 60) {
+                            const x = (Math.random() - 0.5) * 120;
+                            const y = (Math.random() - 0.5) * 70;
+                            this.style.transform = `translate(${x}px, ${y}px)`;
+                        }
+                    });
+                    btn.addEventListener('mouseleave', function() { this.style.transform = ''; });
                 });
             }
 
-            function getPersonalPhrase() {
-                let pool;
-                if (game.stage <= 1) pool = ["Алексей... ты ведь не первый раз здесь, да?", "Алексей, ты делаешь вид, что это просто игра.", "Я уже видела таких, как ты, Алексей."];
-                else if (game.stage <= 3) pool = ["Алексей, ты всегда так реагируешь на проигрыш.", "Алексей, ты снова выбрал это. Как и в прошлый раз.", "Я запоминаю каждое твоё решение, Алексей."];
-                else pool = ["Алексей... не оборачивайся.", "Алексей, ты сейчас один?", "Я ближе, чем ты думаешь, Алексей."];
-                return pool[Math.floor(Math.random() * pool.length)];
-            }
-
-            // Генерация спин-задания
+            // --------------------------------------------------------------
+            // 4. ГЕНЕРАЦИЯ ЗАДАНИЙ
+            // --------------------------------------------------------------
             function generateSpinTask(forceLevel = null) {
-                const baseTask = BASE_TASKS[Math.floor(Math.random() * BASE_TASKS.length)];
+                const base = BASE_TASKS[Math.floor(Math.random() * BASE_TASKS.length)];
                 let level = (forceLevel !== null) ? forceLevel : 1;
                 if (forceLevel === null) {
                     if (game.successStreak >= 2) level = Math.min(2, level+1);
@@ -347,31 +322,31 @@
                     if (game.modRisk < 0.9) level = Math.max(0, level-1);
                     if (game.stress > 70) level = Math.min(2, level+1);
                 }
-                const diff = baseTask.vars.difficulty[level];
-                let text = baseTask.text;
-                let goal = baseTask.goal;
-                for (let key in baseTask.vars) {
+                const diff = base.vars.difficulty[level];
+                let text = base.text;
+                let goal = base.goal;
+                for (let key in base.vars) {
                     if (key === 'difficulty') continue;
-                    let val = baseTask.vars[key][level];
+                    let val = base.vars[key][level];
                     text = text.replace(new RegExp(`\\{${key}\\}`, 'g'), val);
                     if (goal.includes(`{${key}}`)) goal = goal.replace(new RegExp(`\\{${key}\\}`, 'g'), val);
                 }
-                // Система может обмануть: подменить цель
-                if (Math.random() < 0.2 && forceLevel === null) {
-                    goal = "ЛОЖНАЯ ЦЕЛЬ: " + goal + " (на самом деле нужно больше)";
-                    showSystemMessage("⚠️ СИСТЕМА ОБМАНУЛА ТЕБЯ! Цель задания изменена.", true);
-                }
+                if (game.successStreak >= 4 && forceLevel === null) goal = "ЛОЖНАЯ ЦЕЛЬ: " + goal;
+                if (game.stress > 60 && Math.random() < 0.3 && forceLevel === null) goal += " (СИСТЕМА УСЛОЖНИЛА)";
                 return { text, goal, difficulty: diff, type: "spin" };
             }
 
-            // Научная викторина
-            function showQuiz() {
-                if (eventActive || awaitingBalance) return;
+            // --------------------------------------------------------------
+            // 5. НАУЧНЫЙ ВОПРОС
+            // --------------------------------------------------------------
+            function showScienceQuestion() {
+                if (eventActive) return;
                 eventActive = true;
-                const q = SCIENCE_QUIZ[Math.floor(Math.random() * SCIENCE_QUIZ.length)];
-                const modal = document.getElementById('quizModal');
-                document.getElementById('quizText').innerText = q.question;
-                const container = document.getElementById('quizButtons');
+                const q = SCIENCE_QUESTIONS[Math.floor(Math.random() * SCIENCE_QUESTIONS.length)];
+                const modal = document.getElementById('eventModal');
+                document.getElementById('eventTitle').innerHTML = "❓ НАУЧНЫЙ ВОПРОС";
+                document.getElementById('eventText').innerHTML = q.text;
+                const container = document.getElementById('eventButtons');
                 container.innerHTML = "";
                 q.options.forEach((opt, idx) => {
                     const btn = document.createElement('button');
@@ -380,15 +355,20 @@
                     btn.onclick = () => {
                         const isCorrect = (idx === q.correct);
                         if (isCorrect) {
-                            showSystemMessage("✅ Правильно! Система даёт тебе лёгкое задание.", false);
-                            currentTask = generateSpinTask(0); // лёгкое
+                            showSystemMessage("✅ Верно! Ты получаешь ЛЁГКОЕ задание.", false);
+                            currentTask = generateSpinTask(0); // easy
+                            game.trust = Math.min(100, game.trust + 2);
+                            game.stress = Math.max(0, game.stress - 3);
                         } else {
-                            showSystemMessage(`❌ Неправильно. Правильный ответ: ${q.options[q.correct]}. Получай сложное задание.`, true);
-                            currentTask = generateSpinTask(2); // сложное
+                            showSystemMessage(q.mock, true);
+                            currentTask = generateSpinTask(2); // hard
+                            game.stress = Math.min(100, game.stress + 8);
+                            game.trust = Math.max(0, game.trust - 4);
                         }
                         modal.classList.add('hidden');
                         eventActive = false;
                         renderTask();
+                        updateUI();
                         saveGame();
                     };
                     container.appendChild(btn);
@@ -396,31 +376,39 @@
                 modal.classList.remove('hidden');
             }
 
-            // Моральное событие
+            // --------------------------------------------------------------
+            // 6. МОРАЛЬНОЕ СОБЫТИЕ
+            // --------------------------------------------------------------
             function showMoralEvent(index, isLossEvent = false) {
-                if (eventActive || awaitingBalance) return;
+                if (eventActive) return;
                 eventActive = true;
                 const ev = MORAL_EVENTS[index];
                 const modal = document.getElementById('eventModal');
                 document.getElementById('eventTitle').innerText = isLossEvent ? "⚠️ КРИТИЧЕСКАЯ ПРОСАДКА" : "⚠️ МОРАЛЬНЫЙ ВЫБОР";
-                document.getElementById('eventText').innerText = ev.text;
+                document.getElementById('eventText').innerHTML = ev.text;
                 const container = document.getElementById('eventButtons');
                 container.innerHTML = "";
                 ev.options.forEach((opt, idx) => {
                     const btn = document.createElement('button');
                     btn.innerText = opt;
                     btn.className = "modal-btn";
+                    if (idx === 1 && ev.options.length > 2) btn.classList.add('risk');
                     btn.onclick = () => {
                         const eff = ev.effects[idx];
                         game.stress = Math.min(100, Math.max(0, game.stress + eff.stress));
                         game.trust = Math.min(100, Math.max(0, game.trust + eff.trust));
                         if (eff.mod) game.modRisk = eff.mod;
+                        if (ev.isIllusion) {
+                            showSystemMessage("Ты правда думал, что у тебя был выбор?", true);
+                            game.modRisk = 1.4;
+                        }
                         showSystemMessage(`Выбор: "${opt}". Стресс ${eff.stress>0?`+${eff.stress}`:eff.stress}%, доверие ${eff.trust>0?`+${eff.trust}`:eff.trust}%.`);
                         if (idx === 0) game.risky++;
                         else if (idx === 1 && ev.options.length > 2) game.safe++;
                         modal.classList.add('hidden');
                         eventActive = false;
                         updateUI();
+                        saveGame();
                         if (!currentTask) loadNewTask();
                     };
                     container.appendChild(btn);
@@ -428,43 +416,42 @@
                 modal.classList.remove('hidden');
             }
 
-            // Обработка ввода баланса (без наказания, просто запись)
-            function submitBalance() {
-                if (!awaitingBalance) return;
-                const balanceInput = document.getElementById('currentBalance');
-                const newBalance = parseInt(balanceInput.value);
-                if (!isNaN(newBalance)) {
-                    game.balance = newBalance;
-                    showSystemMessage(`Баланс обновлён: ${game.balance}$.`, false);
+            // --------------------------------------------------------------
+            // 7. ОБРАБОТКА ВЫПОЛНЕНИЯ ЗАДАНИЯ (без модалки)
+            // --------------------------------------------------------------
+            function completeTask(success) {
+                if (eventActive) return;
+                // Изменение баланса
+                let profit = 0;
+                if (success) {
+                    profit = Math.floor(Math.random() * 400) + 100;
+                    game.balance += profit;
+                    showSystemMessage(`✅ Ты выполнил задание! Баланс +${profit}$.`, false);
                 } else {
-                    showSystemMessage("Некорректный баланс, оставлен прежний.", true);
+                    profit = -Math.floor(Math.random() * 300) - 100;
+                    game.balance += profit;
+                    showSystemMessage(`❌ Ты провалил задание. Баланс ${profit}$.`, true);
                 }
-                document.getElementById('balanceModal').classList.add('hidden');
-                awaitingBalance = false;
-                document.getElementById('currentBalance').value = '';
-                // Завершаем задание: увеличиваем счётчики, меняем стресс в зависимости от заявленного результата
-                // Заявленный результат уже сохранён в currentDeclaredResult
-                if (currentDeclaredResult) {
-                    const success = (currentDeclaredResult === 'success');
-                    let stressDelta = success ? -5 : 8;
-                    let trustDelta = success ? 3 : -2;
-                    if (currentTask.difficulty === "hard") {
-                        stressDelta += success ? -3 : 10;
-                        trustDelta += success ? 2 : -3;
-                    } else if (currentTask.difficulty === "easy") {
-                        stressDelta += success ? -2 : 5;
-                        trustDelta += success ? 1 : -1;
-                    }
-                    game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
-                    game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
-                    if (success) { game.successStreak++; game.failStreak = 0; }
-                    else { game.successStreak = 0; game.failStreak++; }
-                    game.totalCompleted++;
-                    game.completedInStage++;
-                    showSystemMessage(success ? "✅ Задание засчитано как выполненное." : "❌ Задание засчитано как проваленное.", false);
+                // Изменение стресса и доверия
+                let stressDelta = success ? -5 : 8;
+                let trustDelta = success ? 3 : -2;
+                if (currentTask.difficulty === "hard") {
+                    stressDelta += success ? -3 : 10;
+                    trustDelta += success ? 2 : -3;
+                } else if (currentTask.difficulty === "easy") {
+                    stressDelta += success ? -2 : 5;
+                    trustDelta += success ? 1 : -1;
                 }
-                currentDeclaredResult = null;
-
+                game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
+                game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
+                
+                game.history.push({ task: currentTask.text, result: success, balance: game.balance });
+                if (success) { game.successStreak++; game.failStreak = 0; }
+                else { game.successStreak = 0; game.failStreak++; }
+                
+                game.totalCompleted++;
+                game.completedInStage++;
+                
                 // Переход этапа
                 if (game.completedInStage >= STAGES[game.stage].missions) {
                     if (game.stage + 1 < STAGES.length) {
@@ -484,40 +471,26 @@
                 loadNewTask();
             }
 
-            let currentDeclaredResult = null;
-
             function renderTask() {
                 els.actionButtons.innerHTML = "";
                 const btnSuccess = document.createElement('button');
                 btnSuccess.innerText = "✅ ВЫПОЛНЕНО";
                 btnSuccess.className = "btn-success";
-                btnSuccess.onclick = () => {
-                    if (awaitingBalance || eventActive) return;
-                    awaitingBalance = true;
-                    currentDeclaredResult = 'success';
-                    document.getElementById('balanceTaskInfo').innerHTML = `Задание: ${currentTask.text}<br>Введи текущий баланс:`;
-                    document.getElementById('balanceModal').classList.remove('hidden');
-                };
+                btnSuccess.onclick = () => completeTask(true);
                 const btnFail = document.createElement('button');
                 btnFail.innerText = "❌ ПРОВАЛЕНО";
                 btnFail.className = "btn-fail";
-                btnFail.onclick = () => {
-                    if (awaitingBalance || eventActive) return;
-                    awaitingBalance = true;
-                    currentDeclaredResult = 'fail';
-                    document.getElementById('balanceTaskInfo').innerHTML = `Задание: ${currentTask.text}<br>Введи текущий баланс:`;
-                    document.getElementById('balanceModal').classList.remove('hidden');
-                };
+                btnFail.onclick = () => completeTask(false);
                 els.actionButtons.appendChild(btnSuccess);
                 els.actionButtons.appendChild(btnFail);
                 els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
             }
 
             function loadNewTask() {
-                if (awaitingBalance || eventActive) return;
-                // С вероятностью 30% вместо задания — викторина
-                if (Math.random() < 0.3 && game.totalCompleted > 0) {
-                    showQuiz();
+                if (eventActive) return;
+                // 35% на научный вопрос
+                if (Math.random() < 0.35 && game.totalCompleted > 0) {
+                    showScienceQuestion();
                     return;
                 }
                 currentTask = generateSpinTask();
@@ -525,9 +498,86 @@
                 saveGame();
             }
 
-            function startGame(startBalance) {
-                const bal = parseInt(startBalance);
-                if (isNaN(bal) || bal <= 0) { alert("Введи сумму"); return; }
+            // --------------------------------------------------------------
+            // 8. ОСТАЛЬНОЕ (UI, старт, финиш)
+            // --------------------------------------------------------------
+            function updateUI() {
+                const stageData = STAGES[game.stage];
+                const percent = (game.completedInStage / stageData.missions) * 100;
+                els.phaseFill.style.width = percent + '%';
+                els.stressFill.style.width = game.stress + '%';
+                els.stressValue.innerText = game.stress;
+                els.trustFill.style.width = game.trust + '%';
+                els.trustValue.innerText = game.trust;
+                els.phaseNum.innerText = game.stage + 1;
+                els.phaseNameBadge.innerText = `${stageData.name} (${game.stage+1}/5)`;
+                els.riskStat.innerText = game.risky;
+                els.safeStat.innerText = game.safe;
+                els.mistakeStat.innerText = game.lies;
+                els.balanceStat.innerText = game.balance;
+                renderStageMap();
+                if (game.stress > 70) triggerGlitch();
+                if (Math.random() < 0.1 && game.totalCompleted > 0) showSystemMessage(getPersonalPhrase(), false);
+                if (game.failStreak >= 2) showSystemMessage(`Алексей, ты снова теряешь контроль.`, true);
+                if (game.successStreak >= 3) {
+                    showSystemMessage(`Слишком стабильно... Это подозрительно.`, true);
+                    game.stress = Math.min(100, game.stress + 5);
+                }
+                const totalLoss = game.balanceStart - game.balance;
+                if (!game.lossEventTriggered && totalLoss >= 3000) {
+                    game.lossEventTriggered = true;
+                    showMoralEvent(0, true);
+                }
+                if (game.stress > 75 || game.lies > 3) finishGame(true);
+            }
+
+            function renderStageMap() {
+                els.phaseList.innerHTML = '';
+                STAGES.forEach((s, idx) => {
+                    const done = (idx === game.stage) ? game.completedInStage : (idx < game.stage ? STAGES[idx].missions : 0);
+                    const div = document.createElement('div');
+                    div.className = `phase-item ${idx === game.stage ? 'active' : ''}`;
+                    div.innerHTML = `<div class="phase-icon"><i class="fas ${s.icon}"></i></div><div>${s.name}</div><div style="margin-left:auto;">${done}/${s.missions}</div>`;
+                    div.addEventListener('click', () => showSystemMessage("Нельзя переключать этапы вручную."));
+                    els.phaseList.appendChild(div);
+                });
+            }
+
+            function getPersonalPhrase() {
+                let pool = PERSONAL_PHRASES.light;
+                if (game.stage <= 1) pool = PERSONAL_PHRASES.light;
+                else if (game.stage <= 3) pool = PERSONAL_PHRASES.medium;
+                else if (game.stage === 4) pool = PERSONAL_PHRASES.hard;
+                else pool = PERSONAL_PHRASES.final;
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+
+            function finishGame(byBreak = false) {
+                if (byBreak) {
+                    document.getElementById('finalVerdict').innerText = "💀 СЛОМАЛСЯ";
+                    document.getElementById('finalDesc').innerText = "Система сломала тебя. Ты потерял контроль и честность.";
+                } else {
+                    const profit = game.balance - game.balanceStart;
+                    let verdict = "", desc = "";
+                    if (game.stress < 35 && game.lies === 0 && profit > 0) {
+                        verdict = "🔓 ОСВОБОДИЛСЯ";
+                        desc = "Ты выжил и приумножил капитал.";
+                    } else if (game.trust > 70) {
+                        verdict = "🤖 СТАЛ ЧАСТЬЮ СИСТЕМЫ";
+                        desc = "Ты слишком доверял системе. Теперь ты её агент.";
+                    } else {
+                        verdict = "⚠️ НЕОПРЕДЕЛЁННОСТЬ";
+                        desc = "Финал открыт. Система потеряла интерес.";
+                    }
+                    document.getElementById('finalVerdict').innerText = verdict;
+                    document.getElementById('finalDesc').innerText = desc;
+                }
+                document.getElementById('finalModal').classList.remove('hidden');
+            }
+
+            function startGame(balance) {
+                const bal = parseInt(balance);
+                if (isNaN(bal) || bal <= 0) { alert("Введите корректную сумму"); return; }
                 game.balance = bal;
                 game.balanceStart = bal;
                 game.stress = 30;
@@ -536,39 +586,14 @@
                 game.completedInStage = 0;
                 game.totalCompleted = 0;
                 game.risky = game.safe = game.lies = game.successStreak = game.failStreak = 0;
-                game.modRisk = 1.0;
+                game.history = [];
                 game.lossEventTriggered = false;
+                game.modRisk = 1.0;
                 updateUI();
                 document.getElementById('startModal').classList.add('hidden');
                 loadNewTask();
-                setTimeout(() => showSystemMessage("Я знаю тебя, Алексей. Добро пожаловать.", true), 1000);
+                setTimeout(() => showSystemMessage(`Я знаю тебя, Алексей. Добро пожаловать.`, true), 1000);
                 saveGame();
-            }
-
-            function finishGame(byBreak = false) {
-                if (byBreak) {
-                    document.getElementById('finalVerdict').innerText = "💀 СЛОМАЛСЯ";
-                    document.getElementById('finalDesc').innerText = "Система сломала тебя. Ты потерял контроль.";
-                } else {
-                    const finalProfit = game.balance - game.balanceStart;
-                    let verdict, desc;
-                    if (game.stress < 35 && game.lies === 0 && finalProfit > 0) {
-                        verdict = "🔓 ОСВОБОДИЛСЯ";
-                        desc = "Ты выжил и приумножил капитал. Система повержена.";
-                    } else if (game.trust > 70) {
-                        verdict = "🤖 СТАЛ ЧАСТЬЮ СИСТЕМЫ";
-                        desc = "Ты слишком доверял системе. Теперь ты её агент.";
-                    } else {
-                        verdict = "⚠️ НЕОПРЕДЕЛЁННОСТЬ";
-                        desc = "Финал открыт. Система потеряла интерес.";
-                    }
-                    if (game.lies > 3) desc += " Ты слишком часто пытался обмануть систему.";
-                    if (game.risky > game.safe) desc += " Ты склонен к риску.";
-                    else if (game.safe > game.risky) desc += " Ты слишком осторожен.";
-                    document.getElementById('finalVerdict').innerText = verdict;
-                    document.getElementById('finalDesc').innerText = desc;
-                }
-                document.getElementById('finalModal').classList.remove('hidden');
             }
 
             function resetGame() {
@@ -583,7 +608,7 @@
                     stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
                     stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
                     risky: game.risky, safe: game.safe, lies: game.lies, successStreak: game.successStreak, failStreak: game.failStreak,
-                    lossEventTriggered: game.lossEventTriggered, modRisk: game.modRisk
+                    history: game.history, lossEventTriggered: game.lossEventTriggered, modRisk: game.modRisk
                 }));
             }
 
@@ -591,28 +616,11 @@
                 const saved = localStorage.getItem('mindGameFinal');
                 if (saved) {
                     const data = JSON.parse(saved);
-                    game.stage = data.stage || 0;
-                    game.completedInStage = data.completedInStage || 0;
-                    game.totalCompleted = data.totalCompleted || 0;
-                    game.stress = data.stress || 30;
-                    game.trust = data.trust || 55;
-                    game.balance = data.balance || 0;
-                    game.balanceStart = data.balanceStart || 0;
-                    game.risky = data.risky || 0;
-                    game.safe = data.safe || 0;
-                    game.lies = data.lies || 0;
-                    game.successStreak = data.successStreak || 0;
-                    game.failStreak = data.failStreak || 0;
-                    game.lossEventTriggered = data.lossEventTriggered || false;
-                    game.modRisk = data.modRisk || 1.0;
+                    Object.assign(game, data);
                 }
                 if (game.stage >= STAGES.length) game.stage = STAGES.length-1;
                 updateUI();
-                if (game.balance !== 0 && game.balanceStart !== 0 && !awaitingBalance && !eventActive) loadNewTask();
-            }
-
-            function showHint() {
-                showSystemMessage("Система не даст тебе лёгких подсказок. Полагайся на свой ум.", true);
+                if (game.balance !== 0 && game.balanceStart !== 0 && !eventActive) loadNewTask();
             }
 
             function init() {
@@ -622,21 +630,18 @@
                     else els.questText.style.color = "#0f0";
                 }, 300);
 
-                const confirmBtn = document.getElementById('confirmStart');
-                if (confirmBtn) {
-                    const newBtn = confirmBtn.cloneNode(true);
-                    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
-                    newBtn.addEventListener('click', () => startGame(document.getElementById('startBalance').value));
+                const startBtn = document.getElementById('confirmStart');
+                if (startBtn) {
+                    const newBtn = startBtn.cloneNode(true);
+                    startBtn.parentNode.replaceChild(newBtn, startBtn);
+                    newBtn.onclick = () => startGame(document.getElementById('startBalance').value);
                 }
                 if (game.balance === 0 || game.balanceStart === 0) document.getElementById('startModal').classList.remove('hidden');
 
-                document.getElementById('submitBalanceBtn').onclick = () => submitBalance();
-
-                document.getElementById('resetBtn').onclick = () => resetGame();
-                document.getElementById('hintBtn').onclick = () => showHint();
-                document.getElementById('closeHint').onclick = () => document.getElementById('hintModal').classList.add('hidden');
-                document.getElementById('closeFinal').onclick = () => resetGame();
-
+                document.getElementById('resetBtn').onclick = resetGame;
+                document.getElementById('closeFinal').onclick = resetGame;
+                document.getElementById('hintBtn').onclick = () => showSystemMessage(`Честно оценивай результат, Алексей.`, true);
+                
                 window.audioCtx = null;
                 document.body.addEventListener('click', () => {
                     if (!window.audioCtx && window.AudioContext) {
@@ -644,35 +649,9 @@
                         window.audioCtx.resume();
                     }
                 });
-
-                // Рандомные страшилки
-                setInterval(() => {
-                    if (Math.random() < 0.2 && game.stress < 90 && game.totalCompleted > 0 && !awaitingBalance && !eventActive) {
-                        const scares = [`СИСТЕМА: ТЫ НЕ ОДИН, АЛЕКСЕЙ`, "Ошибка... или нет?", `Я вижу, как ты читаешь, Алексей`, `Твой пульс участился, Алексей`, "Глитч... реальность искажается"];
-                        showSystemMessage(scares[Math.floor(Math.random() * scares.length)], true);
-                        triggerGlitch();
-                        game.stress = Math.min(100, game.stress + 2);
-                        updateUI();
-                    }
-                }, 90000);
                 initFleeingButtons();
                 updateUI();
             }
-
-            function initFleeingButtons() {
-                const btns = document.querySelectorAll('.btn-success, .btn-fail, .btn-choice');
-                btns.forEach(btn => {
-                    btn.addEventListener('mouseenter', function() {
-                        if (game.stress > 60) {
-                            const x = (Math.random() - 0.5) * 120;
-                            const y = (Math.random() - 0.5) * 70;
-                            this.style.transform = `translate(${x}px, ${y}px)`;
-                        }
-                    });
-                    btn.addEventListener('mouseleave', function() { this.style.transform = ''; });
-                });
-            }
-
             init();
         })();
     </script>
