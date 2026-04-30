@@ -286,7 +286,7 @@
     <div class="glitch-overlay"></div>
     <div class="container">
         <div class="status-bar">
-            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.8.0 · СЕТКА ВЕТВЛЕНИЯ</div>
+            <div class="sys-tag"><i class="fas fa-microchip"></i> СИСТЕМА v.8.1 · СЕТКА ВЕТВЛЕНИЯ</div>
             <button id="resetBtn" class="btn-outline"><i class="fas fa-skull"></i> СБРОСИТЬ</button>
         </div>
         <div class="main-grid">
@@ -322,7 +322,7 @@
                     <div class="quest" id="questText">Загрузка...</div>
                     <div id="dynamicZone" class="dynamic-zone"></div>
                     <div class="action-buttons" id="actionButtons">
-                        <!-- Здесь динамически появляются кнопки ВЫПОЛНЕНО / ПРОВАЛЕНО или варианты выбора -->
+                        <!-- Здесь динамически появляются кнопки -->
                     </div>
                     <div class="system-comment" id="systemComment">
                         <i class="fas fa-robot"></i> Система: загрузка...
@@ -371,7 +371,7 @@
 
     <script>
         (function(){
-            // ========== ЭТАПЫ (теперь просто для визуализации) ==========
+            // ========== ЭТАПЫ ==========
             const STAGES = [
                 { name: "ДОВЕРИЕ", icon: "fa-hand-peace", missions: 8 },
                 { name: "СОМНЕНИЕ", icon: "fa-question", missions: 8 },
@@ -379,10 +379,8 @@
                 { name: "ЛОМКА", icon: "fa-skull", missions: 8 },
                 { name: "ФИНАЛ", icon: "fa-crown", missions: 4 }
             ];
-            // Общее количество заданий = 36, на каждый этап примерно по 7-8
 
-            // ========== БАНК ЗАДАНИЙ (реальные казино-задания) ==========
-            // Каждое задание: текст, тип ('spin' или 'question'), варианты (если вопрос), сложность (easy, medium, hard)
+            // ========== БАНК ЗАДАНИЙ (реальные казино) ==========
             const ALL_TASKS = [
                 // Лёгкие спин-задания
                 { text: "Сделайте 50 спинов по 20$ в Dog House", type: "spin", difficulty: "easy", stressSuccess: -3, stressFail: 5, trustChange: 1 },
@@ -390,22 +388,19 @@
                 { text: "Сделайте 80 спинов по 15$ в Gates of Olympus", type: "spin", difficulty: "easy", stressSuccess: -2, stressFail: 5, trustChange: 0 },
                 { text: "Выбейте бонус в Hot Fiesta от 21$ за спин", type: "spin", difficulty: "easy", stressSuccess: -3, stressFail: 7, trustChange: 1 },
                 { text: "Сделайте 100 спинов в Sweet Bonanza по 10$", type: "spin", difficulty: "easy", stressSuccess: -2, stressFail: 4, trustChange: 0 },
-                
                 // Средние спин-задания
                 { text: "Купить бонус в Money Train 4 за 1000$", type: "spin", difficulty: "medium", stressSuccess: -5, stressFail: 10, trustChange: 2 },
                 { text: "Выбейте топовую бонуску в Le Bandit (ставка от 18$)", type: "spin", difficulty: "medium", stressSuccess: -4, stressFail: 12, trustChange: 1 },
                 { text: "Купить бонус в Sweet Rush Bonanza за 500$", type: "spin", difficulty: "medium", stressSuccess: -5, stressFail: 10, trustChange: 2 },
                 { text: "Купить бонус в Gates of Olympus за 1000$", type: "spin", difficulty: "medium", stressSuccess: -6, stressFail: 15, trustChange: 2 },
                 { text: "Окупить бонус в Dog House Multihold за 600$", type: "spin", difficulty: "medium", stressSuccess: -4, stressFail: 12, trustChange: 1 },
-                
                 // Сложные спин-задания
                 { text: "Пробить топовую бонуску в Мумии (ставка 360$)", type: "spin", difficulty: "hard", stressSuccess: -8, stressFail: 20, trustChange: 3 },
                 { text: "Покупать топовый бонус в Le Pharaon за 750$ пока не окупится", type: "spin", difficulty: "hard", stressSuccess: -10, stressFail: 25, trustChange: 3 },
                 { text: "Поймать ретриггер в топовой бонуске в Sugar Rush за 400$", type: "spin", difficulty: "hard", stressSuccess: -7, stressFail: 22, trustChange: 2 },
                 { text: "Выбить хот мод в Le Cowboy (ставка от 25$)", type: "spin", difficulty: "hard", stressSuccess: -9, stressFail: 20, trustChange: 3 },
                 { text: "Поставить 800$ в любой лайв игре и выиграть", type: "spin", difficulty: "hard", stressSuccess: -12, stressFail: 30, trustChange: 4 },
-                
-                // Вопросы-ловушки (сложные, с подвохом)
+                // Вопросы-ловушки
                 { text: "В каком слоте самый высокий RTP по версии системы?", type: "question", difficulty: "medium", 
                   options: ["Dog House", "Gates of Olympus"], correct: 0, stressWin: -5, stressLose: 10, trustWin: 5, trustLose: -5 },
                 { text: "Какой бонус в Money Train 4 самый дорогой?", 
@@ -421,22 +416,19 @@
             // ========== СОСТОЯНИЕ ИГРОКА ==========
             let game = {
                 stage: 0,
-                completedCount: 0,        // общее число выполненных заданий (для прогресса)
-                stress: 30,               // начальный стресс
-                trust: 50,               // доверие к системе
+                completedCount: 0,
+                stress: 30,
+                trust: 50,
                 riskyChoices: 0,
                 safeChoices: 0,
                 mistakes: 0,
                 successStreak: 0,
-                failStreak: 0,
-                lastTaskWasSuccess: true,
-                // история успехов/провалов для ветвления
+                failStreak: 0
             };
 
-            // Текущее задание
             let currentTask = null;
-            let currentTaskType = null; // 'spin' или 'question'
-            let pendingHint = null;      // для подсказки
+            let pendingHint = null;
+            let skipOfferCount = 0;
 
             // DOM
             const els = {
@@ -521,12 +513,11 @@
             }
 
             function updateUI() {
-                // Обновление прогресса по этапам (примерное)
                 const stageIndex = Math.min(4, Math.floor(game.completedCount / 8));
                 game.stage = stageIndex;
                 const stage = STAGES[game.stage];
                 const done = game.completedCount - (stageIndex * 8);
-                const percent = (done / stage.missions) * 100;
+                const percent = Math.min(100, (done / stage.missions) * 100);
                 els.phaseFill.style.width = percent + '%';
                 els.stressFill.style.width = game.stress + '%';
                 els.stressValue.innerText = game.stress;
@@ -556,31 +547,28 @@
                 });
             }
 
-            // Выбор следующего задания в зависимости от сложности и серий
             function getNextTask() {
                 let difficultyPool = [];
-                // Адаптивная сложность
                 if (game.successStreak >= 3) {
                     difficultyPool = ALL_TASKS.filter(t => t.difficulty === "hard");
+                    if (difficultyPool.length === 0) difficultyPool = ALL_TASKS.filter(t => t.difficulty === "medium");
                     showSystemMessage("Система замечает твою серию. Усложняю задание.", true);
                 } else if (game.failStreak >= 2) {
                     difficultyPool = ALL_TASKS.filter(t => t.difficulty === "easy");
+                    if (difficultyPool.length === 0) difficultyPool = ALL_TASKS;
                     showSystemMessage("Ты слишком часто ошибаешься. Возьми лёгкое задание.", true);
                 } else {
-                    // случайный вес: 40% easy, 40% medium, 20% hard
                     const rand = Math.random();
                     if (rand < 0.4) difficultyPool = ALL_TASKS.filter(t => t.difficulty === "easy");
                     else if (rand < 0.8) difficultyPool = ALL_TASKS.filter(t => t.difficulty === "medium");
                     else difficultyPool = ALL_TASKS.filter(t => t.difficulty === "hard");
+                    if (difficultyPool.length === 0) difficultyPool = ALL_TASKS;
                 }
-                if (difficultyPool.length === 0) difficultyPool = ALL_TASKS;
                 const task = { ...difficultyPool[Math.floor(Math.random() * difficultyPool.length)] };
-                // Копируем options, если есть
                 if (task.options) task.options = [...task.options];
                 return task;
             }
 
-            // Обработка успеха/провала спин-задания
             function handleSpinResult(success) {
                 const task = currentTask;
                 if (success) {
@@ -588,7 +576,7 @@
                     game.trust = Math.min(100, game.trust + (task.trustChange || 1));
                     game.successStreak++;
                     game.failStreak = 0;
-                    showSystemMessage(`✅ Задание выполнено! Стресс ${task.stressSuccess}%, доверие +${task.trustChange || 1}.`);
+                    showSystemMessage(`✅ Задание выполнено! Стресс ${task.stressSuccess || -2}%, доверие +${task.trustChange || 1}.`);
                 } else {
                     game.stress = Math.min(100, game.stress + (task.stressFail || 8));
                     game.trust = Math.max(0, game.trust - 2);
@@ -599,12 +587,15 @@
                     showSystemMessage(`❌ Задание провалено! Стресс +${task.stressFail || 8}%, доверие -2.`);
                 }
                 game.completedCount++;
+                if (game.completedCount >= 36) {
+                    finishGame();
+                    return;
+                }
                 updateUI();
                 saveGame();
                 loadNewTask();
             }
 
-            // Обработка ответа на вопрос
             function handleQuestionAnswer(selectedIndex) {
                 const task = currentTask;
                 const isCorrect = (selectedIndex === task.correct);
@@ -624,19 +615,20 @@
                     showSystemMessage(`❌ Неверно! Стресс +${task.stressLose || 12}%, доверие ${task.trustLose || -8}%.`);
                 }
                 game.completedCount++;
+                if (game.completedCount >= 36) {
+                    finishGame();
+                    return;
+                }
                 updateUI();
                 saveGame();
                 loadNewTask();
             }
 
-            // Отображение текущего задания
             function renderCurrentTask() {
+                if (!currentTask) return;
                 els.questText.innerText = currentTask.text;
-                els.dynamicZone.innerHTML = ""; // очищаем
                 els.actionButtons.innerHTML = "";
-
                 if (currentTask.type === "spin") {
-                    // Две кнопки: ВЫПОЛНЕНО и ПРОВАЛЕНО
                     const btnSuccess = document.createElement('button');
                     btnSuccess.innerText = "✅ ВЫПОЛНЕНО";
                     btnSuccess.className = "btn-success";
@@ -648,7 +640,6 @@
                     els.actionButtons.appendChild(btnSuccess);
                     els.actionButtons.appendChild(btnFail);
                 } else if (currentTask.type === "question") {
-                    // Кнопки вариантов ответа
                     currentTask.options.forEach((opt, idx) => {
                         const btn = document.createElement('button');
                         btn.innerText = opt;
@@ -664,7 +655,6 @@
                         els.actionButtons.appendChild(btn);
                     });
                 }
-                // Подсказка
                 if (pendingHint) {
                     showSystemMessage(`💡 Подсказка: ${pendingHint}`, false);
                     pendingHint = null;
@@ -673,7 +663,6 @@
 
             function loadNewTask() {
                 currentTask = getNextTask();
-                // Генерация подсказки (если доверие высокое, может быть правда)
                 if (currentTask.type === "question" && Math.random() < 0.4) {
                     const isTruth = (game.trust > 60) ? (Math.random() < 0.7) : (Math.random() < 0.3);
                     if (isTruth) {
@@ -685,13 +674,13 @@
                 }
                 renderCurrentTask();
                 saveGame();
+                // Предложение пропустить (после загрузки)
+                setTimeout(() => maybeOfferSkip(), 300);
             }
 
-            // Предложение пропустить/усложнить (раз в 5 заданий)
-            let skipOfferCount = 0;
             function maybeOfferSkip() {
                 if (skipOfferCount >= 3) return;
-                if (game.completedCount > 0 && game.completedCount % 5 === 0) {
+                if (game.completedCount > 0 && game.completedCount % 5 === 0 && !document.getElementById('skipModal').classList.contains('hidden') === false) {
                     skipOfferCount++;
                     const modal = document.getElementById('skipModal');
                     modal.classList.remove('hidden');
@@ -700,14 +689,15 @@
                         game.stress = Math.min(100, game.stress + 15);
                         game.trust = Math.max(0, game.trust - 10);
                         game.completedCount++;
+                        if (game.completedCount >= 36) finishGame();
                         updateUI();
                         showSystemMessage("Ты пропустил задание. +15 стресса, -10 доверия.", true);
+                        saveGame();
                         loadNewTask();
                     };
                     document.getElementById('doubleTaskBtn').onclick = () => {
                         modal.classList.add('hidden');
-                        // усложняем следующее задание (вытащим hard)
-                        game.successStreak = 3; // чтобы следующее было сложным
+                        game.successStreak = 3;
                         showSystemMessage("СЛЕДУЮЩЕЕ ЗАДАНИЕ БУДЕТ СЛОЖНЫМ!", true);
                         loadNewTask();
                     };
@@ -716,14 +706,11 @@
                         showSystemMessage("Отказ принят. Продолжаем.", true);
                         loadNewTask();
                     };
-                    return true;
                 }
-                return false;
             }
 
-            // Подсказка (кнопка)
             function showHint() {
-                if (currentTask.type === "question") {
+                if (currentTask && currentTask.type === "question") {
                     const isTruth = (game.trust > 60) ? (Math.random() < 0.6) : (Math.random() < 0.2);
                     let hintMsg;
                     if (isTruth) {
@@ -742,7 +729,32 @@
                 }
             }
 
-            // Сброс
+            function finishGame() {
+                let verdict = "", desc = "";
+                const finalStress = game.stress;
+                const mistakes = game.mistakes;
+                if (finalStress < 30 && mistakes < 5) {
+                    verdict = "🔓 ОСВОБОДИЛСЯ";
+                    desc = "Ты сохранил рассудок и не поддался системе. Победа!";
+                } else if (finalStress > 70 || mistakes > 8) {
+                    verdict = "💀 СЛОМАЛСЯ";
+                    desc = "Система сломала тебя. Ты проиграл.";
+                } else if (game.trust > 70) {
+                    verdict = "🤖 СТАЛ ЧАСТЬЮ СИСТЕМЫ";
+                    desc = "Ты слишком доверял системе. Теперь ты её часть.";
+                } else {
+                    verdict = "⚠️ НЕОПРЕДЕЛЁННОСТЬ";
+                    desc = "Финал остался открытым. Система потеряла интерес.";
+                }
+                document.getElementById('finalVerdict').innerText = verdict;
+                document.getElementById('finalDesc').innerText = desc;
+                document.getElementById('finalModal').classList.remove('hidden');
+                document.getElementById('closeFinal').onclick = () => {
+                    document.getElementById('finalModal').classList.add('hidden');
+                    resetGame();
+                };
+            }
+
             function resetGame() {
                 if(confirm("Сбросить весь прогресс?")) {
                     localStorage.removeItem('mindGameFinal');
@@ -768,9 +780,9 @@
                 const saved = localStorage.getItem('mindGameFinal');
                 if(saved) {
                     const data = JSON.parse(saved);
-                    game.completedCount = data.completedCount;
-                    game.stress = data.stress;
-                    game.trust = data.trust;
+                    game.completedCount = data.completedCount || 0;
+                    game.stress = data.stress || 30;
+                    game.trust = data.trust || 50;
                     game.riskyChoices = data.riskyChoices || 0;
                     game.safeChoices = data.safeChoices || 0;
                     game.mistakes = data.mistakes || 0;
@@ -778,13 +790,10 @@
                     game.failStreak = data.failStreak || 0;
                     skipOfferCount = data.skipOfferCount || 0;
                 }
-                if(game.stress === undefined) game.stress = 30;
-                if(game.trust === undefined) game.trust = 50;
                 if(game.completedCount > 36) game.completedCount = 36;
                 updateUI();
             }
 
-            // Фоновые страхи
             let scareInterval = null;
             function startRandomScares() {
                 if (scareInterval) clearInterval(scareInterval);
@@ -805,11 +814,10 @@
                 }, 120000);
             }
 
-            // Инициализация
             function init() {
                 loadGame();
                 updateUI();
-                loadNewTask();
+                loadNewTask();  // <-- главный вызов
                 startRandomScares();
                 window.audioCtx = null;
                 document.body.addEventListener('click', () => {
@@ -822,11 +830,7 @@
                 els.hintBtn.addEventListener('click', showHint);
                 document.getElementById('closeHint')?.addEventListener('click', () => document.getElementById('hintModal').classList.add('hidden'));
                 document.getElementById('closeInfo')?.addEventListener('click', () => document.getElementById('infoModal').classList.add('hidden'));
-                // Предложение пропустить (если нужно) через небольшую задержку после загрузки
-                setTimeout(() => {
-                    if (!maybeOfferSkip()) {}
-                }, 500);
-                console.log("Новая версия: реальные задания, ветвление, вопросы-ловушки, доверие влияет на подсказки.");
+                console.log("Игра загружена, задание появится.");
             }
             init();
         })();
