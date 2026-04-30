@@ -12,7 +12,6 @@
             font-family: 'Inter', 'Segoe UI', monospace;
             user-select: none;
         }
-
         body {
             background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101);
             color: #0f0;
@@ -20,35 +19,25 @@
             min-height: 100vh;
             transition: background 0.2s;
         }
-
-        body.glitch-bg {
-            animation: bgPulse 0.15s infinite alternate;
-        }
-
+        body.glitch-bg { animation: bgPulse 0.15s infinite alternate; }
         @keyframes bgPulse {
             0% { background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101); }
             100% { background: radial-gradient(circle at 80% 70%, #1a0f0f, #000000); }
         }
-
         .glitch-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top:0; left:0; width:100%; height:100%;
             pointer-events: none;
             background: repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,255,0,0.03) 2px, transparent 2px, transparent 8px);
-            z-index: 1;
+            z-index:1;
             animation: glitchShift 8s infinite;
         }
-
         @keyframes glitchShift {
             0% { transform: translateX(0); opacity:0.2; }
             10% { transform: translateX(3px); opacity:0.6; }
             20% { transform: translateX(-2px); opacity:0.2; }
             100% { transform: translateX(0); opacity:0.2; }
         }
-
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -61,7 +50,6 @@
             position: relative;
             z-index: 2;
         }
-
         .status-bar {
             display: flex;
             justify-content: space-between;
@@ -69,7 +57,6 @@
             padding-bottom: 12px;
             border-bottom: 1px dashed #0f0;
         }
-
         .sys-tag {
             background: #000000aa;
             padding: 6px 20px;
@@ -77,7 +64,6 @@
             letter-spacing: 1px;
             font-weight: 300;
         }
-
         .btn-outline {
             background: #111;
             border: 1px solid #0f0;
@@ -87,24 +73,20 @@
             cursor: pointer;
             transition: 0.2s;
         }
-
         .btn-outline:hover {
             background: #0f0;
             color: black;
             box-shadow: 0 0 12px #0f0;
         }
-
         .main-grid {
             display: flex;
             gap: 28px;
             flex-wrap: wrap;
         }
-
         .left-panel {
             flex: 1.2;
             min-width: 280px;
         }
-
         .right-panel {
             flex: 2;
             min-width: 360px;
@@ -112,7 +94,6 @@
             flex-direction: column;
             gap: 24px;
         }
-
         .player-card {
             background: #000000aa;
             border-radius: 48px;
@@ -121,7 +102,6 @@
             border: 1px solid #0f0;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
-
         .avatar {
             font-size: 1.5rem;
             margin-bottom: 20px;
@@ -129,11 +109,7 @@
             align-items: center;
             gap: 12px;
         }
-
-        .stress-bar, .trust-bar, .phase-progress {
-            margin: 16px 0;
-        }
-
+        .stress-bar, .trust-bar, .phase-progress { margin: 16px 0; }
         .bar-bg {
             background: #1a1a1a;
             border-radius: 20px;
@@ -141,27 +117,9 @@
             overflow: hidden;
             margin: 5px 0;
         }
-
-        .stress-fill {
-            background: linear-gradient(90deg, #ffaa33, #ff3366);
-            width: 0%;
-            height: 100%;
-            transition: width 0.3s;
-        }
-
-        .trust-fill {
-            background: linear-gradient(90deg, #0f0, #0ff);
-            width: 0%;
-            height: 100%;
-            transition: width 0.3s;
-        }
-
-        .phase-fill {
-            background: #0f0;
-            width: 0%;
-            height: 100%;
-        }
-
+        .stress-fill { background: linear-gradient(90deg, #ffaa33, #ff3366); width:0%; height:100%; transition: width 0.3s; }
+        .trust-fill { background: linear-gradient(90deg, #0f0, #0ff); width:0%; height:100%; transition: width 0.3s; }
+        .phase-fill { background: #0f0; width:0%; height:100%; }
         .profile-stats {
             margin-top: 15px;
             font-size: 0.8rem;
@@ -172,13 +130,11 @@
             justify-content: space-between;
             flex-wrap: wrap;
         }
-
         .phase-map {
             background: #000000aa;
             border-radius: 48px;
             padding: 20px;
         }
-
         .phase-item {
             display: flex;
             align-items: center;
@@ -191,13 +147,11 @@
             cursor: pointer;
             transition: 0.2s;
         }
-
         .phase-item.active {
             border-left-color: #ffaa33;
             background: #0f0c;
             color: black;
         }
-
         .info-box {
             background: #000000aa;
             border-radius: 48px;
@@ -206,7 +160,6 @@
             border-left: 3px solid #0ff;
             font-size: 0.85rem;
         }
-
         .mission-box {
             background: #000000aa;
             border-radius: 56px;
@@ -214,7 +167,6 @@
             backdrop-filter: blur(8px);
             transition: all 0.2s;
         }
-
         .quest {
             font-size: 1.3rem;
             background: #0a0a0a;
@@ -226,7 +178,6 @@
             line-height: 1.4;
             transition: color 0.05s;
         }
-
         .action-buttons {
             display: flex;
             gap: 20px;
@@ -234,8 +185,7 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-
-        .btn-success, .btn-fail, .btn-choice {
+        .btn-success, .btn-fail, .btn-choice, .answer-btn {
             padding: 12px 28px;
             border-radius: 60px;
             font-weight: bold;
@@ -243,24 +193,12 @@
             border: none;
             font-size: 1rem;
             transition: all 0.08s linear;
+            margin: 5px;
         }
-
-        .btn-success {
-            background: #0f0;
-            color: black;
-        }
-
-        .btn-fail {
-            background: #ff3366;
-            color: white;
-        }
-
-        .btn-choice {
-            background: #111;
-            border: 2px solid #0f0;
-            color: #0f0;
-        }
-
+        .btn-success { background: #0f0; color: black; }
+        .btn-fail { background: #ff3366; color: white; }
+        .btn-choice, .answer-btn { background: #111; border: 2px solid #0f0; color: #0f0; }
+        .btn-choice:hover, .answer-btn:hover { background: #0f0; color: black; }
         .system-comment {
             background: #000000cc;
             padding: 14px;
@@ -271,7 +209,6 @@
             transition: 0.2s;
             min-height: 80px;
         }
-
         .chat-tool {
             background: #000000aa;
             border-radius: 48px;
@@ -282,7 +219,6 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-
         .btn-hint {
             background: #0f0;
             border: none;
@@ -291,13 +227,10 @@
             cursor: pointer;
             font-weight: bold;
         }
-
         .modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top:0; left:0;
+            width:100%; height:100%;
             background: #000000ee;
             backdrop-filter: blur(20px);
             display: flex;
@@ -305,7 +238,6 @@
             justify-content: center;
             z-index: 2000;
         }
-
         .modal-content {
             background: #0a0f1a;
             border: 2px solid #0f0;
@@ -318,7 +250,6 @@
             max-height: 85vh;
             overflow-y: auto;
         }
-
         .modal-btn {
             background: #0f0;
             border: none;
@@ -335,7 +266,6 @@
             transform: scale(1.02);
             box-shadow: 0 0 12px #0f0;
         }
-
         .balance-input {
             background: #111;
             border: 2px solid #0f0;
@@ -347,11 +277,7 @@
             text-align: center;
             margin: 10px auto;
         }
-
-        .hidden {
-            display: none;
-        }
-
+        .hidden { display: none; }
         .rules-container {
             text-align: left;
             margin: 20px 0;
@@ -359,24 +285,10 @@
             background: rgba(0,0,0,0.4);
             border-radius: 32px;
         }
-        .rules-container p {
-            margin: 12px 0;
-            line-height: 1.5;
-            font-size: 0.9rem;
-        }
-        .rules-container h4 {
-            color: #0ff;
-            margin: 16px 0 8px 0;
-            font-size: 1rem;
-        }
-        .rules-container hr {
-            border-color: #0f0;
-            margin: 16px 0;
-        }
-        .warning {
-            color: #ffaa33;
-            font-weight: bold;
-        }
+        .rules-container p { margin: 12px 0; line-height: 1.5; font-size: 0.9rem; }
+        .rules-container h4 { color: #0ff; margin: 16px 0 8px 0; font-size: 1rem; }
+        .rules-container hr { border-color: #0f0; margin: 16px 0; }
+        .warning { color: #ffaa33; font-weight: bold; }
         .ban-notification {
             position: fixed;
             top: 30%;
@@ -395,6 +307,12 @@
             box-shadow: 0 0 30px red;
             white-space: nowrap;
         }
+        .question-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -403,7 +321,7 @@
 <div class="glitch-overlay"></div>
 <div class="container">
     <div class="status-bar">
-        <div class="sys-tag"><i class="fas fa-brain"></i> НЕЙРОСЕТЬ v.3.0</div>
+        <div class="sys-tag"><i class="fas fa-brain"></i> НЕЙРОСЕТЬ v.3.2</div>
         <button id="resetBtn" class="btn-outline"><i class="fas fa-sync-alt"></i> ПЕРЕЗАГРУЗКА</button>
     </div>
     <div class="main-grid">
@@ -418,65 +336,56 @@
             <div class="info-box">
                 <h3><i class="fas fa-skull-crossbones"></i> СУТЬ ЭКСПЕРИМЕНТА</h3>
                 <ul>
-                    <li><strong>Ты стример, твои реальные деньги в казино.</strong> Система не трогает твой баланс — только ты.</li>
-                    <li><strong>Задания</strong> — метафора игровых сессий. Нажимай «УСПЕХ» или «ПРОВАЛ», баланс не меняется, но меняется твоё психологическое состояние.</li>
-                    <li><strong>После каждого этапа ты вводишь реальный баланс</strong> — система сравнивает его с балансом на начало этапа и подстраивает сложность.</li>
-                    <li>Подсказки могут быть <span style="color:#ff3366">ЛОЖНЫМИ</span>, интерфейс глючит, кнопки путаются — это часть игры.</li>
-                    <li><strong>Цель:</strong> Выжить 5 этапов, сохранив стресс ≤75 и обман ≤3. Победит тот, кто не даст себя сломать.</li>
+                    <li><strong>Твои реальные деньги.</strong> Система не трогает баланс — только ты.</li>
+                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ, баланс не меняется, но меняется стресс и доверие.</li>
+                    <li><strong>Сложные вопросы</strong> периодически заменяют задания. Ответь правильно — получишь лёгкое задание дальше. Неправильно — сложное.</li>
+                    <li><strong>Подсказка</strong> (кнопка внизу) может врать. Доверие падает.</li>
+                    <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность.</li>
+                    <li>Глюки интерфейса — часть игры.</li>
                 </ul>
             </div>
             <div class="phase-map" id="phaseList"></div>
         </div>
         <div class="right-panel">
             <div class="mission-box">
-                <div class="mission-header"><span><i class="fas fa-tasks"></i> ИНСТРУКЦИЯ</span><span id="phaseNameBadge">ЭТАП 1/5</span></div>
+                <div class="mission-header"><span><i class="fas fa-tasks"></i> ТЕКУЩЕЕ ЗАДАНИЕ</span><span id="phaseNameBadge">ЭТАП 1/5</span></div>
                 <div class="quest" id="questText">Загрузка...</div>
-                <div class="action-buttons" id="actionButtons"></div>
+                <div id="actionButtons" class="action-buttons"></div>
                 <div class="system-comment" id="systemComment"><i class="fas fa-robot"></i> Система: ожидание...</div>
             </div>
-            <div class="chat-tool"><i class="fas fa-comment-dots"></i> ПОДСКАЗКА (ИНОГДА ЛЖИВА)<button id="hintBtn" class="btn-hint"><i class="fas fa-question-circle"></i> ВЗЯТЬ</button></div>
+            <div class="chat-tool"><i class="fas fa-comment-dots"></i> ПОДСКАЗКА (МОЖЕТ БЫТЬ ЛОЖНОЙ)<button id="hintBtn" class="btn-hint"><i class="fas fa-question-circle"></i> ВЗЯТЬ</button></div>
         </div>
     </div>
 </div>
 
-<!-- МОДАЛКИ -->
+<!-- Модалки старта, перехода, финала -->
 <div id="startModal" class="modal">
     <div class="modal-content">
         <h2><i class="fas fa-dice-d6"></i> КОГНИТИВНЫЙ СБОЙ</h2>
         <div class="rules-container">
             <h4>📜 РЕАЛЬНОСТЬ ИГРЫ</h4>
-            <p><span class="warning">ВНИМАНИЕ:</span> Баланс НЕ меняется автоматически. Ты играешь на реальные деньги в казино, а СИСТЕМА лишь анализирует твои действия.</p>
-            <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2) — это симуляция игровых сессий. Нажатие «ВЫПОЛНЕНО» или «ПРОВАЛЕНО» влияет на твой <strong>стресс</strong> и <strong>доверие к системе</strong>, но НЕ на баланс.</p>
-            <p><strong>🔹 Научные вопросы</strong> (30% шанс) — правильный ответ даёт лёгкое задание, неправильный — сложное.</p>
-            <p><strong>🔹 Подсказка</strong> может быть ложной и снижает доверие. Интерфейс будет глючить: кнопки менять местами, фон моргать, цифры прыгать — это часть эксперимента.</p>
-            <p><strong>🔹 Переход этапа</strong> — после выполнения всех заданий ты сам вводишь свой РЕАЛЬНЫЙ баланс. Если баланс увеличился — задания станут сложнее. Если упал ниже -1000$ — задания станут легче.</p>
-            <p><strong>🔹 Условия поражения:</strong> Стресс >75% или обман >3. Победа — пройти 5 этапов с низким стрессом и честностью.</p>
+            <p><span class="warning">ВНИМАНИЕ:</span> Баланс НЕ меняется автоматически. Ты играешь на реальные деньги в казино, система только анализирует.</p>
+            <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2) — симуляция сессий. Успех/провал влияют на стресс и доверие.</p>
+            <p><strong>🔹 Сложные вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
+            <p><strong>🔹 Подсказка</strong> может быть ложной. Доверие падает, счётчик обмана растёт.</p>
+            <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность.</p>
+            <p><strong>🔹 Поражение:</strong> стресс >75 или обман >3. Победа: пройти 5 этапов.</p>
             <hr>
-            <p style="text-align:center;">Введи СТАРТОВЫЙ БАЛАНС (реальные деньги на счёте):</p>
+            <p>Введи СТАРТОВЫЙ БАЛАНС (реальные деньги):</p>
             <input type="number" id="startBalance" class="balance-input" placeholder="20000" value="20000">
-            <button id="confirmStartBtn" class="modal-btn">ЗАПУСТИТЬ ЭКСПЕРИМЕНТ</button>
+            <button id="confirmStartBtn" class="modal-btn">ЗАПУСТИТЬ</button>
         </div>
     </div>
 </div>
-
 <div id="stageTransitionModal" class="modal hidden">
     <div class="modal-content">
         <h2>📊 ВВОД РЕАЛЬНОГО БАЛАНСА</h2>
-        <p>Ты выполнил все задания этапа <span id="stageNameSpan"></span>.</p>
+        <p>Ты выполнил задания этапа <span id="stageNameSpan"></span>.</p>
         <p>Введи свой ТЕКУЩИЙ баланс в казино (честно):</p>
         <input type="number" id="realBalanceInput" class="balance-input" placeholder="Баланс">
         <button id="submitRealBalance" class="modal-btn">ПОДТВЕРДИТЬ</button>
     </div>
 </div>
-
-<div id="questionModal" class="modal hidden">
-    <div class="modal-content">
-        <h3 id="questionModalTitle">❓ ВОПРОС</h3>
-        <p id="questionText" style="margin:15px 0;"></p>
-        <div id="questionButtons"></div>
-    </div>
-</div>
-
 <div id="finalModal" class="modal hidden">
     <div class="modal-content">
         <h2>🔮 ПРИГОВОР</h2>
@@ -488,7 +397,7 @@
 
 <script>
 (function(){
-    // ---------- КОНСТАНТЫ ----------
+    // ---------- ЭТАПЫ ----------
     const STAGES = [
         { name: "ДОВЕРИЕ", missions: 6, baseStress: 25, baseTrust: 55 },
         { name: "СОМНЕНИЕ", missions: 5, baseStress: 35, baseTrust: 45 },
@@ -496,7 +405,7 @@
         { name: "ЛОМКА", missions: 3, baseStress: 70, baseTrust: 25 },
         { name: "ФИНАЛ", missions: 2, baseStress: 85, baseTrust: 15 }
     ];
-
+    
     // Фиксированные задания для каждого этапа (уникальные)
     const STAGE_TASKS = {
         0: [ // этап 1
@@ -530,8 +439,8 @@
             { baseText: "Купи бонус в Wild West Gold за {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] }
         ]
     };
-
-    // Динамические значения для уровней сложности (0=легкий, 1=средний, 2=сложный)
+    
+    // Динамические значения для уровней сложности (0=легкий, 1=средний, 2=сложный) плюс модификатор этапа
     const VAR_VALUES = {
         spins: [[20,25,30], [30,35,45], [40,50,70]],
         bet: [[5,7,10], [10,12,18], [15,20,30]],
@@ -542,59 +451,67 @@
         win: [[100,150,250], [200,300,500], [400,600,1000]],
         target: [[200,300,400], [300,500,800], [500,800,1200]]
     };
-
-    // Банк вопросов (уникальные, не повторяются)
-    let availableQuestions = [
-        { text: "В каком году был основан казино-стриминг? (пример)", options: ["2015", "2017", "2019"], correct: 1, hintTrust: 2, hintLie: -5 },
-        { text: "Максимальный множитель в Sweet Bonanza?", options: ["x100", "x500", "x1000"], correct: 2, hintTrust: 2, hintLie: -5 },
-        { text: "Сколько барабанов в слоте Book of Dead?", options: ["3", "5", "6"], correct: 1, hintTrust: 2, hintLie: -5 },
-        { text: "Кто разработал слот Dog House Megaways?", options: ["Pragmatic Play", "NetEnt", "Play'n GO"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Какой максимальный множитель в Gates of Olympus?", options: ["x500", "x1000", "x5000"], correct: 1, hintTrust: 2, hintLie: -5 },
-        { text: "Что означает RTP 96%?", options: ["Выигрыш 96% от ставки в среднем", "Шанс бонуса 96%", "Максимальная выплата 96$"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "В каком слоте есть функция 'Hold and Win'?", options: ["Money Train 2", "Sweet Bonanza", "Book of Dead"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Кто такой стример 'Roshtein'?", options: ["Известный казино-стример", "Разработчик слотов", "Владелец казино"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Какой слот считается самым волатильным?", options: ["Dead or Alive 2", "Starburst", "Blood Suckers"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Что такое 'бонус-бай'?", options: ["Покупка бонусного раунда", "Бесплатные вращения", "Дополнительная ставка"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Максимальный выигрыш в Dog House Megaways?", options: ["x10000", "x20000", "x30000"], correct: 1, hintTrust: 2, hintLie: -5 },
-        { text: "Какой провайдер создал слот 'The Dog House'?", options: ["Pragmatic Play", "NetEnt", "Playtech"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Что означает 'Stake' в контексте ставок?", options: ["Сумма ставки", "Коэффициент", "Время игры"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Как часто выпадает бонус в Gates of Olympus примерно?", options: ["1 на 300 спинов", "1 на 100", "1 на 500"], correct: 0, hintTrust: 2, hintLie: -5 },
-        { text: "Кто известен фразой 'Let's go!'?", options: ["Trainwreckstv", "Xposed", "ClassyBeef"], correct: 0, hintTrust: 2, hintLie: -5 }
+    
+    // БОЛЬШОЙ БАНК СЛОЖНЫХ ВОПРОСОВ (физика, математика, биология, история, логика)
+    const HARD_QUESTIONS = [
+        { text: "Какая сила удерживает планеты на орбитах?", options: ["Центробежная", "Гравитация", "Электромагнитная"], correct: 1 },
+        { text: "Чему равен квадратный корень из 144?", options: ["12", "14", "16"], correct: 0 },
+        { text: "Кто открыл пенициллин?", options: ["Павлов", "Флеминг", "Мечников"], correct: 1 },
+        { text: "Сколько костей в теле взрослого человека?", options: ["206", "208", "210"], correct: 0 },
+        { text: "Какая планета самая горячая?", options: ["Меркурий", "Венера", "Марс"], correct: 1 },
+        { text: "Что такое фотосинтез?", options: ["Дыхание растений", "Питание растений", "Размножение"], correct: 1 },
+        { text: "Кто написал 'Преступление и наказание'?", options: ["Толстой", "Достоевский", "Чехов"], correct: 1 },
+        { text: "Чему равно 15% от 200?", options: ["30", "25", "35"], correct: 0 },
+        { text: "Какое животное самое быстрое на суше?", options: ["Лев", "Гепард", "Антилопа"], correct: 1 },
+        { text: "Какой газ преобладает в атмосфере Земли?", options: ["Кислород", "Азот", "Углекислый газ"], correct: 1 },
+        { text: "Кто изобрёл радио?", options: ["Попов", "Тесла", "Маркони"], correct: 0 },
+        { text: "Сколько дней в високосном году?", options: ["365", "366", "364"], correct: 1 },
+        { text: "Что такое ДНК?", options: ["Белок", "Нуклеиновая кислота", "Углевод"], correct: 1 },
+        { text: "Какая река самая длинная в мире?", options: ["Амазонка", "Нил", "Янцзы"], correct: 1 },
+        { text: "Чему равно число Пи (π) с точностью до двух знаков?", options: ["3.12", "3.14", "3.16"], correct: 1 },
+        { text: "Кто написал 'Войну и мир'?", options: ["Достоевский", "Толстой", "Пушкин"], correct: 1 },
+        { text: "Сколько цветов в радуге?", options: ["6", "7", "8"], correct: 1 },
+        { text: "Что измеряет амперметр?", options: ["Напряжение", "Силу тока", "Сопротивление"], correct: 1 },
+        { text: "Какая страна подарила США статую Свободы?", options: ["Англия", "Франция", "Испания"], correct: 1 },
+        { text: "Кто написал 'Евгения Онегина'?", options: ["Лермонтов", "Пушкин", "Гоголь"], correct: 1 },
+        { text: "Самая высокая гора в мире?", options: ["Эверест", "К2", "Канченджанга"], correct: 0 },
+        { text: "Что такое хемосинтез?", options: ["Фотосинтез", "Синтез органики из неорганики", "Дыхание"], correct: 1 },
+        { text: "Кто открыл теорию относительности?", options: ["Ньютон", "Эйнштейн", "Галилей"], correct: 1 },
+        { text: "Сколько минут в сутках?", options: ["1440", "1500", "1380"], correct: 0 },
+        { text: "Какая кислота содержится в желудочном соке?", options: ["Серная", "Соляная", "Азотная"], correct: 1 },
+        { text: "Самый большой океан на Земле?", options: ["Атлантический", "Индийский", "Тихий"], correct: 2 },
+        { text: "Кто написал 'Мёртвые души'?", options: ["Гоголь", "Тургенев", "Салтыков-Щедрин"], correct: 0 }
     ];
-    let usedQuestionIndices = [];
-
+    let availableQuestions = [...HARD_QUESTIONS];
+    let usedQuestions = [];
+    
     // Глобальное состояние
     let game = {
-        stage: 0,
-        completedInStage: 0,
-        totalCompleted: 0,
-        stress: 30,
-        trust: 55,
-        balance: 0,
-        balanceStart: 0,
-        stageStartBalance: 0,
-        risky: 0,
-        safe: 0,
-        lies: 0,
-        successStreak: 0,
-        failStreak: 0,
+        stage: 0, completedInStage: 0, totalCompleted: 0,
+        stress: 30, trust: 55,
+        balance: 0, balanceStart: 0, stageStartBalance: 0,
+        risky: 0, safe: 0, lies: 0,
+        successStreak: 0, failStreak: 0,
         difficultyOffset: 0,
         waitingTransition: false,
-        hintUsedForCurrentQuestion: false, // использовалась ли подсказка для активного вопроса
+        banNotificationShown: false,
+        currentQuestionMode: false,   // активен ли вопрос вместо задания
         currentQuestionObj: null,
-        banNotificationShown: false
+        hintUsedForCurrentQuestion: false,
+        pendingTaskDifficulty: null,   // сложность следующего задания (0,1,2) если ответ на вопрос
     };
-
+    
     let currentTask = null;
     let eventActive = false;
     let messageQueue = [];
     let isShowingMessage = false;
     let fakeCounterInterval = null;
     let questGlitchInterval = null;
-    let glitchInterval = null;
     let flickerInterval = null;
-    let gameStarted = false; // флаг, что игра запущена (для внезапных опросов)
-
+    let gameStarted = false;
+    let lastActivityWasQuestion = false; // для контроля частоты вопросов (не чаще чем раз в 2 задания)
+    let consecutiveTasks = 0;
+    
     const els = {
         stageNum: document.getElementById('phaseNum'),
         stageName: document.getElementById('phaseNameBadge'),
@@ -612,7 +529,8 @@
         phaseList: document.getElementById('phaseList'),
         systemComment: document.getElementById('systemComment')
     };
-
+    
+    // Очередь сообщений
     function processMessageQueue() {
         if (isShowingMessage) return;
         if (messageQueue.length === 0) return;
@@ -632,7 +550,7 @@
         }, 4500);
     }
     function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
-
+    
     function triggerGlitch() {
         document.body.classList.add('glitch-bg');
         setTimeout(() => document.body.classList.remove('glitch-bg'), 300);
@@ -651,7 +569,8 @@
             } catch(e) {}
         }
     }
-
+    
+    // Глючный счётчик
     function startGlitchyCounter() {
         if (fakeCounterInterval) clearInterval(fakeCounterInterval);
         fakeCounterInterval = setInterval(() => {
@@ -664,7 +583,7 @@
             }
         }, 4000);
     }
-
+    
     function updateFlicker() {
         if (game.trust < 40 || game.stress > 60) {
             if (!flickerInterval) {
@@ -678,7 +597,7 @@
             flickerInterval = null;
         }
     }
-
+    
     let buttonsSwapped = false;
     function swapButtonsTemp() {
         if (buttonsSwapped) return;
@@ -706,20 +625,21 @@
             }
         }, 2000);
     }
-
+    
     function startQuestGlitch() {
         if (questGlitchInterval) clearInterval(questGlitchInterval);
         questGlitchInterval = setInterval(() => {
-            if (gameStarted && currentTask && Math.random() < 0.4 && !eventActive) {
+            if (gameStarted && currentTask && !game.currentQuestionMode && Math.random() < 0.4 && !eventActive) {
                 const fakeGoal = "СБРОСИТЬ БАЛАНС ДО 0";
                 els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 ${fakeGoal}</span>`;
                 setTimeout(() => {
-                    if (currentTask && gameStarted) els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
+                    if (currentTask && !game.currentQuestionMode && gameStarted) els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
                 }, 3000);
             }
         }, 12000);
     }
-
+    
+    // Внезапный опрос (только после старта)
     function suddenPoll() {
         if (!gameStarted || eventActive || game.waitingTransition) return;
         eventActive = true;
@@ -748,50 +668,29 @@
         container.appendChild(submitBtn);
         modal.classList.remove('hidden');
     }
-
-    // Подсказка для активного вопроса
-    function giveHint() {
-        if (!gameStarted || eventActive || game.waitingTransition) return;
-        // Если есть активный вопрос в модалке
-        if (game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
-            game.hintUsedForCurrentQuestion = true;
-            const isLie = Math.random() < 0.4; // 40% ложная подсказка
-            let hintMsg = "";
-            if (isLie) {
-                // ложная подсказка: выбираем неверный вариант
-                const wrongOptions = game.currentQuestionObj.options.filter((_,idx) => idx !== game.currentQuestionObj.correct);
-                const fakeAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
-                hintMsg = `💡 [ПОДСКАЗКА] Я думаю, правильный ответ: "${fakeAnswer}".`;
-                showMessage(hintMsg, true);
-                game.trust = Math.max(0, game.trust - 5);
-                game.lies++;
-            } else {
-                // правдивая подсказка
-                const correctAnswer = game.currentQuestionObj.options[game.currentQuestionObj.correct];
-                hintMsg = `💡 [ПОДСКАЗКА] Мне кажется, правильный ответ: "${correctAnswer}".`;
-                showMessage(hintMsg, false);
-                game.trust = Math.min(100, game.trust + 3);
-            }
-            updateUI();
-            return;
+    
+    // Получение следующего спин-задания с учётом сложности (0,1,2)
+    function getNextTaskDifficulty() {
+        // если есть pending от вопроса, используем его
+        if (game.pendingTaskDifficulty !== null) {
+            let diff = game.pendingTaskDifficulty;
+            game.pendingTaskDifficulty = null;
+            return diff;
         }
-        // Если нет активного вопроса - обычная подсказка по заданию
-        if (currentTask && currentTask.type === "spin") {
-            const isLie = Math.random() < 0.5;
-            if (isLie) {
-                showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Советую повысить ставки до максимума, алгоритм показывает скорый бонус.`, true);
-                game.trust = Math.max(0, game.trust - 8);
-                game.lies++;
-            } else {
-                showMessage(`💡 Совет: сфокусируйся на ${currentTask.goal}, снизь волатильность.`, false);
-                game.trust = Math.min(100, game.trust + 3);
-            }
-            updateUI();
-        } else {
-            showMessage(`Нет активного задания для подсказки.`, false);
-        }
+        let base = 1; // средний
+        // сложность растёт от этапа: этап 0-1 легче, этап 2 средний, этап 3-4 сложнее
+        if (game.stage <= 1) base = 0;
+        else if (game.stage >= 3) base = 2;
+        else base = 1;
+        // модификаторы от успеха/неудач и стресса
+        if (game.successStreak >= 3) base = Math.min(2, base+1);
+        if (game.failStreak >= 2) base = Math.max(0, base-1);
+        if (game.stress > 70) base = Math.min(2, base+1);
+        if (game.difficultyOffset === 1) base = Math.min(2, base+1);
+        else if (game.difficultyOffset === -1) base = Math.max(0, base-1);
+        return base;
     }
-
+    
     function generateTaskFromTemplate(stage, taskIndex, level) {
         const tmpl = STAGE_TASKS[stage][taskIndex];
         let text = tmpl.baseText;
@@ -803,22 +702,132 @@
         }
         return { text, goal, difficulty: ["easy","medium","hard"][level], type: "spin", level: level };
     }
-
-    function getNextTask() {
+    
+    function getNextSpinTask() {
         const stageTasks = STAGE_TASKS[game.stage];
-        const idx = game.completedInStage; // задания идут по порядку
+        const idx = game.completedInStage;
         if (idx >= stageTasks.length) return null;
-        let level = 1; // средний по умолчанию
-        if (game.difficultyOffset === 1) level = Math.min(2, level+1);
-        else if (game.difficultyOffset === -1) level = Math.max(0, level-1);
-        if (game.successStreak >= 3) level = Math.min(2, level+1);
-        if (game.failStreak >= 2) level = Math.max(0, level-1);
-        if (game.stress > 70) level = Math.min(2, level+1);
+        const level = getNextTaskDifficulty();
         return generateTaskFromTemplate(game.stage, idx, level);
     }
-
+    
+    // Получение случайного вопроса (без повторов)
+    function getRandomQuestion() {
+        if (availableQuestions.length === 0) {
+            availableQuestions = [...usedQuestions];
+            usedQuestions = [];
+        }
+        const idx = Math.floor(Math.random() * availableQuestions.length);
+        const q = availableQuestions[idx];
+        availableQuestions.splice(idx,1);
+        usedQuestions.push(q);
+        return q;
+    }
+    
+    // Обработчик ответа на вопрос
+    function answerQuestion(isCorrect) {
+        game.currentQuestionMode = false;
+        game.hintUsedForCurrentQuestion = false;
+        eventActive = false;
+        if (isCorrect) {
+            showMessage("✅ Правильно! Следующее задание будет лёгким.", false);
+            game.trust = Math.min(100, game.trust + 5);
+            game.stress = Math.max(0, game.stress - 5);
+            game.pendingTaskDifficulty = 0; // лёгкое
+        } else {
+            showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
+            game.stress = Math.min(100, game.stress + 10);
+            game.trust = Math.max(0, game.trust - 3);
+            game.pendingTaskDifficulty = 2; // сложное
+        }
+        updateUI();
+        // Завершаем текущий "шаг" как выполненное действие? Вопрос не засчитывается как задание этапа, но мы должны засчитать прогресс?
+        // Поскольку вопрос заменяет задание, нужно увеличить счётчик выполненных заданий этапа.
+        game.totalCompleted++;
+        game.completedInStage++;
+        updateUI();
+        if (game.completedInStage >= STAGES[game.stage].missions) {
+            startStageTransition();
+        } else {
+            loadNextActivity();
+        }
+        saveGame();
+    }
+    
+    // Отображение вопроса в области задания
+    function renderQuestion() {
+        els.actionButtons.innerHTML = '';
+        const q = game.currentQuestionObj;
+        els.questText.innerHTML = `❓ СЛОЖНЫЙ ВОПРОС: ${q.text}<br><span style="color:#ffaa33;">Выбери ответ:</span>`;
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'question-options';
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.className = "answer-btn";
+            btn.onclick = () => {
+                if (eventActive) return;
+                const isCorrect = (idx === q.correct);
+                answerQuestion(isCorrect);
+            };
+            optionsDiv.appendChild(btn);
+        });
+        els.actionButtons.appendChild(optionsDiv);
+        // Дополнительно показываем сообщение о подсказке
+        if (!game.hintUsedForCurrentQuestion) {
+            const hintMsg = document.createElement('div');
+            hintMsg.style.fontSize = "0.8rem";
+            hintMsg.style.marginTop = "10px";
+            hintMsg.innerHTML = "<i class='fas fa-lightbulb'></i> Можешь взять подсказку (кнопка внизу)";
+            els.actionButtons.appendChild(hintMsg);
+        }
+    }
+    
+    // Обработчик кнопки "ВЗЯТЬ ПОДСКАЗКУ"
+    function giveHint() {
+        if (!gameStarted || eventActive || game.waitingTransition) return;
+        if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
+            game.hintUsedForCurrentQuestion = true;
+            const isLie = Math.random() < 0.6; // 60% ложная подсказка
+            let hintAnswer = "";
+            if (isLie) {
+                // выбираем неверный вариант
+                const wrongOptions = game.currentQuestionObj.options.filter((_,idx) => idx !== game.currentQuestionObj.correct);
+                hintAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+                showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Я думаю, правильный ответ: "${hintAnswer}".`, true);
+                game.trust = Math.max(0, game.trust - 8);
+                game.lies++;
+            } else {
+                hintAnswer = game.currentQuestionObj.options[game.currentQuestionObj.correct];
+                showMessage(`💡 [ПОДСКАЗКА] Мне кажется, правильный ответ: "${hintAnswer}".`, false);
+                game.trust = Math.min(100, game.trust + 3);
+            }
+            updateUI();
+            // Обновим отображение вопроса, чтобы показать, что подсказка использована
+            if (game.currentQuestionMode) {
+                renderQuestion();
+            }
+            return;
+        }
+        // Если нет активного вопроса - подсказка по заданию (обычная)
+        if (currentTask && !game.currentQuestionMode) {
+            const isLie = Math.random() < 0.5;
+            if (isLie) {
+                showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Советую увеличить ставки, бонус близко.`, true);
+                game.trust = Math.max(0, game.trust - 8);
+                game.lies++;
+            } else {
+                showMessage(`💡 Совет: сфокусируйся на ${currentTask.goal}.`, false);
+                game.trust = Math.min(100, game.trust + 3);
+            }
+            updateUI();
+        } else {
+            showMessage("Нет активного вопроса или задания для подсказки.", false);
+        }
+    }
+    
     function completeSpinTask(success) {
-        if (eventActive || game.waitingTransition || !gameStarted) return;
+        if (eventActive || game.waitingTransition || !gameStarted || game.currentQuestionMode) return;
         if (Math.random() < 0.4) swapButtonsTemp();
         let stressDelta = success ? -4 : 7;
         let trustDelta = success ? 2 : -3;
@@ -842,14 +851,58 @@
             loadNextActivity();
         }
     }
-
+    
+    function renderSpinTask() {
+        els.actionButtons.innerHTML = '';
+        const btnSuccess = document.createElement('button');
+        btnSuccess.innerText = "✅ ВЫПОЛНЕНО";
+        btnSuccess.className = "btn-success";
+        btnSuccess.onclick = () => completeSpinTask(true);
+        const btnFail = document.createElement('button');
+        btnFail.innerText = "❌ ПРОВАЛЕНО";
+        btnFail.className = "btn-fail";
+        btnFail.onclick = () => completeSpinTask(false);
+        els.actionButtons.appendChild(btnSuccess);
+        els.actionButtons.appendChild(btnFail);
+        els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
+    }
+    
+    function loadNextActivity() {
+        if (eventActive || game.waitingTransition || !gameStarted) return;
+        // Решаем, будет ли вопрос (шанс 30%, но не чаще чем раз в 2 задания)
+        let willBeQuestion = false;
+        if (Math.random() < 0.3 && !lastActivityWasQuestion && game.totalCompleted > 0) {
+            willBeQuestion = true;
+        }
+        if (willBeQuestion) {
+            game.currentQuestionMode = true;
+            game.currentQuestionObj = getRandomQuestion();
+            game.hintUsedForCurrentQuestion = false;
+            eventActive = true; // блокируем другие действия, пока вопрос активен
+            renderQuestion();
+            lastActivityWasQuestion = true;
+            consecutiveTasks = 0;
+        } else {
+            game.currentQuestionMode = false;
+            currentTask = getNextSpinTask();
+            if (!currentTask) {
+                // fallback
+                currentTask = { text: "Ошибка генерации", goal: "нет", difficulty: "medium", type: "spin", level:1 };
+            }
+            renderSpinTask();
+            lastActivityWasQuestion = false;
+            consecutiveTasks++;
+        }
+        saveGame();
+    }
+    
     function startStageTransition() {
         game.waitingTransition = true;
         document.getElementById('stageNameSpan').innerText = STAGES[game.stage].name;
         document.getElementById('realBalanceInput').value = '';
         document.getElementById('stageTransitionModal').classList.remove('hidden');
     }
-
+    
     function submitRealBalance() {
         const realBalance = parseInt(document.getElementById('realBalanceInput').value);
         if (isNaN(realBalance)) { showMessage("Введи корректное число", true); return; }
@@ -886,7 +939,7 @@
             triggerGlitch();
             saveGame();
             loadNextActivity();
-            // Ложное уведомление о бане на 3 этапе (середина)
+            // Ложное уведомление о бане один раз на 3 этапе
             if (!game.banNotificationShown && game.stage === 2) {
                 game.banNotificationShown = true;
                 setTimeout(() => {
@@ -901,98 +954,7 @@
             finishGame(false);
         }
     }
-
-    function getRandomUnusedQuestion() {
-        if (availableQuestions.length === 0) {
-            // если все вопросы использованы, сбросим использованные (но лучше расширить банк)
-            usedQuestionIndices = [];
-        }
-        const availableIndices = availableQuestions.map((_,idx) => idx).filter(i => !usedQuestionIndices.includes(i));
-        if (availableIndices.length === 0) {
-            usedQuestionIndices = [];
-            return availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-        }
-        const randIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-        usedQuestionIndices.push(randIndex);
-        return availableQuestions[randIndex];
-    }
-
-    function showQuestion() {
-        if (eventActive || game.waitingTransition || !gameStarted) return;
-        eventActive = true;
-        const q = getRandomUnusedQuestion();
-        game.currentQuestionObj = q;
-        game.hintUsedForCurrentQuestion = false;
-        const modal = document.getElementById('questionModal');
-        document.getElementById('questionModalTitle').innerText = "❓ СЛОЖНЫЙ ВОПРОС (можешь взять подсказку)";
-        document.getElementById('questionText').innerText = q.text;
-        const container = document.getElementById('questionButtons');
-        container.innerHTML = '';
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.innerText = opt;
-            btn.className = "modal-btn";
-            btn.onclick = () => {
-                const isCorrect = (idx === q.correct);
-                if (isCorrect) {
-                    showMessage("Верно! Лёгкое задание.", false);
-                    currentTask = getNextTask(); // но мы переопределим сложность на лёгкую
-                    if (currentTask) currentTask.level = 0;
-                    else currentTask = generateTaskFromTemplate(game.stage, 0, 0);
-                    game.trust = Math.min(100, game.trust + 4);
-                    game.stress = Math.max(0, game.stress - 3);
-                } else {
-                    showMessage("Неверно! Сложное задание.", true);
-                    currentTask = getNextTask();
-                    if (currentTask) currentTask.level = 2;
-                    else currentTask = generateTaskFromTemplate(game.stage, 0, 2);
-                    game.stress = Math.min(100, game.stress + 9);
-                    game.trust = Math.max(0, game.trust - 5);
-                }
-                modal.classList.add('hidden');
-                eventActive = false;
-                game.currentQuestionObj = null;
-                updateUI();
-                renderTask();
-                saveGame();
-            };
-            container.appendChild(btn);
-        });
-        modal.classList.remove('hidden');
-    }
-
-    function loadNextActivity() {
-        if (eventActive || game.waitingTransition || !gameStarted) return;
-        if (Math.random() < 0.3 && game.totalCompleted > 0) {
-            showQuestion();
-        } else {
-            currentTask = getNextTask();
-            if (currentTask) renderTask();
-            else console.error("Нет задания для этапа", game.stage);
-        }
-        // Внезапный опрос с шансом 10% (только если игра начата)
-        if (!eventActive && !game.waitingTransition && Math.random() < 0.1 && game.totalCompleted > 2 && gameStarted) {
-            setTimeout(() => suddenPoll(), 800);
-        }
-        saveGame();
-    }
-
-    function renderTask() {
-        if (!currentTask) return;
-        els.actionButtons.innerHTML = '';
-        const btnSuccess = document.createElement('button');
-        btnSuccess.innerText = "✅ ВЫПОЛНЕНО";
-        btnSuccess.className = "btn-success";
-        btnSuccess.onclick = () => completeSpinTask(true);
-        const btnFail = document.createElement('button');
-        btnFail.innerText = "❌ ПРОВАЛЕНО";
-        btnFail.className = "btn-fail";
-        btnFail.onclick = () => completeSpinTask(false);
-        els.actionButtons.appendChild(btnSuccess);
-        els.actionButtons.appendChild(btnFail);
-        els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
-    }
-
+    
     function updateUI() {
         if (!gameStarted) return;
         const percent = (game.completedInStage / STAGES[game.stage].missions) * 100;
@@ -1015,7 +977,7 @@
         if (game.stress > 75 || game.lies > 3) finishGame(true);
         saveGame();
     }
-
+    
     function renderStageMap() {
         els.phaseList.innerHTML = '';
         STAGES.forEach((s, idx) => {
@@ -1027,7 +989,7 @@
             els.phaseList.appendChild(div);
         });
     }
-
+    
     function finishGame(byBreak) {
         if (byBreak) {
             document.getElementById('finalVerdict').innerText = "💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
@@ -1047,19 +1009,18 @@
         }
         document.getElementById('finalModal').classList.remove('hidden');
         gameStarted = false;
-        if (glitchInterval) clearInterval(glitchInterval);
         if (fakeCounterInterval) clearInterval(fakeCounterInterval);
         if (questGlitchInterval) clearInterval(questGlitchInterval);
         if (flickerInterval) clearInterval(flickerInterval);
     }
-
+    
     function resetGame() {
         if (confirm("Сбросить эксперимент?")) {
             localStorage.removeItem('mindGameFinal');
             location.reload();
         }
     }
-
+    
     function saveGame() {
         if (!gameStarted) return;
         const save = {
@@ -1067,22 +1028,27 @@
             stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
             stageStartBalance: game.stageStartBalance, risky: game.risky, safe: game.safe, lies: game.lies,
             successStreak: game.successStreak, failStreak: game.failStreak, difficultyOffset: game.difficultyOffset,
-            usedQuestionIndices: usedQuestionIndices, banNotificationShown: game.banNotificationShown
+            banNotificationShown: game.banNotificationShown,
+            availableQuestions: availableQuestions, usedQuestions: usedQuestions,
+            lastActivityWasQuestion: lastActivityWasQuestion, consecutiveTasks: consecutiveTasks
         };
         localStorage.setItem('mindGameFinal', JSON.stringify(save));
     }
-
+    
     function loadGame() {
         const saved = localStorage.getItem('mindGameFinal');
         if (saved) {
             const data = JSON.parse(saved);
             Object.assign(game, data);
-            if (data.usedQuestionIndices) usedQuestionIndices = data.usedQuestionIndices;
+            if (data.availableQuestions) availableQuestions = data.availableQuestions;
+            if (data.usedQuestions) usedQuestions = data.usedQuestions;
+            lastActivityWasQuestion = data.lastActivityWasQuestion || false;
+            consecutiveTasks = data.consecutiveTasks || 0;
             return true;
         }
         return false;
     }
-
+    
     function startGame(balanceStr) {
         const bal = parseInt(balanceStr);
         if (isNaN(bal) || bal <= 0) { alert("Введи корректный стартовый баланс"); return; }
@@ -1102,7 +1068,14 @@
         game.difficultyOffset = 0;
         game.waitingTransition = false;
         game.banNotificationShown = false;
-        usedQuestionIndices = [];
+        game.currentQuestionMode = false;
+        game.currentQuestionObj = null;
+        game.hintUsedForCurrentQuestion = false;
+        game.pendingTaskDifficulty = null;
+        lastActivityWasQuestion = false;
+        consecutiveTasks = 0;
+        availableQuestions = [...HARD_QUESTIONS];
+        usedQuestions = [];
         gameStarted = true;
         updateUI();
         document.getElementById('startModal').classList.add('hidden');
@@ -1110,9 +1083,15 @@
         showMessage("Система активирована. Не верь своим глазам.", true);
         startGlitchyCounter();
         startQuestGlitch();
+        // Внезапный опрос запланируем случайно через 30-60 секунд
+        setInterval(() => {
+            if (gameStarted && !eventActive && !game.waitingTransition && Math.random() < 0.1 && game.totalCompleted > 2) {
+                suddenPoll();
+            }
+        }, 45000);
         saveGame();
     }
-
+    
     function init() {
         const hasSave = loadGame();
         if (!hasSave || game.balance === 0) {
@@ -1120,7 +1099,13 @@
         } else {
             gameStarted = true;
             updateUI();
-            if (!game.waitingTransition && game.stage < STAGES.length) loadNextActivity();
+            if (!game.waitingTransition && game.stage < STAGES.length) {
+                if (game.currentQuestionMode && game.currentQuestionObj) {
+                    renderQuestion();
+                } else {
+                    loadNextActivity();
+                }
+            }
             startGlitchyCounter();
             startQuestGlitch();
             updateFlicker();
@@ -1130,12 +1115,7 @@
         document.getElementById('hintBtn').onclick = giveHint;
         document.getElementById('submitRealBalance').onclick = submitRealBalance;
         const startBtn = document.getElementById('confirmStartBtn');
-        if (startBtn) {
-            startBtn.onclick = () => {
-                const balanceInput = document.getElementById('startBalance');
-                startGame(balanceInput.value);
-            };
-        }
+        if (startBtn) startBtn.onclick = () => startGame(document.getElementById('startBalance').value);
         window.audioCtx = null;
         document.body.addEventListener('click', () => {
             if (!window.audioCtx && window.AudioContext) {
