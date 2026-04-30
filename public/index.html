@@ -274,7 +274,7 @@
             };
 
             let currentTask = null;
-            let pendingSpinResult = null; // 'success' или 'fail'
+            let pendingSpinResult = null;
             let fleeingButtons = false;
             let textGlitchInterval = null;
 
@@ -463,26 +463,21 @@
                 else return Math.random() < 0.5 ? 0 : 1;
             }
 
-            // Обработка результата спина (без ручного ввода баланса, просто выбор)
             function resolveSpinResult(declaredSuccess) {
-                // В реальном стриме стример сам решает, успех или провал.
-                // Для баланса: при успехе баланс растет на случайную сумму 100-500$, при провале падает на 100-400$.
                 let profit = 0;
                 if (declaredSuccess) {
-                    profit = Math.floor(Math.random() * 400) + 100; // +100..500
+                    profit = Math.floor(Math.random() * 400) + 100;
                     game.balance += profit;
                     showSystemMessage(`✅ Ты заявил успех! Баланс +${profit}$.`, false);
                 } else {
-                    profit = -Math.floor(Math.random() * 300) - 100; // -100..-400
+                    profit = -Math.floor(Math.random() * 300) - 100;
                     game.balance += profit;
                     showSystemMessage(`❌ Ты признал провал. Баланс ${profit}$.`, false);
                 }
                 game.prevBalance = game.balance;
 
-                // Эффекты стресса и доверия (без лжи, так как стример честно оценил)
                 let stressDelta = declaredSuccess ? -5 : 8;
                 let trustDelta = declaredSuccess ? 3 : -2;
-                // Учет сложности задания
                 if (currentTask.difficulty === "hard") {
                     stressDelta += declaredSuccess ? -3 : 10;
                     trustDelta += declaredSuccess ? 2 : -3;
@@ -493,7 +488,6 @@
                 game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
                 game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
 
-                // Статистика
                 if (declaredSuccess) game.successStreak++;
                 else game.successStreak = 0;
                 if (!declaredSuccess) game.failStreak++;
@@ -523,7 +517,6 @@
 
             function handleSpinButton(declaredResult) {
                 pendingSpinResult = declaredResult;
-                // Показываем модалку с вопросом подтверждения
                 document.getElementById('balanceTaskInfo').innerHTML = `Задание: ${currentTask.text}<br>Ты подтверждаешь, что ${declaredResult === 'success' ? 'ВЫПОЛНИЛ' : 'ПРОВАЛИЛ'} его?`;
                 document.getElementById('balanceModal').classList.remove('hidden');
             }
@@ -730,12 +723,21 @@
                 loadGame();
                 startTextGlitch();
 
-                if (game.balance === 0 || game.balanceStart === 0) {
-                    document.getElementById('startModal').classList.remove('hidden');
-                    document.getElementById('confirmStart').onclick = () => {
+                // ----- ПЕРЕСОЗДАЁМ КНОПКУ "НАЧАТЬ КВЕСТ", ЧТОБЫ ГАРАНТИРОВАННО РАБОТАЛА -----
+                const startModal = document.getElementById('startModal');
+                const confirmBtn = document.getElementById('confirmStart');
+                if (confirmBtn) {
+                    const newConfirmBtn = confirmBtn.cloneNode(true);
+                    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                    newConfirmBtn.addEventListener('click', function() {
                         const bal = document.getElementById('startBalance').value;
                         startGame(bal);
-                    };
+                    });
+                }
+
+                // Если нет сохранённой игры — показываем модалку
+                if (game.balance === 0 || game.balanceStart === 0) {
+                    startModal.classList.remove('hidden');
                 } else {
                     loadNewTask();
                 }
