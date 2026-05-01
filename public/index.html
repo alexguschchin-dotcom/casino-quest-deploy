@@ -371,9 +371,9 @@
                 <h3><i class="fas fa-skull-crossbones"></i> СУТЬ ЭКСПЕРИМЕНТА</h3>
                 <ul>
                     <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ и отвечай на вопросы, будут меняться стресс и доверие.</li>
-                    <li><strong>Страшные вопросы</strong> заменяют задания (шанс ~30%). Правильный ответ → лёгкое задание, неправильный → сложное.</li>
-                    <li><strong>Подсказка (кнопка внизу)</strong> может врать. Доверие падает, счётчик обмана растёт.</li>
-                    <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность.</li>
+                    <li><strong>Страшные вопросы</strong> заменяют задания (шанс 50%). Правильный ответ → лёгкое задание, неправильный → сложное.</li>
+                    <li><strong>Подсказка (кнопка внизу)</strong> может врать. Каждая ложная подсказка увеличивает счётчик ОБМАН. При 4 обманах — поражение.</li>
+                    <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность следующего этапа.</li>
                     <li>Глюки интерфейса — часть игры.</li>
                     <li><strong>Поражение:</strong> стресс = 100% или обман > 3. Победа: пройти 5 этапов.</li>
                 </ul>
@@ -400,9 +400,9 @@
             <h4>📜 РЕАЛЬНОСТЬ ИГРЫ</h4>
             <p><span class="warning">ВНИМАНИЕ:</span> Ты попал в систему, которая анализирует твое поведение.</p>
             <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2) — симуляция сессий. Успех/провал влияют на стресс и доверие.</p>
-            <p><strong>🔹 Страшные психологические вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
-            <p><strong>🔹 Подсказка</strong> может быть ложной. Доверие падает, счётчик обмана растёт.</p>
-            <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность.</p>
+            <p><strong>🔹 Страшные психологические вопросы</strong> появляются вместо заданий (шанс 50%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
+            <p><strong>🔹 Подсказка</strong> может быть ложной. Каждая ложная подсказка увеличивает счётчик ОБМАН. При 4 обманах — поражение.</p>
+            <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность следующего этапа.</p>
             <p><strong>🔹 Поражение:</strong> стресс = 100% или обман > 3. Победа: пройти 5 этапов.</p>
             <hr>
             <p>Введи СТАРТОВЫЙ БАЛАНС :</p>
@@ -1024,10 +1024,8 @@
     }
     
     function giveHint() {
-        // Проверяем, что игра активна и нет перехода этапа
         if (!gameStarted || game.waitingTransition) return;
         
-        // Если активен вопрос и он ещё не использовал подсказку – обрабатываем
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
             const isLie = Math.random() < 0.6;
@@ -1046,11 +1044,10 @@
                 soundSuccess();
             }
             updateUI();
-            if (game.currentQuestionMode) renderQuestion(); // обновляем интерфейс вопроса (например, убираем сообщение о подсказке)
+            if (game.currentQuestionMode) renderQuestion();
             return;
         }
         
-        // Подсказка для обычного задания
         if (currentTask && !game.currentQuestionMode) {
             const isLie = Math.random() < 0.5;
             if (isLie) {
@@ -1066,8 +1063,6 @@
             updateUI();
             return;
         }
-        
-        // Если ничего не подошло
         showMessage("Нет активного вопроса или задания для подсказки.", false);
     }
     
@@ -1148,8 +1143,8 @@
     function loadNextActivity() {
         if (eventActive || game.waitingTransition || !gameStarted) return;
         let willBeQuestion = false;
-        // Вопросы не появляются, если ещё не было выполнено ни одного задания
-        if (Math.random() < 0.3 && !lastActivityWasQuestion && game.totalCompleted > 0) {
+        // Теперь вопрос может выпасть с вероятностью 50% на каждом шаге, даже первом
+        if (Math.random() < 0.5 && !lastActivityWasQuestion) {
             willBeQuestion = true;
         }
         if (willBeQuestion) {
@@ -1189,8 +1184,8 @@
         if (absDiff > 500) {
             stressDelta = Math.min(25, Math.floor(absDiff / 200));
             trustDelta = -Math.min(20, Math.floor(absDiff / 300));
-            game.lies++;
-            showMessage(`⚠️ Расхождение баланса на ${delta}$. Система фиксирует обман!`, true);
+            // Обман убран – больше не увеличиваем game.lies
+            showMessage(`⚠️ Расхождение баланса на ${delta}$. Система зафиксировала несовпадение.`, true);
             triggerGlitch();
             soundError();
         } else {
@@ -1293,7 +1288,7 @@
         if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
         if (byBreak) {
             document.getElementById('finalVerdict').innerText = "💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
-            document.getElementById('finalDesc').innerText = "Стресс достиг 100% или обман превысил лимит. Ты потерял самообладание.";
+            document.getElementById('finalDesc').innerText = "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание.";
             soundError();
         } else {
             const profit = game.balance - game.balanceStart;
