@@ -456,52 +456,50 @@
         { name: "ФИНАЛ", missions: 2, baseStress: 85, baseTrust: 15 }
     ];
     
-    // Шаблоны заданий (обновлены: для покупки бонуса используется переменная {buy}, для спинов {bet})
+    // Шаблоны заданий
     const STAGE_TASKS = {
         0: [
-            { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. Цель: бонус", goal: "бонус", vars: ["bet"] },
-            { baseText: "Купи бонус в Sweet rush Bonanza за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Gates of Olympus по {bet}$. Цель: не потерять в балансе -{max}$", goal: "не потерять в балансе -{max}$", vars: ["spins","bet","max"] },
-            { baseText: "Купи бонус в Money Train 3 за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Зайти в новую Sweet Bonanza 2500 и словить вкусный заносик. Цель: Заносик", goal: "Заносик", vars: [] },
-            { baseText: "Выбей бонус в Wild West Gold ставкой {bet}$. Цель: отбить {p}%", goal: "{p}%", vars: ["bet","p"] }
+            { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. ", goal: "бонус", vars: ["bet"] },
+            { baseText: "Купи бонус в Sweet rush Bonanza за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Сделай {spins} спинов в Gates of Olympus по {bet}$. ", goal: "не потерять в балансе -{max}$", vars: ["spins","bet","max"] },
+            { baseText: "Купи бонус в Money Train 3 за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Зайти в новую Sweet Bonanza 2500 и словить вкусность. ", goal: "Заносик", vars: [] },
+            { baseText: "Выбей бонус в Wild West Gold ставкой {bet}$.", goal: "{p}%", vars: ["bet","p"] }
         ],
         1: [
-            { baseText: "Купи бонус в Le Bandit за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Dog House Megaways по {bet}$. Цель: бонус", goal: "бонус", vars: ["spins","bet"] },
-            { baseText: "Купи бонус в Sugar Rush за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Starlight Princess по {bet}$. Цель: >{win}$", goal: ">{win}$", vars: ["spins","bet","win"] },
-            { baseText: "Купи бонус в Money Train 4 за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] }
+            { baseText: "Купи бонус в Le Bandit за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Сделай {spins} спинов в Dog House Megaways по {bet}$.", goal: "бонус", vars: ["spins","bet"] },
+            { baseText: "Купи бонус в Sugar Rush за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Сделай {spins} спинов в Starlight Princess по {bet}$.", goal: ">{win}$", vars: ["spins","bet","win"] },
+            { baseText: "Купи бонус в Money Train 4 за {buy}$.", goal: "{p}%", vars: ["buy","p"] }
         ],
         2: [
-            { baseText: "Купить бонус в Twerk за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Выбивать бонуски в Le king по {bet}$ пока не останетесь довольны. Цель: Не сгореть", goal: "Не сгореть", vars: ["bet"] },
-            { baseText: "Купи бонус в The Dog House multihold за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Frkn bananas и выбить бонус по {bet}$ если не выбили купить. Цель: x{mult}+", goal: "x{mult}+", vars: ["spins","bet","mult"] }
+            { baseText: "Купить бонус в Twerk за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Выбивать бонуски в Le king по {bet}$ пока не останетесь довольны.", goal: "Не сгореть", vars: ["bet"] },
+            { baseText: "Купи бонус в The Dog House multihold за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Сделай {spins} спинов в Frkn bananas и выбить бонус по {bet}$ если не выбили купить.", goal: "x{mult}+", vars: ["spins","bet","mult"] }
         ],
         3: [
-            { baseText: "Купи бонус в zeus ze zecond за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Окупить бонус в Princess Suki за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Пробей топовый бонус в Duck hunters за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] }
+            { baseText: "Купи бонус в zeus ze zecond за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Окупить бонус в Princess Suki за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Пробей топовый бонус в Duck hunters за {buy}$.", goal: "{p}%", vars: ["buy","p"] }
         ],
         4: [
-            { baseText: "Купить топовый бонус Zeus vs Hades – Gods of War за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Купи бонус в Wild West Gold за {buy}$. Цель: отбить {p}%", goal: "{p}%", vars: ["buy","p"] }
+            { baseText: "Купить топовый бонус Zeus vs Hades – Gods of War за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
+            { baseText: "Купи бонус в Wild West Gold за {buy}$.", goal: "{p}%", vars: ["buy","p"] }
         ]
     };
     
-    // НОВЫЕ ЗНАЧЕНИЯ: ставки на спин (bet) – 8/12/16, стоимость бонуса (buy) – 300/500/800
     const VAR_VALUES = {
-        spins: [[15,20,25], [25,30,40], [35,45,60]],     // количество спинов
-        bet: [[8,8,8], [12,12,12], [16,16,16]],         // ставка на спин (easy=8, medium=12, hard=16)
-        buy: [[300,300,300], [500,500,500], [800,800,800]], // стоимость покупки бонуса
-        p: [[50,50,50], [75,75,75], [100,100,100]],     // процент отбития (easy=50%, medium=75%, hard=100%)
-        max: [[80,120,180], [150,220,350], [250,400,700]],   // допустимые потери
+        spins: [[15,20,25], [25,30,40], [35,45,60]],
+        bet: [[8,8,8], [12,12,12], [16,16,16]],
+        buy: [[300,300,300], [500,500,500], [800,800,800]],
+        p: [[50,50,50], [75,75,75], [100,100,100]],
+        max: [[80,120,180], [150,220,350], [250,400,700]],
         mult: [[20,30,40], [35,50,75], [60,90,150]],
         win: [[80,120,200], [150,250,450], [300,500,900]]
     };
     
-    // СТРАШНЫЕ ВОПРОСЫ (без изменений)
     const HARD_QUESTIONS = [
         { text: "В фильме «Куб» (1997) как называется структура, в которой оказались герои?", options: ["Лабиринт", "Куб", "Сфера"], correct: 1 },
         { text: "Как зовут демона, которого вызывают в фильме «Изгоняющий дьявола»?", options: ["Пазузу", "Валак", "Баал"], correct: 0 },
@@ -977,7 +975,7 @@
                 showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
                 game.stress = Math.min(100, game.stress + 10);
                 game.trust = Math.max(0, game.trust - 3);
-                game.pendingTaskDifficulty = 2;   // сложное задание гарантированно
+                game.pendingTaskDifficulty = 2;
                 soundError();
                 pixelateTemporarily();
                 shakeScreen(300, 3);
@@ -1026,7 +1024,10 @@
     }
     
     function giveHint() {
+        // Проверяем, что игра активна и нет перехода этапа
         if (!gameStarted || game.waitingTransition) return;
+        
+        // Если активен вопрос и он ещё не использовал подсказку – обрабатываем
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
             const isLie = Math.random() < 0.6;
@@ -1045,9 +1046,11 @@
                 soundSuccess();
             }
             updateUI();
-            if (game.currentQuestionMode) renderQuestion();
+            if (game.currentQuestionMode) renderQuestion(); // обновляем интерфейс вопроса (например, убираем сообщение о подсказке)
             return;
         }
+        
+        // Подсказка для обычного задания
         if (currentTask && !game.currentQuestionMode) {
             const isLie = Math.random() < 0.5;
             if (isLie) {
@@ -1063,6 +1066,8 @@
             updateUI();
             return;
         }
+        
+        // Если ничего не подошло
         showMessage("Нет активного вопроса или задания для подсказки.", false);
     }
     
@@ -1143,6 +1148,7 @@
     function loadNextActivity() {
         if (eventActive || game.waitingTransition || !gameStarted) return;
         let willBeQuestion = false;
+        // Вопросы не появляются, если ещё не было выполнено ни одного задания
         if (Math.random() < 0.3 && !lastActivityWasQuestion && game.totalCompleted > 0) {
             willBeQuestion = true;
         }
