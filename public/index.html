@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>КОГНИТИВНЫЙ СБОЙ · СТРИМ-КВЕСТ</title>
     <style>
+        /* твой стиль без изменений (я его не трогаю) */
         * {
             margin: 0;
             padding: 0;
@@ -336,8 +337,8 @@
             <div class="info-box">
                 <h3><i class="fas fa-skull-crossbones"></i> СУТЬ ЭКСПЕРИМЕНТА</h3>
                 <ul>
-                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ и отвечай на вопросы, будут менятся стресс и доверие и в зависимости от него давать разные задания.</li>
-                    <li><strong>Сложные вопросы</strong> периодически заменяют задания. Ответь правильно — получишь лёгкое задание дальше. Неправильно — сложное, вопросы сложные, используй подсказки.</li>
+                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ и отвечай на вопросы, будут меняться стресс и доверие, и в зависимости от этого даваться разные задания.</li>
+                    <li><strong>Сложные вопросы</strong> периодически заменяют задания. Ответь правильно → лёгкое задание дальше. Неправильно → сложное. Вопросы сложные, используй подсказки.</li>
                     <li><strong>Подсказка</strong> (кнопка внизу) может врать. Доверие падает.</li>
                     <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность.</li>
                     <li>Глюки интерфейса — часть игры.</li>
@@ -363,7 +364,7 @@
         <h2><i class="fas fa-dice-d6"></i> КОГНИТИВНЫЙ СБОЙ</h2>
         <div class="rules-container">
             <h4>📜 РЕАЛЬНОСТЬ ИГРЫ</h4>
-            <p><span class="warning">ВНИМАНИЕ:</span> Ты попал в систему котрая анализирует твое поведение.</p>
+            <p><span class="warning">ВНИМАНИЕ:</span> Ты попал в систему, которая анализирует твое поведение.</p>
             <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2) — симуляция сессий. Успех/провал влияют на стресс и доверие.</p>
             <p><strong>🔹 Сложные вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
             <p><strong>🔹 Подсказка</strong> может быть ложной. Доверие падает, счётчик обмана растёт.</p>
@@ -378,10 +379,9 @@
 </div>
 <div id="stageTransitionModal" class="modal hidden">
     <div class="modal-content">
-        <h2>📊 ВВОД  БАЛАНСА</h2>
+        <h2>📊 ВВОД БАЛАНСА</h2>
         <p>Ты выполнил задания этапа <span id="stageNameSpan"></span>.</p>
-        <p>Введи свой ТЕКУЩИЙ баланс
-            :</p>
+        <p>Введи свой ТЕКУЩИЙ баланс:</p>
         <input type="number" id="realBalanceInput" class="balance-input" placeholder="Баланс">
         <button id="submitRealBalance" class="modal-btn">ПОДТВЕРДИТЬ</button>
     </div>
@@ -406,50 +406,50 @@
         { name: "ФИНАЛ", missions: 2, baseStress: 85, baseTrust: 15 }
     ];
     
-    // Фиксированные задания для каждого этапа (уникальные)
+    // ТВОИ НОВЫЕ ЗАДАНИЯ (исправлены синтаксические ошибки и лишние переменные)
     const STAGE_TASKS = {
-        0: [ // этап 1
-            { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. Цель: бонус", goal: "бонус", vars: ["spins","bet"] },
+        0: [
+            { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. Цель: бонус", goal: "бонус", vars: ["bet"] },
             { baseText: "Купи бонус в Sweet rush Bonanza за {bet}$. Цель: отбить {p}%", goal: "{p}%", vars: ["bet","p"] },
             { baseText: "Сделай {spins} спинов в Gates of Olympus по {bet}$. Цель: не потерять в балансе -{max}$", goal: "не потерять в балансе -{max}$", vars: ["spins","bet","max"] },
             { baseText: "Купи бонус в Money Train 3 за {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] },
-            { baseText: "Зайти в новую Sweet Bonanza 2500 и словить вкусный заносик. Цель: Заносик", goal: "Заносик", vars: ["spins","bet","fish"] },
+            { baseText: "Зайти в новую Sweet Bonanza 2500 и словить вкусный заносик. Цель: Заносик", goal: "Заносик", vars: [] },
             { baseText: "Выбей бонус в Wild West Gold ставкой {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] }
         ],
-        1: [ // этап 2
+        1: [
             { baseText: "Купи бонус в Le Bandit за {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] },
             { baseText: "Сделай {spins} спинов в Dog House Megaways по {bet}$. Цель: бонус", goal: "бонус", vars: ["spins","bet"] },
             { baseText: "Купи бонус в Sugar Rush за {bet}$. Цель: ретриггер", goal: "ретриггер", vars: ["bet"] },
             { baseText: "Сделай {spins} спинов в Starlight Princess по {bet}$. Цель: >{win}$", goal: ">{win}$", vars: ["spins","bet","win"] },
             { baseText: "Купи бонус в Money Train 4 за {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] }
         ],
-        2: [ // этап 3
-            { baseText: "Купить бонус в Twerk за {bet}$. Цель: Познать запрещенные знания", goal: "Познать запрещенные знания", vars: ["bet","mult"] },
-            { baseText: "Выбивать бонуски в Le king по {bet}$ пока не останетесь довольны. Цель: Не сгореть ", goal: "Не сгореть", vars: ["spins","bet","mult"] },
+        2: [
+            { baseText: "Купить бонус в Twerk за {bet}$. Цель: Познать запрещенные знания", goal: "Познать запрещенные знания", vars: ["bet"] },
+            { baseText: "Выбивать бонуски в Le king по {bet}$ пока не останетесь довольны. Цель: Не сгореть", goal: "Не сгореть", vars: ["bet"] },
             { baseText: "Купи бонус в The Dog House multihold за {bet}$. Цель: x{mult} в бонусе", goal: "x{mult}", vars: ["bet","mult"] },
             { baseText: "Сделай {spins} спинов в Frkn bananas и выбить бонус по {bet}$ если не выбили купить. Цель: x{mult}+", goal: "x{mult}+", vars: ["spins","bet","mult"] }
         ],
-        3: [ // этап 4
-            { baseText: "Купи бонус в zeus ze zecond {bet}$. Цель: Дойти до серебрянных монет", goal: "Дойти до серебрянных монет", vars: ["bet"] },
-            { baseText: "Окупить бонус в Princess Suki за {bet}$. Цель: окуп", goal: "окуп", vars: ["spins","bet","fish"] },
-            { baseText: "Пробей топовый бонус в Duck hunters за {bet}$. Цель: Порадоваться ", goal: "Порадоваться", vars: ["bet","win"] }
+        3: [
+            { baseText: "Купи бонус в zeus ze zecond за {bet}$. Цель: Дойти до серебрянных монет", goal: "Дойти до серебрянных монет", vars: ["bet"] },
+            { baseText: "Окупить бонус в Princess Suki за {bet}$. Цель: окуп", goal: "окуп", vars: ["bet"] },
+            { baseText: "Пробей топовый бонус в Duck hunters за {bet}$. Цель: Порадоваться", goal: "Порадоваться", vars: ["bet"] }
         ],
-        4: [ // этап 5
-            { baseText: "Купить топоый бонус Zeus vs Hades – Gods of War 250 за {bet}$. Цель: Выбить две шторы goal: "Выбить две шторы", vars: ["spins","bet","target"] },
-            { baseText: "Купи бонус в Wild West Gold за {bet}$. Цель: поймать два ретриггера в бонусках", goal: "поймать два ретриггера в бонусках", vars: ["bet","mult"] }
+        4: [
+            { baseText: "Купить топовый бонус Zeus vs Hades – Gods of War за {bet}$. Цель: Выбить две шторы", goal: "Выбить две шторы", vars: ["bet"] },
+            { baseText: "Купи бонус в Wild West Gold за {bet}$. Цель: поймать два ретриггера в бонусках", goal: "поймать два ретриггера в бонусках", vars: ["bet"] }
         ]
     };
     
-    // Динамические значения для уровней сложности (0=легкий, 1=средний, 2=сложный) плюс модификатор этапа
+    // ДИНАМИЧЕСКИЕ ЗНАЧЕНИЯ (подстроены под новые задания)
     const VAR_VALUES = {
-        spins: [[20,25,30], [30,35,45], [40,50,70]],
-        bet: [[5,7,10], [10,12,18], [15,20,30]],
-        p: [[40,50,60], [50,60,70], [60,70,80]],
-        max: [[100,150,200], [150,200,300], [200,300,500]],
-        mult: [[30,40,50], [40,60,80], [60,80,120]],
-        fish: [[2,3,4], [3,4,6], [4,6,9]],
-        win: [[100,150,250], [200,300,500], [400,600,1000]],
-        target: [[200,300,400], [300,500,800], [500,800,1200]]
+        spins: [[15,20,25], [25,30,40], [35,45,60]],
+        bet: [[3,5,8], [8,12,18], [15,25,40]],
+        p: [[30,40,50], [45,55,70], [60,75,100]],
+        max: [[80,120,180], [150,220,350], [250,400,700]],
+        mult: [[20,30,40], [35,50,75], [60,90,150]],
+        fish: [[1,2,3], [2,3,5], [3,5,8]],
+        win: [[80,120,200], [150,250,450], [300,500,900]],
+        target: [[150,250,350], [300,450,700], [500,800,1300]]
     };
     
     // БОЛЬШОЙ БАНК СЛОЖНЫХ ВОПРОСОВ (физика, математика, биология, история, логика)
@@ -495,10 +495,10 @@
         difficultyOffset: 0,
         waitingTransition: false,
         banNotificationShown: false,
-        currentQuestionMode: false,   // активен ли вопрос вместо задания
+        currentQuestionMode: false,
         currentQuestionObj: null,
         hintUsedForCurrentQuestion: false,
-        pendingTaskDifficulty: null,   // сложность следующего задания (0,1,2) если ответ на вопрос
+        pendingTaskDifficulty: null,
     };
     
     let currentTask = null;
@@ -510,7 +510,6 @@
     let flickerInterval = null;
     let gameStarted = false;
     let lastActivityWasQuestion = false; // для контроля частоты вопросов (не чаще чем раз в 2 задания)
-    let consecutiveTasks = 0;
     
     const els = {
         stageNum: document.getElementById('phaseNum'),
@@ -530,7 +529,7 @@
         systemComment: document.getElementById('systemComment')
     };
     
-    // Очередь сообщений
+    // Очередь сообщений (без изменений, работает)
     function processMessageQueue() {
         if (isShowingMessage) return;
         if (messageQueue.length === 0) return;
@@ -671,18 +670,15 @@
     
     // Получение следующего спин-задания с учётом сложности (0,1,2)
     function getNextTaskDifficulty() {
-        // если есть pending от вопроса, используем его
         if (game.pendingTaskDifficulty !== null) {
             let diff = game.pendingTaskDifficulty;
             game.pendingTaskDifficulty = null;
             return diff;
         }
-        let base = 1; // средний
-        // сложность растёт от этапа: этап 0-1 легче, этап 2 средний, этап 3-4 сложнее
+        let base = 1;
         if (game.stage <= 1) base = 0;
         else if (game.stage >= 3) base = 2;
         else base = 1;
-        // модификаторы от успеха/неудач и стресса
         if (game.successStreak >= 3) base = Math.min(2, base+1);
         if (game.failStreak >= 2) base = Math.max(0, base-1);
         if (game.stress > 70) base = Math.min(2, base+1);
@@ -696,6 +692,7 @@
         let text = tmpl.baseText;
         let goal = tmpl.goal;
         for (let v of tmpl.vars) {
+            if (!VAR_VALUES[v]) continue;
             let val = VAR_VALUES[v][level][Math.floor(Math.random() * VAR_VALUES[v][level].length)];
             text = text.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
             if (goal.includes(`{${v}}`)) goal = goal.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
@@ -733,16 +730,14 @@
             showMessage("✅ Правильно! Следующее задание будет лёгким.", false);
             game.trust = Math.min(100, game.trust + 5);
             game.stress = Math.max(0, game.stress - 5);
-            game.pendingTaskDifficulty = 0; // лёгкое
+            game.pendingTaskDifficulty = 0;
         } else {
             showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
             game.stress = Math.min(100, game.stress + 10);
             game.trust = Math.max(0, game.trust - 3);
-            game.pendingTaskDifficulty = 2; // сложное
+            game.pendingTaskDifficulty = 2;
         }
         updateUI();
-        // Завершаем текущий "шаг" как выполненное действие? Вопрос не засчитывается как задание этапа, но мы должны засчитать прогресс?
-        // Поскольку вопрос заменяет задание, нужно увеличить счётчик выполненных заданий этапа.
         game.totalCompleted++;
         game.completedInStage++;
         updateUI();
@@ -773,7 +768,6 @@
             optionsDiv.appendChild(btn);
         });
         els.actionButtons.appendChild(optionsDiv);
-        // Дополнительно показываем сообщение о подсказке
         if (!game.hintUsedForCurrentQuestion) {
             const hintMsg = document.createElement('div');
             hintMsg.style.fontSize = "0.8rem";
@@ -788,10 +782,9 @@
         if (!gameStarted || eventActive || game.waitingTransition) return;
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
-            const isLie = Math.random() < 0.6; // 60% ложная подсказка
+            const isLie = Math.random() < 0.6;
             let hintAnswer = "";
             if (isLie) {
-                // выбираем неверный вариант
                 const wrongOptions = game.currentQuestionObj.options.filter((_,idx) => idx !== game.currentQuestionObj.correct);
                 hintAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
                 showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Я думаю, правильный ответ: "${hintAnswer}".`, true);
@@ -803,13 +796,9 @@
                 game.trust = Math.min(100, game.trust + 3);
             }
             updateUI();
-            // Обновим отображение вопроса, чтобы показать, что подсказка использована
-            if (game.currentQuestionMode) {
-                renderQuestion();
-            }
+            if (game.currentQuestionMode) renderQuestion();
             return;
         }
-        // Если нет активного вопроса - подсказка по заданию (обычная)
         if (currentTask && !game.currentQuestionMode) {
             const isLie = Math.random() < 0.5;
             if (isLie) {
@@ -869,7 +858,6 @@
     
     function loadNextActivity() {
         if (eventActive || game.waitingTransition || !gameStarted) return;
-        // Решаем, будет ли вопрос (шанс 30%, но не чаще чем раз в 2 задания)
         let willBeQuestion = false;
         if (Math.random() < 0.3 && !lastActivityWasQuestion && game.totalCompleted > 0) {
             willBeQuestion = true;
@@ -878,20 +866,17 @@
             game.currentQuestionMode = true;
             game.currentQuestionObj = getRandomQuestion();
             game.hintUsedForCurrentQuestion = false;
-            eventActive = true; // блокируем другие действия, пока вопрос активен
+            eventActive = true;
             renderQuestion();
             lastActivityWasQuestion = true;
-            consecutiveTasks = 0;
         } else {
             game.currentQuestionMode = false;
             currentTask = getNextSpinTask();
             if (!currentTask) {
-                // fallback
                 currentTask = { text: "Ошибка генерации", goal: "нет", difficulty: "medium", type: "spin", level:1 };
             }
             renderSpinTask();
             lastActivityWasQuestion = false;
-            consecutiveTasks++;
         }
         saveGame();
     }
@@ -939,7 +924,6 @@
             triggerGlitch();
             saveGame();
             loadNextActivity();
-            // Ложное уведомление о бане один раз на 3 этапе
             if (!game.banNotificationShown && game.stage === 2) {
                 game.banNotificationShown = true;
                 setTimeout(() => {
@@ -1030,7 +1014,7 @@
             successStreak: game.successStreak, failStreak: game.failStreak, difficultyOffset: game.difficultyOffset,
             banNotificationShown: game.banNotificationShown,
             availableQuestions: availableQuestions, usedQuestions: usedQuestions,
-            lastActivityWasQuestion: lastActivityWasQuestion, consecutiveTasks: consecutiveTasks
+            lastActivityWasQuestion: lastActivityWasQuestion
         };
         localStorage.setItem('mindGameFinal', JSON.stringify(save));
     }
@@ -1043,7 +1027,6 @@
             if (data.availableQuestions) availableQuestions = data.availableQuestions;
             if (data.usedQuestions) usedQuestions = data.usedQuestions;
             lastActivityWasQuestion = data.lastActivityWasQuestion || false;
-            consecutiveTasks = data.consecutiveTasks || 0;
             return true;
         }
         return false;
@@ -1073,7 +1056,6 @@
         game.hintUsedForCurrentQuestion = false;
         game.pendingTaskDifficulty = null;
         lastActivityWasQuestion = false;
-        consecutiveTasks = 0;
         availableQuestions = [...HARD_QUESTIONS];
         usedQuestions = [];
         gameStarted = true;
@@ -1083,7 +1065,6 @@
         showMessage("Система активирована. Не верь своим глазам.", true);
         startGlitchyCounter();
         startQuestGlitch();
-        // Внезапный опрос запланируем случайно через 30-60 секунд
         setInterval(() => {
             if (gameStarted && !eventActive && !game.waitingTransition && Math.random() < 0.1 && game.totalCompleted > 2) {
                 suddenPoll();
