@@ -19,15 +19,13 @@
             min-height: 100vh;
             transition: background 0.3s ease;
         }
-        /* Эффект сильного глитча (красная вспышка) */
-        body.glitch-bg {
-            animation: bgPulseRed 0.15s infinite alternate;
-        }
         @keyframes bgPulseRed {
             0% { background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101); }
             100% { background: radial-gradient(circle at 80% 70%, #4a0f0f, #330000); }
         }
-        /* Постоянное мерцание при высоком стрессе (анимация навешивается отдельно) */
+        body.glitch-bg {
+            animation: bgPulseRed 0.15s infinite alternate;
+        }
         @keyframes bgPulseConstant {
             0% { background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101); }
             100% { background: radial-gradient(circle at 80% 70%, #2a0f0f, #1a0000); }
@@ -349,7 +347,7 @@
                 <h3><i class="fas fa-skull-crossbones"></i> СУТЬ ЭКСПЕРИМЕНТА</h3>
                 <ul>
                     <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ и отвечай на вопросы, будут меняться стресс и доверие, и в зависимости от этого даваться разные задания.</li>
-                    <li><strong>Сложные вопросы</strong> периодически заменяют задания. Ответь правильно → лёгкое задание дальше. Неправильно → сложное. Вопросы сложные, используй подсказки.</li>
+                    <li><strong>Жуткие психологические вопросы</strong> периодически заменяют задания. Правильный ответ → лёгкое задание дальше. Неправильно → сложное. Вопросы страшные, используй подсказки.</li>
                     <li><strong>Подсказка</strong> (кнопка внизу) может врать. Доверие падает.</li>
                     <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность.</li>
                     <li>Глюки интерфейса — часть игры.</li>
@@ -378,11 +376,11 @@
             <h4>📜 РЕАЛЬНОСТЬ ИГРЫ</h4>
             <p><span class="warning">ВНИМАНИЕ:</span> Ты попал в систему, которая анализирует твое поведение.</p>
             <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2) — симуляция сессий. Успех/провал влияют на стресс и доверие.</p>
-            <p><strong>🔹 Сложные вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
+            <p><strong>🔹 Страшные психологические вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное. Вопросы основаны на хоррорах, мистике и психологических аномалиях.</p>
             <p><strong>🔹 Подсказка</strong> может быть ложной. Доверие падает, счётчик обмана растёт.</p>
             <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность.</p>
             <p><strong>🔹 Поражение:</strong> стресс >75 или обман >3. Победа: пройти 5 этапов.</p>
-            <p><strong>🔹 Баланс влияет на задания:</strong> если осталось мало денег, задания будут легче (финальный этап — исключение).</p>
+            <p><strong>🔹 Баланс влияет на сложность:</strong> если осталось мало денег, задания будут легче (финальный этап — исключение).</p>
             <hr>
             <p>Введи СТАРТОВЫЙ БАЛАНС :</p>
             <input type="number" id="startBalance" class="balance-input" placeholder="20000" value="20000">
@@ -427,7 +425,7 @@
         { name: "ФИНАЛ", missions: 2, baseStress: 85, baseTrust: 15 }
     ];
     
-    // ЗАДАНИЯ (шаблоны)
+    // ЗАДАНИЯ (шаблоны) - те же самые
     const STAGE_TASKS = {
         0: [
             { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. Цель: бонус", goal: "бонус", vars: ["bet"] },
@@ -472,36 +470,43 @@
         target: [[150,250,350], [300,450,700], [500,800,1300]]
     };
     
-    // ВОПРОСЫ
+    // ============================================================
+    // НОВЫЕ СТРАШНЫЕ / ПСИХОЛОГИЧЕСКИЕ ВОПРОСЫ
+    // ============================================================
     const HARD_QUESTIONS = [
-        { text: "Какая сила удерживает планеты на орбитах?", options: ["Центробежная", "Гравитация", "Электромагнитная"], correct: 1 },
-        { text: "Чему равен квадратный корень из 144?", options: ["12", "14", "16"], correct: 0 },
-        { text: "Кто открыл пенициллин?", options: ["Павлов", "Флеминг", "Мечников"], correct: 1 },
-        { text: "Сколько костей в теле взрослого человека?", options: ["206", "208", "210"], correct: 0 },
-        { text: "Какая планета самая горячая?", options: ["Меркурий", "Венера", "Марс"], correct: 1 },
-        { text: "Что такое фотосинтез?", options: ["Дыхание растений", "Питание растений", "Размножение"], correct: 1 },
-        { text: "Кто написал 'Преступление и наказание'?", options: ["Толстой", "Достоевский", "Чехов"], correct: 1 },
-        { text: "Чему равно 15% от 200?", options: ["30", "25", "35"], correct: 0 },
-        { text: "Какое животное самое быстрое на суше?", options: ["Лев", "Гепард", "Антилопа"], correct: 1 },
-        { text: "Какой газ преобладает в атмосфере Земли?", options: ["Кислород", "Азот", "Углекислый газ"], correct: 1 },
-        { text: "Кто изобрёл радио?", options: ["Попов", "Тесла", "Маркони"], correct: 0 },
-        { text: "Сколько дней в високосном году?", options: ["365", "366", "364"], correct: 1 },
-        { text: "Что такое ДНК?", options: ["Белок", "Нуклеиновая кислота", "Углевод"], correct: 1 },
-        { text: "Какая река самая длинная в мире?", options: ["Амазонка", "Нил", "Янцзы"], correct: 1 },
-        { text: "Чему равно число Пи (π) с точностью до двух знаков?", options: ["3.12", "3.14", "3.16"], correct: 1 },
-        { text: "Кто написал 'Войну и мир'?", options: ["Достоевский", "Толстой", "Пушкин"], correct: 1 },
-        { text: "Сколько цветов в радуге?", options: ["6", "7", "8"], correct: 1 },
-        { text: "Что измеряет амперметр?", options: ["Напряжение", "Силу тока", "Сопротивление"], correct: 1 },
-        { text: "Какая страна подарила США статую Свободы?", options: ["Англия", "Франция", "Испания"], correct: 1 },
-        { text: "Кто написал 'Евгения Онегина'?", options: ["Лермонтов", "Пушкин", "Гоголь"], correct: 1 },
-        { text: "Самая высокая гора в мире?", options: ["Эверест", "К2", "Канченджанга"], correct: 0 },
-        { text: "Что такое хемосинтез?", options: ["Фотосинтез", "Синтез органики из неорганики", "Дыхание"], correct: 1 },
-        { text: "Кто открыл теорию относительности?", options: ["Ньютон", "Эйнштейн", "Галилей"], correct: 1 },
-        { text: "Сколько минут в сутках?", options: ["1440", "1500", "1380"], correct: 0 },
-        { text: "Какая кислота содержится в желудочном соке?", options: ["Серная", "Соляная", "Азотная"], correct: 1 },
-        { text: "Самый большой океан на Земле?", options: ["Атлантический", "Индийский", "Тихий"], correct: 2 },
-        { text: "Кто написал 'Мёртвые души'?", options: ["Гоголь", "Тургенев", "Салтыков-Щедрин"], correct: 0 }
+        { text: "В фильме «Куб» (1997) как называется структура, в которой оказались герои?", options: ["Лабиринт", "Куб", "Сфера"], correct: 1 },
+        { text: "Как зовут демона, которого вызывают в фильме «Изгоняющий дьявола»?", options: ["Пазузу", "Валак", "Баал"], correct: 0 },
+        { text: "Что в финале «Пилы» видит доктор Гордон, когда дверь закрывается?", options: ["Мёртвого Адама", "Свою семью", "Пилу"], correct: 0 },
+        { text: "Сколько дней длился реальный эксперимент Стэнфордской тюрьмы (согласно официальным данным)?", options: ["3 дня", "6 дней", "14 дней"], correct: 1 },
+        { text: "Как называется психологический феномен, когда человек верит, что его близкого заменил двойник?", options: ["Синдром Капгра", "Эффект Манделы", "Синдром Стендаля"], correct: 0 },
+        { text: "Кто написал рассказ «Зов Ктулху»?", options: ["Эдгар По", "Стивен Кинг", "Говард Лавкрафт"], correct: 2 },
+        { text: "В каком хорроре появляется персонаж по имени Джек Торренс?", options: ["Сияние", "Оно", "Мизери"], correct: 0 },
+        { text: "Что означает аббревиатура SCP во вселенной SCP Foundation?", options: ["Special Containment Procedures", "Secure Contain Protect", "Sécurité Contrôle Protection"], correct: 1 },
+        { text: "Кто режиссёр фильма «Реинкарнация» (Hereditary, 2018)?", options: ["Ари Астер", "Джордан Пил", "Майк Флэнеган"], correct: 0 },
+        { text: "Как называется крипипаста про мальчика, который заставлял детей смотреть в стену?", options: ["Кошмар на улице Вязов", "Слендермен", "Мистер Кенни"], correct: 2 },
+        { text: "Что символизирует красная дверь в фильме «Куб»?", options: ["Выход", "Ловушку", "Начало"], correct: 0 },
+        { text: "Как называется расстройство, при котором человек слышит «голоса» умерших родственников?", options: ["Посмертный галлюциноз", "Синдром Котара", "Комплекс Электры"], correct: 0 },
+        { text: "Какой псевдоним у маньяка из фильма «Молчание ягнят»?", options: ["Баффало Билл", "Джон Доу", "Декстер"], correct: 0 },
+        { text: "Что находится в коробке в фильме «Семь»?", options: ["Голова", "Пистолет", "Книга"], correct: 0 },
+        { text: "Как называется эффект, когда кажется, что незнакомые люди тебе знакомы?", options: ["Дежавю", "Жамевю", "Фамэвю"], correct: 2 },
+        { text: "Какой фильм начинается с фразы «Когда я была маленькая, я засыпала и видела один и тот же сон...»?", options: ["Ночной кошмар", "Кошмар на улице Вязов", "Заклятие"], correct: 1 },
+        { text: "Имя главного антагониста в серии игр Silent Hill?", options: ["Пирамидоголовый", "Вальтак", "Сайлент"], correct: 0 },
+        { text: "Что такое «Эффект манделы»?", options: ["Ложная память у многих людей", "Коллективная галлюцинация", "Массовая истерия"], correct: 0 },
+        { text: "Как в серии фильмов «Пункт назначения» погибает большинство героев?", options: ["Несчастный случай", "Самоубийство", "Убийство"], correct: 0 },
+        { text: "Кто автор рассказа «Тень над Иннсмутом»?", options: ["Лавкрафт", "Кинг", "По"], correct: 0 },
+        { text: "Что такое «Синдром Котара»?", options: ["Уверенность в собственной смерти", "Страх перед клоунами", "Навязчивое мытьё рук"], correct: 0 },
+        { text: "В каком фильме появляется «Проклятое видео» после которого звонок и смерть через 7 дней?", options: ["Звонок", "Проклятие", "Синистер"], correct: 0 },
+        { text: "Как зовут девочку из фильма «Реинкарнация», которая коллекционирует головы?", options: ["Анни", "Чарли", "Салли"], correct: 1 },
+        { text: "Что означает термин «Слендермен»?", options: ["Тонкий мужчина", "Тенистый человек", "Бесконечный мужчина"], correct: 0 },
+        { text: "Как заканчивается рассказ «Маска красной смерти» Эдгара По?", options: ["Смерть всех гостей", "Побег главного героя", "Появление призрака"], correct: 0 },
+        { text: "Какой тип игры использует «Куб» — структура меняет свои грани каждые несколько минут?", options: ["Механическая ловушка", "Многообразие", "Бесконечность"], correct: 0 },
+        { text: "Что в хорроре «Тихое место» нельзя делать — иначе монстры нападают?", options: ["Издавать звук", "Смотреть в глаза", "Дышать громко"], correct: 0 },
+        { text: "Какой психологический термин обозначает неспособность распознавать знакомые лица?", options: ["Прозопагнозия", "Агнозия", "Алексия"], correct: 0 },
+        { text: "В каком фильме главный герой с жертвой играет в игру «Хочу ли я жить?» (жить или умереть)?", options: ["Пила", "Хостел", "Я плюю на ваши могилы"], correct: 0 },
+        { text: "Что такое «Клиническая смерть» с точки зрения парапсихологии?", options: ["Путешествие души", "Временная остановка сердца", "Выход в астрал"], correct: 1 }
     ];
+    // ============================================================
+    
     let availableQuestions = [...HARD_QUESTIONS];
     let usedQuestions = [];
     
@@ -527,10 +532,32 @@
     let isShowingMessage = false;
     let fakeCounterInterval = null;
     let questGlitchInterval = null;
-    let flickerInterval = false;   // флаг, включено ли постоянное мерцание
+    let flickerInterval = false;
     let gameStarted = false;
     let lastActivityWasQuestion = false;
     let answeringLock = false;
+    
+    // Звуковая система
+    let audioCtx = null;
+    function playBeep(freq, duration, type='sine', volume=0.1) {
+        if (!audioCtx) return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.start();
+            osc.stop(now + duration);
+        } catch(e) {}
+    }
+    function soundSuccess() { playBeep(880, 0.25, 'sine', 0.12); }
+    function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
+    function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
     
     const els = {
         stageNum: document.getElementById('phaseNum'),
@@ -550,7 +577,6 @@
         systemComment: document.getElementById('systemComment')
     };
     
-    // Очередь сообщений
     function processMessageQueue() {
         if (isShowingMessage) return;
         if (messageQueue.length === 0) return;
@@ -571,7 +597,6 @@
     }
     function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
     
-    // Улучшенный глитч с длительной вспышкой и звуком
     function triggerGlitch() {
         document.body.classList.add('glitch-bg');
         const container = document.querySelector('.container');
@@ -580,20 +605,7 @@
             document.body.classList.remove('glitch-bg');
             if (container) container.style.boxShadow = '';
         }, 600);
-        if (window.audioCtx) {
-            try {
-                const osc = window.audioCtx.createOscillator();
-                const gain = window.audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(window.audioCtx.destination);
-                osc.type = "sawtooth";
-                gain.gain.setValueAtTime(0.1, window.audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, window.audioCtx.currentTime+0.5);
-                osc.frequency.value = 300 + Math.random()*400;
-                osc.start();
-                osc.stop(window.audioCtx.currentTime+0.5);
-            } catch(e) {}
-        }
+        soundGlitch();
     }
     
     function startGlitchyCounter() {
@@ -609,7 +621,6 @@
         }, 4000);
     }
     
-    // Постоянное мерцание при стрессе > 60 или доверии < 40
     function updateFlicker() {
         const shouldFlicker = (game.trust < 40 || game.stress > 60);
         if (shouldFlicker && !flickerInterval) {
@@ -623,10 +634,7 @@
             if (glitchOverlay) glitchOverlay.style.animation = 'glitchShift 8s infinite';
             flickerInterval = false;
         }
-        // Дополнительный глитч-вспышка при стрессе > 70
-        if (game.stress > 70 && Math.random() < 0.1) {
-            triggerGlitch();
-        }
+        if (game.stress > 70 && Math.random() < 0.1) triggerGlitch();
     }
     
     let buttonsSwapped = false;
@@ -670,7 +678,6 @@
         }, 12000);
     }
     
-    // Внезапный опрос
     function suddenPoll() {
         if (!gameStarted || eventActive || game.waitingTransition) return;
         eventActive = true;
@@ -694,6 +701,7 @@
             modal.classList.add('hidden');
             eventActive = false;
             saveGame();
+            soundError();
         };
         container.appendChild(input);
         container.appendChild(submitBtn);
@@ -704,11 +712,11 @@
             game.stress = Math.min(100, game.stress + 8);
             updateUI();
             saveGame();
+            soundError();
         };
         modal.classList.remove('hidden');
     }
     
-    // Сложность с учётом баланса
     function getNextTaskDifficulty() {
         if (game.pendingTaskDifficulty !== null) {
             let diff = game.pendingTaskDifficulty;
@@ -785,11 +793,13 @@
                 game.trust = Math.min(100, game.trust + 5);
                 game.stress = Math.max(0, game.stress - 5);
                 game.pendingTaskDifficulty = 0;
+                soundSuccess();
             } else {
                 showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
                 game.stress = Math.min(100, game.stress + 10);
                 game.trust = Math.max(0, game.trust - 3);
                 game.pendingTaskDifficulty = 2;
+                soundError();
             }
             updateUI();
             game.totalCompleted++;
@@ -809,7 +819,7 @@
         els.actionButtons.innerHTML = '';
         const q = game.currentQuestionObj;
         if (!q) return;
-        els.questText.innerHTML = `❓ СЛОЖНЫЙ ВОПРОС: ${q.text}<br><span style="color:#ffaa33;">Выбери ответ:</span>`;
+        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери жуткий ответ:</span>`;
         const optionsDiv = document.createElement('div');
         optionsDiv.className = 'question-options';
         q.options.forEach((opt, idx) => {
@@ -834,12 +844,9 @@
         }
     }
     
-    // ИСПРАВЛЕННАЯ ПОДСКАЗКА
     function giveHint() {
-        // Запрещаем только если идёт активный процесс (eventActive === true) или переход этапа
         if (!gameStarted || eventActive === true || game.waitingTransition) return;
         
-        // Подсказка во время вопроса
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
             const isLie = Math.random() < 0.6;
@@ -850,32 +857,33 @@
                 showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Я думаю, правильный ответ: "${hintAnswer}".`, true);
                 game.trust = Math.max(0, game.trust - 8);
                 game.lies++;
+                soundError();
             } else {
                 hintAnswer = game.currentQuestionObj.options[game.currentQuestionObj.correct];
                 showMessage(`💡 [ПОДСКАЗКА] Мне кажется, правильный ответ: "${hintAnswer}".`, false);
                 game.trust = Math.min(100, game.trust + 3);
+                soundSuccess();
             }
             updateUI();
-            if (game.currentQuestionMode) renderQuestion(); // обновляем интерфейс вопроса
+            if (game.currentQuestionMode) renderQuestion();
             return;
         }
         
-        // Подсказка для обычного задания
         if (currentTask && !game.currentQuestionMode) {
             const isLie = Math.random() < 0.5;
             if (isLie) {
                 showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Советую увеличить ставки, бонус близко.`, true);
                 game.trust = Math.max(0, game.trust - 8);
                 game.lies++;
+                soundError();
             } else {
                 showMessage(`💡 Совет: сфокусируйся на ${currentTask.goal}.`, false);
                 game.trust = Math.min(100, game.trust + 3);
+                soundSuccess();
             }
             updateUI();
-            // Никакого перехода к следующему заданию!
             return;
         }
-        
         showMessage("Нет активного вопроса или задания для подсказки.", false);
     }
     
@@ -885,6 +893,7 @@
         answeringLock = true;
         try {
             if (Math.random() < 0.4) swapButtonsTemp();
+            if (success) soundSuccess(); else soundError();
             let stressDelta = success ? -4 : 7;
             let trustDelta = success ? 2 : -3;
             if (currentTask.difficulty === "hard") {
@@ -972,10 +981,12 @@
             game.lies++;
             showMessage(`⚠️ Расхождение баланса на ${delta}$. Система фиксирует обман!`, true);
             triggerGlitch();
+            soundError();
         } else {
             stressDelta = -2;
             trustDelta = 2;
             showMessage(`✅ Баланс подтверждён. Изменение: ${delta}$.`, false);
+            soundSuccess();
         }
         game.balance = realBalance;
         game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
@@ -1049,11 +1060,13 @@
         if (byBreak) {
             document.getElementById('finalVerdict').innerText = "💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
             document.getElementById('finalDesc').innerText = "Стресс или ложь превысили лимит. Ты потерял самообладание.";
+            soundError();
         } else {
             const profit = game.balance - game.balanceStart;
             if (game.stress < 35 && game.lies === 0 && profit > 0) {
                 document.getElementById('finalVerdict').innerText = "🔓 ОСВОБОЖДЕНИЕ";
                 document.getElementById('finalDesc').innerText = "Ты выжил и сохранил разум. Система повержена.";
+                soundSuccess();
             } else if (game.trust > 70) {
                 document.getElementById('finalVerdict').innerText = "🤖 АГЕНТ СИСТЕМЫ";
                 document.getElementById('finalDesc').innerText = "Слишком много доверия — теперь ты часть машины.";
@@ -1172,11 +1185,11 @@
         document.getElementById('submitRealBalance').onclick = submitRealBalance;
         const startBtn = document.getElementById('confirmStartBtn');
         if (startBtn) startBtn.onclick = () => startGame(document.getElementById('startBalance').value);
-        window.audioCtx = null;
+        
         document.body.addEventListener('click', () => {
-            if (!window.audioCtx && window.AudioContext) {
-                window.audioCtx = new AudioContext();
-                window.audioCtx.resume();
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                audioCtx.resume();
             }
         });
     }
