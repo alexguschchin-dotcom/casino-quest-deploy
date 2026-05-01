@@ -493,7 +493,7 @@
     const VAR_VALUES = {
         spins: [[15,20,25], [25,30,40], [35,45,60]],
         bet: [[8,8,8], [12,12,12], [16,16,16]],
-        buy: [[300,300,300], [500,500,500], [800,800,800]],
+        buy: [[300,300,300], [500,500,500], [1000,1000,1000]],
         p: [[50,50,50], [75,75,75], [100,100,100]],
         max: [[80,120,180], [150,220,350], [250,400,700]],
         mult: [[20,30,40], [35,50,75], [60,90,150]],
@@ -998,7 +998,7 @@
         els.actionButtons.innerHTML = '';
         const q = game.currentQuestionObj;
         if (!q) return;
-        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери жуткий ответ:</span>`;
+        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери ответ:</span>`;
         const optionsDiv = document.createElement('div');
         optionsDiv.className = 'question-options';
         q.options.forEach((opt, idx) => {
