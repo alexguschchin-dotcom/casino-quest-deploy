@@ -336,9 +336,8 @@
             <div class="info-box">
                 <h3><i class="fas fa-skull-crossbones"></i> СУТЬ ЭКСПЕРИМЕНТА</h3>
                 <ul>
-                    <li><strong>Твои реальные деньги.</strong> Система не трогает баланс — только ты.</li>
-                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ, баланс не меняется, но меняется стресс и доверие.</li>
-                    <li><strong>Сложные вопросы</strong> периодически заменяют задания. Ответь правильно — получишь лёгкое задание дальше. Неправильно — сложное.</li>
+                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ и отвечай на вопросы, будут менятся стресс и доверие и в зависимости от него давать разные задания.</li>
+                    <li><strong>Сложные вопросы</strong> периодически заменяют задания. Ответь правильно — получишь лёгкое задание дальше. Неправильно — сложное, вопросы сложные, используй подсказки.</li>
                     <li><strong>Подсказка</strong> (кнопка внизу) может врать. Доверие падает.</li>
                     <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность.</li>
                     <li>Глюки интерфейса — часть игры.</li>
@@ -364,14 +363,14 @@
         <h2><i class="fas fa-dice-d6"></i> КОГНИТИВНЫЙ СБОЙ</h2>
         <div class="rules-container">
             <h4>📜 РЕАЛЬНОСТЬ ИГРЫ</h4>
-            <p><span class="warning">ВНИМАНИЕ:</span> Баланс НЕ меняется автоматически. Ты играешь на реальные деньги в казино, система только анализирует.</p>
+            <p><span class="warning">ВНИМАНИЕ:</span> Ты попал в систему котрая анализирует твое поведение.</p>
             <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2) — симуляция сессий. Успех/провал влияют на стресс и доверие.</p>
             <p><strong>🔹 Сложные вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
             <p><strong>🔹 Подсказка</strong> может быть ложной. Доверие падает, счётчик обмана растёт.</p>
             <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность.</p>
             <p><strong>🔹 Поражение:</strong> стресс >75 или обман >3. Победа: пройти 5 этапов.</p>
             <hr>
-            <p>Введи СТАРТОВЫЙ БАЛАНС (реальные деньги):</p>
+            <p>Введи СТАРТОВЫЙ БАЛАНС :</p>
             <input type="number" id="startBalance" class="balance-input" placeholder="20000" value="20000">
             <button id="confirmStartBtn" class="modal-btn">ЗАПУСТИТЬ</button>
         </div>
@@ -379,9 +378,10 @@
 </div>
 <div id="stageTransitionModal" class="modal hidden">
     <div class="modal-content">
-        <h2>📊 ВВОД РЕАЛЬНОГО БАЛАНСА</h2>
+        <h2>📊 ВВОД  БАЛАНСА</h2>
         <p>Ты выполнил задания этапа <span id="stageNameSpan"></span>.</p>
-        <p>Введи свой ТЕКУЩИЙ баланс в казино (честно):</p>
+        <p>Введи свой ТЕКУЩИЙ баланс
+            :</p>
         <input type="number" id="realBalanceInput" class="balance-input" placeholder="Баланс">
         <button id="submitRealBalance" class="modal-btn">ПОДТВЕРДИТЬ</button>
     </div>
@@ -409,11 +409,11 @@
     // Фиксированные задания для каждого этапа (уникальные)
     const STAGE_TASKS = {
         0: [ // этап 1
-            { baseText: "Сделай {spins} спинов в Dog House по {bet}$. Цель: бонус", goal: "бонус", vars: ["spins","bet"] },
-            { baseText: "Купи бонус в Sweet Bonanza за {bet}$. Цель: отбить {p}%", goal: "{p}%", vars: ["bet","p"] },
-            { baseText: "Сделай {spins} спинов в Gates of Olympus по {bet}$. Цель: не хуже -{max}$", goal: "-{max}$", vars: ["spins","bet","max"] },
+            { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. Цель: бонус", goal: "бонус", vars: ["spins","bet"] },
+            { baseText: "Купи бонус в Sweet rush Bonanza за {bet}$. Цель: отбить {p}%", goal: "{p}%", vars: ["bet","p"] },
+            { baseText: "Сделай {spins} спинов в Gates of Olympus по {bet}$. Цель: не потерять в балансе -{max}$", goal: "не потерять в балансе -{max}$", vars: ["spins","bet","max"] },
             { baseText: "Купи бонус в Money Train 3 за {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] },
-            { baseText: "Сделай {spins} спинов в Big Bass по {bet}$. Цель: {fish} рыб", goal: "{fish} рыб", vars: ["spins","bet","fish"] },
+            { baseText: "Зайти в новую Sweet Bonanza 2500 и словить вкусный заносик. Цель: Заносик", goal: "Заносик", vars: ["spins","bet","fish"] },
             { baseText: "Выбей бонус в Wild West Gold ставкой {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] }
         ],
         1: [ // этап 2
@@ -424,19 +424,19 @@
             { baseText: "Купи бонус в Money Train 4 за {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] }
         ],
         2: [ // этап 3
-            { baseText: "Выбей бонус в Book of Dead ставкой {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] },
-            { baseText: "Сделай {spins} спинов в Fruit Party по {bet}$. Цель: x{mult}+", goal: "x{mult}+", vars: ["spins","bet","mult"] },
-            { baseText: "Купи бонус в The Dog House за {bet}$. Цель: x{mult} в бонусе", goal: "x{mult}", vars: ["bet","mult"] },
-            { baseText: "Сделай {spins} спинов в Gates of Olympus по {bet}$. Цель: x{mult}+", goal: "x{mult}+", vars: ["spins","bet","mult"] }
+            { baseText: "Купить бонус в Twerk за {bet}$. Цель: Познать запрещенные знания", goal: "Познать запрещенные знания", vars: ["bet","mult"] },
+            { baseText: "Выбивать бонуски в Le king по {bet}$ пока не останетесь довольны. Цель: Не сгореть ", goal: "Не сгореть", vars: ["spins","bet","mult"] },
+            { baseText: "Купи бонус в The Dog House multihold за {bet}$. Цель: x{mult} в бонусе", goal: "x{mult}", vars: ["bet","mult"] },
+            { baseText: "Сделай {spins} спинов в Frkn bananas и выбить бонус по {bet}$ если не выбили купить. Цель: x{mult}+", goal: "x{mult}+", vars: ["spins","bet","mult"] }
         ],
         3: [ // этап 4
-            { baseText: "Купи бонус в Le Pharaon за {bet}$. Цель: хот-мод", goal: "хот-мод", vars: ["bet"] },
-            { baseText: "Сделай {spins} спинов в Big Bass по {bet}$. Цель: {fish} рыб", goal: "{fish} рыб", vars: ["spins","bet","fish"] },
-            { baseText: "Купи бонус в Sweet Bonanza за {bet}$. Цель: >{win}$", goal: ">{win}$", vars: ["bet","win"] }
+            { baseText: "Купи бонус в zeus ze zecond {bet}$. Цель: Дойти до серебрянных монет", goal: "Дойти до серебрянных монет", vars: ["bet"] },
+            { baseText: "Окупить бонус в Princess Suki за {bet}$. Цель: окуп", goal: "окуп", vars: ["spins","bet","fish"] },
+            { baseText: "Пробей топовый бонус в Duck hunters за {bet}$. Цель: Порадоваться ", goal: "Порадоваться", vars: ["bet","win"] }
         ],
         4: [ // этап 5
-            { baseText: "Сделай {spins} спинов в Dog House Multihold по {bet}$. Цель: окупить {target}$", goal: "окупить {target}$", vars: ["spins","bet","target"] },
-            { baseText: "Купи бонус в Wild West Gold за {bet}$. Цель: x{mult}", goal: "x{mult}", vars: ["bet","mult"] }
+            { baseText: "Купить топоый бонус Zeus vs Hades – Gods of War 250 за {bet}$. Цель: Выбить две шторы goal: "Выбить две шторы", vars: ["spins","bet","target"] },
+            { baseText: "Купи бонус в Wild West Gold за {bet}$. Цель: поймать два ретриггера в бонусках", goal: "поймать два ретриггера в бонусках", vars: ["bet","mult"] }
         ]
     };
     
