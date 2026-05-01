@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>КОГНИТИВНЫЙ СБОЙ · СТРИМ-КВЕСТ</title>
     <style>
-        /* твой стиль без изменений (я его не трогаю) */
         * {
             margin: 0;
             padding: 0;
@@ -314,6 +313,9 @@
             justify-content: center;
             margin-top: 20px;
         }
+        #questionButtons {
+            margin: 15px 0;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -342,6 +344,7 @@
                     <li><strong>Подсказка</strong> (кнопка внизу) может врать. Доверие падает.</li>
                     <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность.</li>
                     <li>Глюки интерфейса — часть игры.</li>
+                    <li><strong>Баланс влияет на сложность:</strong> чем меньше денег, тем легче задания (но финал всё равно суров).</li>
                 </ul>
             </div>
             <div class="phase-map" id="phaseList"></div>
@@ -358,7 +361,7 @@
     </div>
 </div>
 
-<!-- Модалки старта, перехода, финала -->
+<!-- Модалки -->
 <div id="startModal" class="modal">
     <div class="modal-content">
         <h2><i class="fas fa-dice-d6"></i> КОГНИТИВНЫЙ СБОЙ</h2>
@@ -370,6 +373,7 @@
             <p><strong>🔹 Подсказка</strong> может быть ложной. Доверие падает, счётчик обмана растёт.</p>
             <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность.</p>
             <p><strong>🔹 Поражение:</strong> стресс >75 или обман >3. Победа: пройти 5 этапов.</p>
+            <p><strong>🔹 Баланс влияет на задания:</strong> если осталось мало денег, задания будут легче (финальный этап — исключение).</p>
             <hr>
             <p>Введи СТАРТОВЫЙ БАЛАНС :</p>
             <input type="number" id="startBalance" class="balance-input" placeholder="20000" value="20000">
@@ -394,10 +398,18 @@
         <button id="closeFinal" class="modal-btn">НАЧАТЬ ЗАНОВО</button>
     </div>
 </div>
+<div id="questionModal" class="modal hidden">
+    <div class="modal-content">
+        <h2 id="questionModalTitle">⚠️ СИСТЕМНЫЙ ЗАПРОС</h2>
+        <p id="questionText"></p>
+        <div id="questionButtons"></div>
+        <button id="closeQuestionModal" class="modal-btn" style="background:#333;">ЗАКРЫТЬ</button>
+    </div>
+</div>
 
 <script>
 (function(){
-    // ---------- ЭТАПЫ ----------
+    // ЭТАПЫ
     const STAGES = [
         { name: "ДОВЕРИЕ", missions: 6, baseStress: 25, baseTrust: 55 },
         { name: "СОМНЕНИЕ", missions: 5, baseStress: 35, baseTrust: 45 },
@@ -406,7 +418,7 @@
         { name: "ФИНАЛ", missions: 2, baseStress: 85, baseTrust: 15 }
     ];
     
-    // ТВОИ НОВЫЕ ЗАДАНИЯ (исправлены синтаксические ошибки и лишние переменные)
+    // ЗАДАНИЯ (шаблоны)
     const STAGE_TASKS = {
         0: [
             { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. Цель: бонус", goal: "бонус", vars: ["bet"] },
@@ -440,7 +452,6 @@
         ]
     };
     
-    // ДИНАМИЧЕСКИЕ ЗНАЧЕНИЯ (подстроены под новые задания)
     const VAR_VALUES = {
         spins: [[15,20,25], [25,30,40], [35,45,60]],
         bet: [[3,5,8], [8,12,18], [15,25,40]],
@@ -452,7 +463,7 @@
         target: [[150,250,350], [300,450,700], [500,800,1300]]
     };
     
-    // БОЛЬШОЙ БАНК СЛОЖНЫХ ВОПРОСОВ (физика, математика, биология, история, логика)
+    // ВОПРОСЫ
     const HARD_QUESTIONS = [
         { text: "Какая сила удерживает планеты на орбитах?", options: ["Центробежная", "Гравитация", "Электромагнитная"], correct: 1 },
         { text: "Чему равен квадратный корень из 144?", options: ["12", "14", "16"], correct: 0 },
@@ -509,7 +520,7 @@
     let questGlitchInterval = null;
     let flickerInterval = null;
     let gameStarted = false;
-    let lastActivityWasQuestion = false; // для контроля частоты вопросов (не чаще чем раз в 2 задания)
+    let lastActivityWasQuestion = false;
     
     const els = {
         stageNum: document.getElementById('phaseNum'),
@@ -529,7 +540,7 @@
         systemComment: document.getElementById('systemComment')
     };
     
-    // Очередь сообщений (без изменений, работает)
+    // Очередь сообщений
     function processMessageQueue() {
         if (isShowingMessage) return;
         if (messageQueue.length === 0) return;
@@ -569,7 +580,6 @@
         }
     }
     
-    // Глючный счётчик
     function startGlitchyCounter() {
         if (fakeCounterInterval) clearInterval(fakeCounterInterval);
         fakeCounterInterval = setInterval(() => {
@@ -638,7 +648,7 @@
         }, 12000);
     }
     
-    // Внезапный опрос (только после старта)
+    // Внезапный опрос (фикс: теперь модалка существует)
     function suddenPoll() {
         if (!gameStarted || eventActive || game.waitingTransition) return;
         eventActive = true;
@@ -665,10 +675,18 @@
         };
         container.appendChild(input);
         container.appendChild(submitBtn);
+        document.getElementById('closeQuestionModal').onclick = () => {
+            modal.classList.add('hidden');
+            eventActive = false;
+            showMessage("Ты проигнорировал запрос. Стресс растёт.", true);
+            game.stress = Math.min(100, game.stress + 8);
+            updateUI();
+            saveGame();
+        };
         modal.classList.remove('hidden');
     }
     
-    // Получение следующего спин-задания с учётом сложности (0,1,2)
+    // Новая логика сложности с учётом баланса (но не перебивает принудительный от вопроса)
     function getNextTaskDifficulty() {
         if (game.pendingTaskDifficulty !== null) {
             let diff = game.pendingTaskDifficulty;
@@ -684,7 +702,22 @@
         if (game.stress > 70) base = Math.min(2, base+1);
         if (game.difficultyOffset === 1) base = Math.min(2, base+1);
         else if (game.difficultyOffset === -1) base = Math.max(0, base-1);
-        return base;
+        
+        // --- АДАПТАЦИЯ ПОД ТЕКУЩИЙ БАЛАНС ---
+        // На финальных этапах (индекс 3 и 4) не снижаем сложность из-за низкого баланса, только повышаем если очень много
+        const isFinalStage = (game.stage >= 3);
+        const balanceRatio = game.balance / game.balanceStart;
+        let balanceMod = 0;
+        if (!isFinalStage) {
+            if (balanceRatio <= 0.3) balanceMod = -1;      // баланс упал ниже 30% → легче
+            else if (balanceRatio >= 1.5) balanceMod = 1;  // баланс вырос на 50% → сложнее
+        } else {
+            // Финальные этапы: только повышение если очень богат, но не понижаем
+            if (balanceRatio >= 1.8) balanceMod = 1;
+        }
+        let newBase = base + balanceMod;
+        newBase = Math.min(2, Math.max(0, newBase));
+        return newBase;
     }
     
     function generateTaskFromTemplate(stage, taskIndex, level) {
@@ -708,7 +741,6 @@
         return generateTaskFromTemplate(game.stage, idx, level);
     }
     
-    // Получение случайного вопроса (без повторов)
     function getRandomQuestion() {
         if (availableQuestions.length === 0) {
             availableQuestions = [...usedQuestions];
@@ -721,7 +753,6 @@
         return q;
     }
     
-    // Обработчик ответа на вопрос
     function answerQuestion(isCorrect) {
         game.currentQuestionMode = false;
         game.hintUsedForCurrentQuestion = false;
@@ -740,7 +771,6 @@
         updateUI();
         game.totalCompleted++;
         game.completedInStage++;
-        updateUI();
         if (game.completedInStage >= STAGES[game.stage].missions) {
             startStageTransition();
         } else {
@@ -749,7 +779,6 @@
         saveGame();
     }
     
-    // Отображение вопроса в области задания
     function renderQuestion() {
         els.actionButtons.innerHTML = '';
         const q = game.currentQuestionObj;
@@ -777,7 +806,6 @@
         }
     }
     
-    // Обработчик кнопки "ВЗЯТЬ ПОДСКАЗКУ"
     function giveHint() {
         if (!gameStarted || eventActive || game.waitingTransition) return;
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
