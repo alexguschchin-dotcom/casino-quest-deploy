@@ -55,7 +55,26 @@
             box-shadow: 0 0 40px rgba(0,255,0,0.2), inset 0 0 10px rgba(0,255,0,0.1);
             position: relative;
             z-index: 2;
-            transition: box-shadow 0.3s;
+            transition: transform 0.1s cubic-bezier(0.2,1.2,0.8,1), box-shadow 0.3s;
+        }
+        .container.pixelated {
+            filter: url(#pixelate);
+            transition: filter 0.05s;
+        }
+        .blood-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9997;
+            background: radial-gradient(circle at 20% 20%, rgba(139,0,0,0) 70%, rgba(139,0,0,0.4) 90%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .blood-overlay.active {
+            opacity: 1;
         }
         .status-bar {
             display: flex;
@@ -323,6 +342,11 @@
         #questionButtons {
             margin: 15px 0;
         }
+        svg {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -346,12 +370,13 @@
             <div class="info-box">
                 <h3><i class="fas fa-skull-crossbones"></i> СУТЬ ЭКСПЕРИМЕНТА</h3>
                 <ul>
-                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ и отвечай на вопросы, будут меняться стресс и доверие, и в зависимости от этого даваться разные задания.</li>
-                    <li><strong>Жуткие психологические вопросы</strong> периодически заменяют задания. Правильный ответ → лёгкое задание дальше. Неправильно → сложное. Вопросы страшные, используй подсказки.</li>
-                    <li><strong>Подсказка</strong> (кнопка внизу) может врать. Доверие падает.</li>
-                    <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность.</li>
-                    <li>Глюки интерфейса — часть игры.</li>
-                    <li><strong>Баланс влияет на сложность:</strong> чем меньше денег, тем легче задания (но финал всё равно суров).</li>
+                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ и отвечай на вопросы, будут меняться стресс и доверие.</li>
+                    <li><strong>Страшные психологические вопросы</strong> заменяют задания (шанс 30%). Правильный ответ = лёгкое задание, неправильный = сложное.</li>
+                    <li><strong>Подсказка</strong> может врать. Доверие падает, счётчик обмана растёт.</li>
+                    <li><strong>После этапа введи реальный баланс</strong> — сложность подстроится.</li>
+                    <li><strong>Баланс влияет на сложность:</strong> чем меньше денег, тем легче задания (кроме финала).</li>
+                    <li><strong>Поражение:</strong> стресс = 100% ИЛИ обман > 3. Победа: пройти 5 этапов.</li>
+                    <li>Глюки, молнии, тени, дрожь, кровь — часть атмосферы. Береги нервы.</li>
                 </ul>
             </div>
             <div class="phase-map" id="phaseList"></div>
@@ -376,10 +401,10 @@
             <h4>📜 РЕАЛЬНОСТЬ ИГРЫ</h4>
             <p><span class="warning">ВНИМАНИЕ:</span> Ты попал в систему, которая анализирует твое поведение.</p>
             <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2) — симуляция сессий. Успех/провал влияют на стресс и доверие.</p>
-            <p><strong>🔹 Страшные психологические вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное. Вопросы основаны на хоррорах, мистике и психологических аномалиях.</p>
+            <p><strong>🔹 Страшные психологические вопросы</strong> появляются вместо заданий (шанс ~30%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
             <p><strong>🔹 Подсказка</strong> может быть ложной. Доверие падает, счётчик обмана растёт.</p>
             <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность.</p>
-            <p><strong>🔹 Поражение:</strong> стресс >75 или обман >3. Победа: пройти 5 этапов.</p>
+            <p><strong>🔹 Поражение:</strong> стресс = 100% или обман > 3. Победа: пройти 5 этапов.</p>
             <p><strong>🔹 Баланс влияет на сложность:</strong> если осталось мало денег, задания будут легче (финальный этап — исключение).</p>
             <hr>
             <p>Введи СТАРТОВЫЙ БАЛАНС :</p>
@@ -414,9 +439,17 @@
     </div>
 </div>
 
+<svg>
+    <filter id="pixelate" x="0" y="0" width="100%" height="100%">
+        <feFlood x="0" y="0" width="100%" height="100%" flood-color="black" result="blackFill"/>
+        <feComposite in="SourceGraphic" in2="blackFill" operator="in" result="masked"/>
+        <feMorphology operator="dilate" radius="4" in="masked" result="pixelated"/>
+    </filter>
+</svg>
+
 <script>
 (function(){
-    // ЭТАПЫ
+    // ----------------------- НАСТРОЙКИ ЭТАПОВ -----------------------
     const STAGES = [
         { name: "ДОВЕРИЕ", missions: 6, baseStress: 25, baseTrust: 55 },
         { name: "СОМНЕНИЕ", missions: 5, baseStress: 35, baseTrust: 45 },
@@ -425,7 +458,7 @@
         { name: "ФИНАЛ", missions: 2, baseStress: 85, baseTrust: 15 }
     ];
     
-    // ЗАДАНИЯ (шаблоны) - те же самые
+    // ----------------------- ШАБЛОНЫ ЗАДАНИЙ -----------------------
     const STAGE_TASKS = {
         0: [
             { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. Цель: бонус", goal: "бонус", vars: ["bet"] },
@@ -465,19 +498,15 @@
         p: [[30,40,50], [45,55,70], [60,75,100]],
         max: [[80,120,180], [150,220,350], [250,400,700]],
         mult: [[20,30,40], [35,50,75], [60,90,150]],
-        fish: [[1,2,3], [2,3,5], [3,5,8]],
-        win: [[80,120,200], [150,250,450], [300,500,900]],
-        target: [[150,250,350], [300,450,700], [500,800,1300]]
+        win: [[80,120,200], [150,250,450], [300,500,900]]
     };
     
-    // ============================================================
-    // НОВЫЕ СТРАШНЫЕ / ПСИХОЛОГИЧЕСКИЕ ВОПРОСЫ
-    // ============================================================
+    // ----------------------- СТРАШНЫЕ ВОПРОСЫ -----------------------
     const HARD_QUESTIONS = [
         { text: "В фильме «Куб» (1997) как называется структура, в которой оказались герои?", options: ["Лабиринт", "Куб", "Сфера"], correct: 1 },
         { text: "Как зовут демона, которого вызывают в фильме «Изгоняющий дьявола»?", options: ["Пазузу", "Валак", "Баал"], correct: 0 },
         { text: "Что в финале «Пилы» видит доктор Гордон, когда дверь закрывается?", options: ["Мёртвого Адама", "Свою семью", "Пилу"], correct: 0 },
-        { text: "Сколько дней длился реальный эксперимент Стэнфордской тюрьмы (согласно официальным данным)?", options: ["3 дня", "6 дней", "14 дней"], correct: 1 },
+        { text: "Сколько дней длился реальный эксперимент Стэнфордской тюрьмы?", options: ["3 дня", "6 дней", "14 дней"], correct: 1 },
         { text: "Как называется психологический феномен, когда человек верит, что его близкого заменил двойник?", options: ["Синдром Капгра", "Эффект Манделы", "Синдром Стендаля"], correct: 0 },
         { text: "Кто написал рассказ «Зов Ктулху»?", options: ["Эдгар По", "Стивен Кинг", "Говард Лавкрафт"], correct: 2 },
         { text: "В каком хорроре появляется персонаж по имени Джек Торренс?", options: ["Сияние", "Оно", "Мизери"], correct: 0 },
@@ -499,18 +528,15 @@
         { text: "Как зовут девочку из фильма «Реинкарнация», которая коллекционирует головы?", options: ["Анни", "Чарли", "Салли"], correct: 1 },
         { text: "Что означает термин «Слендермен»?", options: ["Тонкий мужчина", "Тенистый человек", "Бесконечный мужчина"], correct: 0 },
         { text: "Как заканчивается рассказ «Маска красной смерти» Эдгара По?", options: ["Смерть всех гостей", "Побег главного героя", "Появление призрака"], correct: 0 },
-        { text: "Какой тип игры использует «Куб» — структура меняет свои грани каждые несколько минут?", options: ["Механическая ловушка", "Многообразие", "Бесконечность"], correct: 0 },
         { text: "Что в хорроре «Тихое место» нельзя делать — иначе монстры нападают?", options: ["Издавать звук", "Смотреть в глаза", "Дышать громко"], correct: 0 },
         { text: "Какой психологический термин обозначает неспособность распознавать знакомые лица?", options: ["Прозопагнозия", "Агнозия", "Алексия"], correct: 0 },
         { text: "В каком фильме главный герой с жертвой играет в игру «Хочу ли я жить?» (жить или умереть)?", options: ["Пила", "Хостел", "Я плюю на ваши могилы"], correct: 0 },
         { text: "Что такое «Клиническая смерть» с точки зрения парапсихологии?", options: ["Путешествие души", "Временная остановка сердца", "Выход в астрал"], correct: 1 }
     ];
-    // ============================================================
-    
     let availableQuestions = [...HARD_QUESTIONS];
     let usedQuestions = [];
     
-    // Глобальное состояние
+    // ----------------------- СОСТОЯНИЕ ИГРЫ -----------------------
     let game = {
         stage: 0, completedInStage: 0, totalCompleted: 0,
         stress: 30, trust: 55,
@@ -537,7 +563,7 @@
     let lastActivityWasQuestion = false;
     let answeringLock = false;
     
-    // Звуковая система
+    // ----------------------- ЗВУКИ -----------------------
     let audioCtx = null;
     function playBeep(freq, duration, type='sine', volume=0.1) {
         if (!audioCtx) return;
@@ -559,6 +585,7 @@
     function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
     function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
     
+    // ----------------------- DOM ЭЛЕМЕНТЫ -----------------------
     const els = {
         stageNum: document.getElementById('phaseNum'),
         stageName: document.getElementById('phaseNameBadge'),
@@ -577,6 +604,7 @@
         systemComment: document.getElementById('systemComment')
     };
     
+    // ----------------------- ОЧЕРЕДЬ СООБЩЕНИЙ -----------------------
     function processMessageQueue() {
         if (isShowingMessage) return;
         if (messageQueue.length === 0) return;
@@ -597,6 +625,7 @@
     }
     function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
     
+    // ----------------------- БАЗОВЫЕ ЭФФЕКТЫ -----------------------
     function triggerGlitch() {
         document.body.classList.add('glitch-bg');
         const container = document.querySelector('.container');
@@ -611,7 +640,7 @@
     function startGlitchyCounter() {
         if (fakeCounterInterval) clearInterval(fakeCounterInterval);
         fakeCounterInterval = setInterval(() => {
-            if (gameStarted && game.stress > 40 && Math.random() < 0.3) {
+            if (gameStarted && game.stress > 40 && Math.random() < 0.4) {
                 const oldBalanceSpan = els.balanceStat;
                 const oldVal = parseInt(oldBalanceSpan.innerText);
                 const fakeVal = oldVal + (Math.random() > 0.5 ? 1 : -1);
@@ -678,520 +707,523 @@
         }, 12000);
     }
     
-    function suddenPoll() {
-        if (!gameStarted || eventActive || game.waitingTransition) return;
-        eventActive = true;
-        const modal = document.getElementById('questionModal');
-        document.getElementById('questionModalTitle').innerText = "⚠️ СИСТЕМНЫЙ ЗАПРОС";
-        document.getElementById('questionText').innerHTML = "Какого цвета была кнопка 'ВЫПОЛНЕНО' 5 секунд назад? (любой ответ)";
-        const container = document.getElementById('questionButtons');
-        container.innerHTML = '';
-        const input = document.createElement('input');
-        input.type = "text";
-        input.placeholder = "Напиши цвет...";
-        input.className = "balance-input";
-        const submitBtn = document.createElement('button');
-        submitBtn.innerText = "ОТВЕТИТЬ";
-        submitBtn.className = "modal-btn";
-        submitBtn.onclick = () => {
-            showMessage("❌ Неверно. Система запомнила твою неуверенность.", true);
-            game.stress = Math.min(100, game.stress + 5);
-            game.trust = Math.max(0, game.trust - 3);
-            updateUI();
-            modal.classList.add('hidden');
-            eventActive = false;
-            saveGame();
-            soundError();
-        };
-        container.appendChild(input);
-        container.appendChild(submitBtn);
-        document.getElementById('closeQuestionModal').onclick = () => {
-            modal.classList.add('hidden');
-            eventActive = false;
-            showMessage("Ты проигнорировал запрос. Стресс растёт.", true);
-            game.stress = Math.min(100, game.stress + 8);
-            updateUI();
-            saveGame();
-            soundError();
-        };
-        modal.classList.remove('hidden');
+    // ==================== СПЕЦЭФФЕКТЫ (МОЛНИИ, ТЕНИ, ДРОЖЬ, КРОВЬ, ПИКСЕЛЬ) ====================
+    let lightningInterval = null;
+    function triggerLightning() {
+        if (!gameStarted) return;
+        const flash = document.createElement('div');
+        flash.style.position = 'fixed';
+        flash.style.top = 0; flash.style.left = 0; flash.style.width = '100%'; flash.style.height = '100%';
+        flash.style.backgroundColor = 'white'; flash.style.zIndex = 9999; flash.style.pointerEvents = 'none';
+        flash.style.opacity = 0; document.body.appendChild(flash);
+        flash.style.transition = 'opacity 0.05s'; flash.style.opacity = 0.9;
+        setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 500); }, 100);
+        const darken = document.createElement('div');
+        darken.style.position = 'fixed'; darken.style.top = 0; darken.style.left = 0; darken.style.width = '100%'; darken.style.height = '100%';
+        darken.style.backgroundColor = 'black'; darken.style.zIndex = 9998; darken.style.pointerEvents = 'none';
+        darken.style.opacity = 0; document.body.appendChild(darken);
+        setTimeout(() => { darken.style.transition = 'opacity 0.2s'; darken.style.opacity = 0.5;
+            setTimeout(() => { darken.style.opacity = 0; setTimeout(() => darken.remove(), 300); }, 300);
+        }, 50);
+        if (audioCtx) {
+            try {
+                const now = audioCtx.currentTime;
+                const gain = audioCtx.createGain(); gain.connect(audioCtx.destination);
+                const osc = audioCtx.createOscillator(); osc.connect(gain);
+                osc.type = 'sawtooth'; osc.frequency.value = 80;
+                gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now+1.5);
+                osc.frequency.exponentialRampToValue(40, 1.2); osc.start(); osc.stop(now+1.5);
+                const bufferSize = 4096;
+                const whiteNoise = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+                whiteNoise.onaudioprocess = (e) => { const out = e.outputBuffer.getChannelData(0); for(let i=0;i<bufferSize;i++) out[i]=(Math.random()*2-1)*0.15; };
+                const noiseGain = audioCtx.createGain(); noiseGain.gain.value=0.2;
+                whiteNoise.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+                whiteNoise.start(); setTimeout(()=>{ whiteNoise.stop(); whiteNoise.disconnect(); },800);
+            } catch(e){}
+        }
+    }
+    function startLightning() {
+        if(lightningInterval) clearInterval(lightningInterval);
+        lightningInterval = setInterval(()=>{
+            if(!gameStarted) return;
+            if(Math.random()<0.3 && game.stress>30) triggerLightning();
+        }, 30000);
+    }
+    function shakeScreen(duration=300, intensity=3){
+        const cont = document.querySelector('.container'); if(!cont) return;
+        cont.style.transition='transform 0.05s cubic-bezier(0.2,1.2,0.8,1)';
+        let start=null;
+        function step(ts){
+            if(!start) start=ts;
+            if(ts-start<duration){
+                cont.style.transform=`translate(${(Math.random()-0.5)*intensity}px, ${(Math.random()-0.5)*intensity}px)`;
+                requestAnimationFrame(step);
+            } else { cont.style.transform=''; cont.style.transition=''; }
+        }
+        requestAnimationFrame(step);
+    }
+    let rainCanvas=null;
+    function addRainOverlay(){
+        const canvas=document.createElement('canvas');
+        canvas.style.position='fixed'; canvas.style.top=0; canvas.style.left=0; canvas.style.width='100%'; canvas.style.height='100%';
+        canvas.style.pointerEvents='none'; canvas.style.zIndex=9995; canvas.style.opacity=0.2;
+        document.body.appendChild(canvas); rainCanvas=canvas;
+        let ctx=canvas.getContext('2d'), width, height, raindrops=[];
+        function resize(){ width=window.innerWidth; height=window.innerHeight; canvas.width=width; canvas.height=height; initRaindrops(180); }
+        function initRaindrops(count){ raindrops=[]; for(let i=0;i<count;i++) raindrops.push({x:Math.random()*width, y:Math.random()*height, length:8+Math.random()*15, speed:5+Math.random()*8, opacity:0.2+Math.random()*0.5}); }
+        function drawRain(){ if(!gameStarted||!ctx) return; ctx.clearRect(0,0,width,height); ctx.strokeStyle='#aaf'; ctx.lineWidth=1.5; for(let r of raindrops){ ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(r.x-2,r.y+r.length); ctx.strokeStyle=`rgba(170,200,255,${r.opacity*0.6})`; ctx.stroke(); r.y+=r.speed; if(r.y>height){ r.y=-r.length; r.x=Math.random()*width; } } requestAnimationFrame(drawRain); }
+        window.addEventListener('resize',resize); resize(); drawRain();
+    }
+    let shadowTimeout=null;
+    function showScaryShadow(){
+        if(!gameStarted || game.stress<70) return;
+        if(shadowTimeout) return;
+        const sd=document.createElement('div');
+        sd.style.position='fixed'; sd.style.bottom='10%'; sd.style.right='5%'; sd.style.width='150px'; sd.style.height='250px';
+        sd.style.background='radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.8), transparent)';
+        sd.style.borderRadius='50%'; sd.style.filter='blur(10px)'; sd.style.zIndex=9996; sd.style.pointerEvents='none';
+        sd.style.opacity=0; sd.style.transition='opacity 0.2s'; document.body.appendChild(sd);
+        setTimeout(()=>sd.style.opacity=0.7,10);
+        setTimeout(()=>{ sd.style.opacity=0; setTimeout(()=>sd.remove(),300); },800);
+        shadowTimeout=setTimeout(()=>{ shadowTimeout=null; },3000);
+    }
+    let breathInterval=null;
+    function startCameraBreathing(){
+        if(breathInterval) clearInterval(breathInterval);
+        let scale=1, dir=1;
+        breathInterval=setInterval(()=>{
+            if(!gameStarted) return;
+            const cont=document.querySelector('.container');
+            if(cont){
+                scale+=dir*0.0008;
+                if(scale>=1.008) dir=-1; if(scale<=0.992) dir=1;
+                cont.style.transition='transform 0.5s ease-in-out';
+                cont.style.transform=`scale(${scale})`;
+            }
+        },80);
+    }
+    let heartbeatInterval=null;
+    function updateHeartbeat(){
+        if(!gameStarted) return;
+        if(game.stress>60){
+            if(!heartbeatInterval){
+                let interval=Math.max(350,1000-Math.floor(game.stress/2)*8);
+                heartbeatInterval=setInterval(()=>{
+                    if(game.stress>60&&audioCtx){
+                        try{
+                            const now=audioCtx.currentTime;
+                            const osc=audioCtx.createOscillator();
+                            const gain=audioCtx.createGain();
+                            osc.connect(gain); gain.connect(audioCtx.destination);
+                            osc.type='sine'; osc.frequency.value=60;
+                            gain.gain.setValueAtTime(0.08,now); gain.gain.exponentialRampToValueAtTime(0.0001,now+0.25);
+                            osc.start(); osc.stop(now+0.25);
+                        }catch(e){}
+                    }
+                },interval);
+            } else {
+                clearInterval(heartbeatInterval);
+                let newInt=Math.max(350,1000-Math.floor(game.stress/2)*8);
+                heartbeatInterval=setInterval(()=>{
+                    if(game.stress>60&&audioCtx){ /* аналогично */ }
+                },newInt);
+            }
+        } else { if(heartbeatInterval) clearInterval(heartbeatInterval); heartbeatInterval=null; }
+    }
+    function pixelateTemporarily(){ document.querySelector('.container')?.classList.add('pixelated'); setTimeout(()=>document.querySelector('.container')?.classList.remove('pixelated'),300); }
+    let bloodOverlay=null;
+    function updateBloodOverlay(){
+        if(!gameStarted) return;
+        if(!bloodOverlay){ bloodOverlay=document.createElement('div'); bloodOverlay.className='blood-overlay'; document.body.appendChild(bloodOverlay); }
+        if(game.stress>80) bloodOverlay.classList.add('active'); else bloodOverlay.classList.remove('active');
     }
     
-    function getNextTaskDifficulty() {
-        if (game.pendingTaskDifficulty !== null) {
-            let diff = game.pendingTaskDifficulty;
-            game.pendingTaskDifficulty = null;
-            return diff;
+    // ----------------------- ЛОГИКА СЛОЖНОСТИ -----------------------
+    function getNextTaskDifficulty(){
+        if(game.pendingTaskDifficulty!==null){
+            let d=game.pendingTaskDifficulty;
+            game.pendingTaskDifficulty=null;
+            return d;
         }
-        let base = 1;
-        if (game.stage <= 1) base = 0;
-        else if (game.stage >= 3) base = 2;
-        else base = 1;
-        if (game.successStreak >= 3) base = Math.min(2, base+1);
-        if (game.failStreak >= 2) base = Math.max(0, base-1);
-        if (game.stress > 70) base = Math.min(2, base+1);
-        if (game.difficultyOffset === 1) base = Math.min(2, base+1);
-        else if (game.difficultyOffset === -1) base = Math.max(0, base-1);
-        
-        const isFinalStage = (game.stage >= 3);
-        const balanceRatio = game.balance / game.balanceStart;
-        let balanceMod = 0;
-        if (!isFinalStage) {
-            if (balanceRatio <= 0.3) balanceMod = -1;
-            else if (balanceRatio >= 1.5) balanceMod = 1;
-        } else {
-            if (balanceRatio >= 1.8) balanceMod = 1;
-        }
-        let newBase = base + balanceMod;
-        newBase = Math.min(2, Math.max(0, newBase));
-        return newBase;
+        let base=1;
+        if(game.stage<=1) base=0; else if(game.stage>=3) base=2; else base=1;
+        if(game.successStreak>=3) base=Math.min(2,base+1);
+        if(game.failStreak>=2) base=Math.max(0,base-1);
+        if(game.stress>70) base=Math.min(2,base+1);
+        if(game.difficultyOffset===1) base=Math.min(2,base+1);
+        else if(game.difficultyOffset===-1) base=Math.max(0,base-1);
+        const isFinal=game.stage>=3;
+        const ratio=game.balance/game.balanceStart;
+        let mod=0;
+        if(!isFinal){ if(ratio<=0.3) mod=-1; else if(ratio>=1.5) mod=1; }
+        else { if(ratio>=1.8) mod=1; }
+        let newBase=base+mod;
+        return Math.min(2,Math.max(0,newBase));
     }
-    
-    function generateTaskFromTemplate(stage, taskIndex, level) {
-        const tmpl = STAGE_TASKS[stage][taskIndex];
-        let text = tmpl.baseText;
-        let goal = tmpl.goal;
-        for (let v of tmpl.vars) {
-            if (!VAR_VALUES[v]) continue;
-            let val = VAR_VALUES[v][level][Math.floor(Math.random() * VAR_VALUES[v][level].length)];
-            text = text.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
-            if (goal.includes(`{${v}}`)) goal = goal.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
+    function generateTaskFromTemplate(stage,idx,level){
+        const tmpl=STAGE_TASKS[stage][idx];
+        let text=tmpl.baseText, goal=tmpl.goal;
+        for(let v of tmpl.vars){
+            if(!VAR_VALUES[v]) continue;
+            let val=VAR_VALUES[v][level][Math.floor(Math.random()*VAR_VALUES[v][level].length)];
+            text=text.replace(new RegExp(`\\{${v}\\}`,'g'),val);
+            if(goal.includes(`{${v}}`)) goal=goal.replace(new RegExp(`\\{${v}\\}`,'g'),val);
         }
-        return { text, goal, difficulty: ["easy","medium","hard"][level], type: "spin", level: level };
+        return {text, goal, difficulty:["easy","medium","hard"][level], type:"spin", level:level};
     }
-    
-    function getNextSpinTask() {
-        const stageTasks = STAGE_TASKS[game.stage];
-        const idx = game.completedInStage;
-        if (idx >= stageTasks.length) return null;
-        const level = getNextTaskDifficulty();
-        return generateTaskFromTemplate(game.stage, idx, level);
+    function getNextSpinTask(){
+        const tasks=STAGE_TASKS[game.stage];
+        const idx=game.completedInStage;
+        if(idx>=tasks.length) return null;
+        const level=getNextTaskDifficulty();
+        return generateTaskFromTemplate(game.stage,idx,level);
     }
-    
-    function getRandomQuestion() {
-        if (availableQuestions.length === 0) {
-            availableQuestions = [...usedQuestions];
-            usedQuestions = [];
-        }
-        const idx = Math.floor(Math.random() * availableQuestions.length);
-        const q = availableQuestions[idx];
-        availableQuestions.splice(idx,1);
-        usedQuestions.push(q);
+    function getRandomQuestion(){
+        if(availableQuestions.length===0){ availableQuestions=[...usedQuestions]; usedQuestions=[]; }
+        const idx=Math.floor(Math.random()*availableQuestions.length);
+        const q=availableQuestions[idx];
+        availableQuestions.splice(idx,1); usedQuestions.push(q);
         return q;
     }
     
-    function answerQuestion(isCorrect) {
-        if (answeringLock) return;
-        answeringLock = true;
-        try {
-            if (!game.currentQuestionMode) return;
-            game.currentQuestionMode = false;
-            game.hintUsedForCurrentQuestion = false;
-            eventActive = false;
-            if (isCorrect) {
-                showMessage("✅ Правильно! Следующее задание будет лёгким.", false);
-                game.trust = Math.min(100, game.trust + 5);
-                game.stress = Math.max(0, game.stress - 5);
-                game.pendingTaskDifficulty = 0;
+    // ----------------------- ОСНОВНАЯ ИГРОВАЯ ЛОГИКА -----------------------
+    function answerQuestion(isCorrect){
+        if(answeringLock) return;
+        answeringLock=true;
+        try{
+            if(!game.currentQuestionMode) return;
+            game.currentQuestionMode=false;
+            game.hintUsedForCurrentQuestion=false;
+            eventActive=false;
+            if(isCorrect){
+                showMessage("✅ Правильно! Следующее задание будет лёгким.",false);
+                game.trust=Math.min(100,game.trust+5);
+                game.stress=Math.max(0,game.stress-5);
+                game.pendingTaskDifficulty=0;
                 soundSuccess();
             } else {
-                showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
-                game.stress = Math.min(100, game.stress + 10);
-                game.trust = Math.max(0, game.trust - 3);
-                game.pendingTaskDifficulty = 2;
+                showMessage("❌ Неправильно! Следующее задание будет сложным.",true);
+                game.stress=Math.min(100,game.stress+10);
+                game.trust=Math.max(0,game.trust-3);
+                game.pendingTaskDifficulty=2;
                 soundError();
+                pixelateTemporarily(); shakeScreen(300,3);
             }
             updateUI();
             game.totalCompleted++;
             game.completedInStage++;
-            if (game.completedInStage >= STAGES[game.stage].missions) {
-                startStageTransition();
-            } else {
-                loadNextActivity();
-            }
+            if(game.completedInStage>=STAGES[game.stage].missions) startStageTransition();
+            else loadNextActivity();
             saveGame();
-        } finally {
-            setTimeout(() => { answeringLock = false; }, 300);
-        }
+        } finally { setTimeout(()=>{ answeringLock=false; },300); }
     }
-    
-    function renderQuestion() {
-        els.actionButtons.innerHTML = '';
-        const q = game.currentQuestionObj;
-        if (!q) return;
-        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери жуткий ответ:</span>`;
-        const optionsDiv = document.createElement('div');
-        optionsDiv.className = 'question-options';
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.innerText = opt;
-            btn.className = "answer-btn";
-            btn.onclick = (e) => {
+    function renderQuestion(){
+        els.actionButtons.innerHTML='';
+        const q=game.currentQuestionObj;
+        if(!q) return;
+        els.questText.innerHTML=`❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери жуткий ответ:</span>`;
+        const div=document.createElement('div'); div.className='question-options';
+        q.options.forEach((opt,idx)=>{
+            const btn=document.createElement('button'); btn.innerText=opt; btn.className="answer-btn";
+            btn.onclick=(e)=>{
                 e.preventDefault();
-                if (eventActive === false) return;
-                const isCorrect = (idx === q.correct);
-                answerQuestion(isCorrect);
+                if(eventActive===false) return;
+                answerQuestion(idx===q.correct);
             };
-            optionsDiv.appendChild(btn);
+            div.appendChild(btn);
         });
-        els.actionButtons.appendChild(optionsDiv);
-        if (!game.hintUsedForCurrentQuestion) {
-            const hintMsg = document.createElement('div');
-            hintMsg.style.fontSize = "0.8rem";
-            hintMsg.style.marginTop = "10px";
-            hintMsg.innerHTML = "<i class='fas fa-lightbulb'></i> Можешь взять подсказку (кнопка внизу)";
-            els.actionButtons.appendChild(hintMsg);
+        els.actionButtons.appendChild(div);
+        if(!game.hintUsedForCurrentQuestion){
+            const msg=document.createElement('div'); msg.style.fontSize='0.8rem'; msg.style.marginTop='10px';
+            msg.innerHTML="<i class='fas fa-lightbulb'></i> Можешь взять подсказку (кнопка внизу)";
+            els.actionButtons.appendChild(msg);
         }
     }
-    
-    function giveHint() {
-        if (!gameStarted || eventActive === true || game.waitingTransition) return;
-        
-        if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
-            game.hintUsedForCurrentQuestion = true;
-            const isLie = Math.random() < 0.6;
-            let hintAnswer = "";
-            if (isLie) {
-                const wrongOptions = game.currentQuestionObj.options.filter((_,idx) => idx !== game.currentQuestionObj.correct);
-                hintAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
-                showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Я думаю, правильный ответ: "${hintAnswer}".`, true);
-                game.trust = Math.max(0, game.trust - 8);
+    function giveHint(){
+        if(!gameStarted || eventActive===true || game.waitingTransition) return;
+        if(game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion){
+            game.hintUsedForCurrentQuestion=true;
+            const isLie=Math.random()<0.6;
+            let hintAnswer="";
+            if(isLie){
+                const wrong=game.currentQuestionObj.options.filter((_,i)=>i!==game.currentQuestionObj.correct);
+                hintAnswer=wrong[Math.floor(Math.random()*wrong.length)];
+                showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Я думаю, правильный ответ: "${hintAnswer}".`,true);
+                game.trust=Math.max(0,game.trust-8);
                 game.lies++;
                 soundError();
             } else {
-                hintAnswer = game.currentQuestionObj.options[game.currentQuestionObj.correct];
-                showMessage(`💡 [ПОДСКАЗКА] Мне кажется, правильный ответ: "${hintAnswer}".`, false);
-                game.trust = Math.min(100, game.trust + 3);
+                hintAnswer=game.currentQuestionObj.options[game.currentQuestionObj.correct];
+                showMessage(`💡 [ПОДСКАЗКА] Мне кажется, правильный ответ: "${hintAnswer}".`,false);
+                game.trust=Math.min(100,game.trust+3);
                 soundSuccess();
             }
             updateUI();
-            if (game.currentQuestionMode) renderQuestion();
+            if(game.currentQuestionMode) renderQuestion();
             return;
         }
-        
-        if (currentTask && !game.currentQuestionMode) {
-            const isLie = Math.random() < 0.5;
-            if (isLie) {
-                showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Советую увеличить ставки, бонус близко.`, true);
-                game.trust = Math.max(0, game.trust - 8);
+        if(currentTask && !game.currentQuestionMode){
+            const isLie=Math.random()<0.5;
+            if(isLie){
+                showMessage(`💡 [ЛОЖНАЯ ПОДСКАЗКА] Советую увеличить ставки, бонус близко.`,true);
+                game.trust=Math.max(0,game.trust-8);
                 game.lies++;
                 soundError();
             } else {
-                showMessage(`💡 Совет: сфокусируйся на ${currentTask.goal}.`, false);
-                game.trust = Math.min(100, game.trust + 3);
+                showMessage(`💡 Совет: сфокусируйся на ${currentTask.goal}.`,false);
+                game.trust=Math.min(100,game.trust+3);
                 soundSuccess();
             }
             updateUI();
             return;
         }
-        showMessage("Нет активного вопроса или задания для подсказки.", false);
+        showMessage("Нет активного вопроса или задания для подсказки.",false);
     }
-    
-    function completeSpinTask(success) {
-        if (eventActive || game.waitingTransition || !gameStarted || game.currentQuestionMode) return;
-        if (answeringLock) return;
-        answeringLock = true;
-        try {
-            if (Math.random() < 0.4) swapButtonsTemp();
-            if (success) soundSuccess(); else soundError();
-            let stressDelta = success ? -4 : 7;
-            let trustDelta = success ? 2 : -3;
-            if (currentTask.difficulty === "hard") {
-                stressDelta += success ? -3 : 9;
-                trustDelta += success ? 2 : -4;
-            } else if (currentTask.difficulty === "easy") {
-                stressDelta += success ? -1 : 4;
+    function completeSpinTask(success){
+        if(eventActive || game.waitingTransition || !gameStarted || game.currentQuestionMode) return;
+        if(answeringLock) return;
+        answeringLock=true;
+        try{
+            if(Math.random()<0.4) swapButtonsTemp();
+            if(success) soundSuccess(); else { soundError(); shakeScreen(400,5); pixelateTemporarily(); if(game.stress>60) setTimeout(()=>shakeScreen(300,3),500); }
+            let stressDelta=success ? -4 : 7;
+            let trustDelta=success ? 2 : -3;
+            if(currentTask.difficulty==="hard"){
+                stressDelta+=success ? -3 : 9;
+                trustDelta+=success ? 2 : -4;
+            } else if(currentTask.difficulty==="easy"){
+                stressDelta+=success ? -1 : 4;
             }
-            game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
-            game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
-            if (success) { game.successStreak++; game.failStreak = 0; }
-            else { game.successStreak = 0; game.failStreak++; }
+            game.stress=Math.min(100,Math.max(0,game.stress+stressDelta));
+            game.trust=Math.min(100,Math.max(0,game.trust+trustDelta));
+            if(success){ game.successStreak++; game.failStreak=0; } else { game.successStreak=0; game.failStreak++; }
             game.totalCompleted++;
             game.completedInStage++;
             showMessage(success ? `✅ Задание принято! Стресс ${stressDelta>=0?'+':''}${stressDelta}, доверие ${trustDelta>=0?'+':''}${trustDelta}` : `❌ Провал! Стресс +${stressDelta}, доверие ${trustDelta}`, !success);
             updateUI();
-            if (game.completedInStage >= STAGES[game.stage].missions) {
-                startStageTransition();
-            } else {
-                loadNextActivity();
-            }
-        } finally {
-            setTimeout(() => { answeringLock = false; }, 300);
-        }
+            if(game.completedInStage>=STAGES[game.stage].missions) startStageTransition();
+            else loadNextActivity();
+        } finally { setTimeout(()=>{ answeringLock=false; },300); }
     }
-    
-    function renderSpinTask() {
-        els.actionButtons.innerHTML = '';
-        const btnSuccess = document.createElement('button');
-        btnSuccess.innerText = "✅ ВЫПОЛНЕНО";
-        btnSuccess.className = "btn-success";
-        btnSuccess.onclick = () => completeSpinTask(true);
-        const btnFail = document.createElement('button');
-        btnFail.innerText = "❌ ПРОВАЛЕНО";
-        btnFail.className = "btn-fail";
-        btnFail.onclick = () => completeSpinTask(false);
-        els.actionButtons.appendChild(btnSuccess);
-        els.actionButtons.appendChild(btnFail);
-        els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
+    function renderSpinTask(){
+        els.actionButtons.innerHTML='';
+        const btnS=document.createElement('button'); btnS.innerText="✅ ВЫПОЛНЕНО"; btnS.className="btn-success";
+        btnS.onclick=()=>completeSpinTask(true);
+        const btnF=document.createElement('button'); btnF.innerText="❌ ПРОВАЛЕНО"; btnF.className="btn-fail";
+        btnF.onclick=()=>completeSpinTask(false);
+        els.actionButtons.appendChild(btnS); els.actionButtons.appendChild(btnF);
+        els.questText.innerHTML=`${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
     }
-    
-    function loadNextActivity() {
-        if (eventActive || game.waitingTransition || !gameStarted) return;
-        let willBeQuestion = false;
-        if (Math.random() < 0.3 && !lastActivityWasQuestion && game.totalCompleted > 0) {
-            willBeQuestion = true;
-        }
-        if (willBeQuestion) {
-            game.currentQuestionMode = true;
-            game.currentQuestionObj = getRandomQuestion();
-            game.hintUsedForCurrentQuestion = false;
-            eventActive = true;
+    function loadNextActivity(){
+        if(eventActive || game.waitingTransition || !gameStarted) return;
+        let willBeQuestion=false;
+        if(Math.random()<0.3 && !lastActivityWasQuestion && game.totalCompleted>0) willBeQuestion=true;
+        if(willBeQuestion){
+            game.currentQuestionMode=true;
+            game.currentQuestionObj=getRandomQuestion();
+            game.hintUsedForCurrentQuestion=false;
+            eventActive=true;
             renderQuestion();
-            lastActivityWasQuestion = true;
+            lastActivityWasQuestion=true;
         } else {
-            game.currentQuestionMode = false;
-            currentTask = getNextSpinTask();
-            if (!currentTask) {
-                currentTask = { text: "Ошибка генерации", goal: "нет", difficulty: "medium", type: "spin", level:1 };
-            }
+            game.currentQuestionMode=false;
+            currentTask=getNextSpinTask();
+            if(!currentTask) currentTask={text:"Ошибка генерации",goal:"нет",difficulty:"medium",type:"spin",level:1};
             renderSpinTask();
-            lastActivityWasQuestion = false;
+            lastActivityWasQuestion=false;
         }
         saveGame();
     }
-    
-    function startStageTransition() {
-        game.waitingTransition = true;
-        eventActive = false;
-        document.getElementById('stageNameSpan').innerText = STAGES[game.stage].name;
-        document.getElementById('realBalanceInput').value = '';
+    function startStageTransition(){
+        game.waitingTransition=true;
+        eventActive=false;
+        document.getElementById('stageNameSpan').innerText=STAGES[game.stage].name;
+        document.getElementById('realBalanceInput').value='';
         document.getElementById('stageTransitionModal').classList.remove('hidden');
     }
-    
-    function submitRealBalance() {
-        const realBalance = parseInt(document.getElementById('realBalanceInput').value);
-        if (isNaN(realBalance)) { showMessage("Введи корректное число", true); return; }
+    function submitRealBalance(){
+        const real=parseInt(document.getElementById('realBalanceInput').value);
+        if(isNaN(real)){ showMessage("Введи корректное число",true); return; }
         document.getElementById('stageTransitionModal').classList.add('hidden');
-        const delta = realBalance - game.stageStartBalance;
-        const absDiff = Math.abs(delta);
-        let stressDelta = 0, trustDelta = 0;
-        if (absDiff > 500) {
-            stressDelta = Math.min(25, Math.floor(absDiff / 200));
-            trustDelta = -Math.min(20, Math.floor(absDiff / 300));
+        const delta=real-game.stageStartBalance;
+        const abs=Math.abs(delta);
+        let stressDelta=0, trustDelta=0;
+        if(abs>500){
+            stressDelta=Math.min(25,Math.floor(abs/200));
+            trustDelta=-Math.min(20,Math.floor(abs/300));
             game.lies++;
-            showMessage(`⚠️ Расхождение баланса на ${delta}$. Система фиксирует обман!`, true);
-            triggerGlitch();
-            soundError();
+            showMessage(`⚠️ Расхождение баланса на ${delta}$. Система фиксирует обман!`,true);
+            triggerGlitch(); soundError();
         } else {
-            stressDelta = -2;
-            trustDelta = 2;
-            showMessage(`✅ Баланс подтверждён. Изменение: ${delta}$.`, false);
+            stressDelta=-2; trustDelta=2;
+            showMessage(`✅ Баланс подтверждён. Изменение: ${delta}$.`,false);
             soundSuccess();
         }
-        game.balance = realBalance;
-        game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
-        game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
-        if (delta > 0) game.difficultyOffset = 1;
-        else if (delta < -1000) game.difficultyOffset = -1;
-        else game.difficultyOffset = 0;
+        game.balance=real;
+        game.stress=Math.min(100,Math.max(0,game.stress+stressDelta));
+        game.trust=Math.min(100,Math.max(0,game.trust+trustDelta));
+        if(delta>0) game.difficultyOffset=1;
+        else if(delta<-1000) game.difficultyOffset=-1;
+        else game.difficultyOffset=0;
         updateUI();
         game.stage++;
-        game.completedInStage = 0;
-        if (game.stage < STAGES.length) {
-            game.stress = STAGES[game.stage].baseStress;
-            game.trust = STAGES[game.stage].baseTrust;
-            game.stageStartBalance = game.balance;
-            game.waitingTransition = false;
-            showMessage(`🔥 ПЕРЕХОД НА ЭТАП: ${STAGES[game.stage].name} (сложность: ${game.difficultyOffset===1?'повышена':game.difficultyOffset===-1?'понижена':'стандарт'})`, true);
+        game.completedInStage=0;
+        if(game.stage<STAGES.length){
+            game.stress=STAGES[game.stage].baseStress;
+            game.trust=STAGES[game.stage].baseTrust;
+            game.stageStartBalance=game.balance;
+            game.waitingTransition=false;
+            showMessage(`🔥 ПЕРЕХОД НА ЭТАП: ${STAGES[game.stage].name} (сложность: ${game.difficultyOffset===1?'повышена':game.difficultyOffset===-1?'понижена':'стандарт'})`,true);
             triggerGlitch();
             saveGame();
             loadNextActivity();
-            if (!game.banNotificationShown && game.stage === 2) {
-                game.banNotificationShown = true;
-                setTimeout(() => {
-                    const banDiv = document.createElement('div');
-                    banDiv.className = 'ban-notification';
-                    banDiv.innerText = '⚠️ ВАШ АККАУНТ ЗАБЛОКИРОВАН ЗА МУЛЬТИАККАУНТИНГ ⚠️';
-                    document.body.appendChild(banDiv);
-                    setTimeout(() => banDiv.remove(), 3000);
-                }, 5000);
+            if(!game.banNotificationShown && game.stage===2){
+                game.banNotificationShown=true;
+                setTimeout(()=>{
+                    const ban=document.createElement('div'); ban.className='ban-notification'; ban.innerText='⚠️ ВАШ АККАУНТ ЗАБЛОКИРОВАН ЗА МУЛЬТИАККАУНТИНГ ⚠️';
+                    document.body.appendChild(ban); setTimeout(()=>ban.remove(),3000);
+                },5000);
             }
-        } else {
-            finishGame(false);
-        }
+        } else finishGame(false);
     }
-    
-    function updateUI() {
-        if (!gameStarted) return;
-        const percent = (game.completedInStage / STAGES[game.stage].missions) * 100;
-        els.phaseFill.style.width = percent + '%';
-        els.stressFill.style.width = game.stress + '%';
-        els.stressVal.innerText = game.stress;
-        els.trustFill.style.width = game.trust + '%';
-        els.trustVal.innerText = game.trust;
-        els.stageNum.innerText = game.stage+1;
-        els.stageName.innerText = `${STAGES[game.stage].name} (${game.stage+1}/5)`;
-        els.riskStat.innerText = game.risky;
-        els.safeStat.innerText = game.safe;
-        els.lieStat.innerText = game.lies;
-        els.balanceStat.innerText = game.balance;
+    function updateUI(){
+        if(!gameStarted) return;
+        const percent=(game.completedInStage/STAGES[game.stage].missions)*100;
+        els.phaseFill.style.width=percent+'%';
+        els.stressFill.style.width=game.stress+'%';
+        els.stressVal.innerText=game.stress;
+        els.trustFill.style.width=game.trust+'%';
+        els.trustVal.innerText=game.trust;
+        els.stageNum.innerText=game.stage+1;
+        els.stageName.innerText=`${STAGES[game.stage].name} (${game.stage+1}/5)`;
+        els.riskStat.innerText=game.risky;
+        els.safeStat.innerText=game.safe;
+        els.lieStat.innerText=game.lies;
+        els.balanceStat.innerText=game.balance;
         renderStageMap();
         updateFlicker();
-        if (game.stress > 70) triggerGlitch();
-        if (game.failStreak >= 2) showMessage(`Ты теряешь контроль, Алексей.`, true);
-        if (game.successStreak >= 3 && Math.random()<0.3) showMessage(`Стабильность подозрительна... Я наблюдаю.`, true);
-        if (game.stress > 75 || game.lies > 3) finishGame(true);
+        updateBloodOverlay();
+        updateHeartbeat();
+        if(game.stress>70) triggerGlitch();
+        if(game.failStreak>=2) showMessage(`Ты теряешь контроль, Алексей.`,true);
+        if(game.successStreak>=3 && Math.random()<0.3) showMessage(`Стабильность подозрительна... Я наблюдаю.`,true);
+        if(game.stress>=100 || game.lies>3) finishGame(true);
         saveGame();
     }
-    
-    function renderStageMap() {
-        els.phaseList.innerHTML = '';
-        STAGES.forEach((s, idx) => {
-            const done = (idx === game.stage) ? game.completedInStage : (idx < game.stage ? STAGES[idx].missions : 0);
-            const div = document.createElement('div');
-            div.className = `phase-item ${idx === game.stage ? 'active' : ''}`;
-            div.innerHTML = `<div class="phase-icon"><i class="fas fa-${idx===0?'hand-peace':idx===1?'question':idx===2?'weight-hanging':idx===3?'skull':'crown'}"></i></div><div>${s.name}</div><div style="margin-left:auto;">${done}/${s.missions}</div>`;
-            div.addEventListener('click', () => showMessage("Нельзя переключать этапы вручную."));
+    function renderStageMap(){
+        els.phaseList.innerHTML='';
+        STAGES.forEach((s,idx)=>{
+            const done=(idx===game.stage)?game.completedInStage:(idx<game.stage?STAGES[idx].missions:0);
+            const div=document.createElement('div');
+            div.className=`phase-item ${idx===game.stage?'active':''}`;
+            div.innerHTML=`<div class="phase-icon"><i class="fas fa-${idx===0?'hand-peace':idx===1?'question':idx===2?'weight-hanging':idx===3?'skull':'crown'}"></i></div><div>${s.name}</div><div style="margin-left:auto;">${done}/${s.missions}</div>`;
+            div.addEventListener('click',()=>showMessage("Нельзя переключать этапы вручную."));
             els.phaseList.appendChild(div);
         });
     }
-    
-    function finishGame(byBreak) {
-        if (byBreak) {
-            document.getElementById('finalVerdict').innerText = "💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
-            document.getElementById('finalDesc').innerText = "Стресс или ложь превысили лимит. Ты потерял самообладание.";
+    function finishGame(byBreak){
+        if(byBreak){
+            document.getElementById('finalVerdict').innerText="💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
+            document.getElementById('finalDesc').innerText="Стресс или ложь превысили лимит. Ты потерял самообладание.";
             soundError();
         } else {
-            const profit = game.balance - game.balanceStart;
-            if (game.stress < 35 && game.lies === 0 && profit > 0) {
-                document.getElementById('finalVerdict').innerText = "🔓 ОСВОБОЖДЕНИЕ";
-                document.getElementById('finalDesc').innerText = "Ты выжил и сохранил разум. Система повержена.";
+            const profit=game.balance-game.balanceStart;
+            if(game.stress<35 && game.lies===0 && profit>0){
+                document.getElementById('finalVerdict').innerText="🔓 ОСВОБОЖДЕНИЕ";
+                document.getElementById('finalDesc').innerText="Ты выжил и сохранил разум. Система повержена.";
                 soundSuccess();
-            } else if (game.trust > 70) {
-                document.getElementById('finalVerdict').innerText = "🤖 АГЕНТ СИСТЕМЫ";
-                document.getElementById('finalDesc').innerText = "Слишком много доверия — теперь ты часть машины.";
+            } else if(game.trust>70){
+                document.getElementById('finalVerdict').innerText="🤖 АГЕНТ СИСТЕМЫ";
+                document.getElementById('finalDesc').innerText="Слишком много доверия — теперь ты часть машины.";
             } else {
-                document.getElementById('finalVerdict').innerText = "⚠️ НЕОПРЕДЕЛЁННОСТЬ";
-                document.getElementById('finalDesc').innerText = "Финал открыт. Ты остался загадкой.";
+                document.getElementById('finalVerdict').innerText="⚠️ НЕОПРЕДЕЛЁННОСТЬ";
+                document.getElementById('finalDesc').innerText="Финал открыт. Ты остался загадкой.";
             }
         }
         document.getElementById('finalModal').classList.remove('hidden');
-        gameStarted = false;
-        if (fakeCounterInterval) clearInterval(fakeCounterInterval);
-        if (questGlitchInterval) clearInterval(questGlitchInterval);
-        if (flickerInterval) {
-            document.body.style.animation = '';
-            flickerInterval = false;
-        }
+        gameStarted=false;
+        if(fakeCounterInterval) clearInterval(fakeCounterInterval);
+        if(questGlitchInterval) clearInterval(questGlitchInterval);
+        if(flickerInterval){ document.body.style.animation=''; flickerInterval=false; }
     }
-    
-    function resetGame() {
-        if (confirm("Сбросить эксперимент?")) {
-            localStorage.removeItem('mindGameFinal');
-            location.reload();
-        }
+    function resetGame(){ if(confirm("Сбросить эксперимент?")){ localStorage.removeItem('mindGameFinal'); location.reload(); } }
+    function saveGame(){
+        if(!gameStarted) return;
+        const save={stage:game.stage,completedInStage:game.completedInStage,totalCompleted:game.totalCompleted,stress:game.stress,trust:game.trust,balance:game.balance,balanceStart:game.balanceStart,stageStartBalance:game.stageStartBalance,risky:game.risky,safe:game.safe,lies:game.lies,successStreak:game.successStreak,failStreak:game.failStreak,difficultyOffset:game.difficultyOffset,banNotificationShown:game.banNotificationShown,availableQuestions:availableQuestions,usedQuestions:usedQuestions,lastActivityWasQuestion:lastActivityWasQuestion};
+        localStorage.setItem('mindGameFinal',JSON.stringify(save));
     }
-    
-    function saveGame() {
-        if (!gameStarted) return;
-        const save = {
-            stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
-            stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
-            stageStartBalance: game.stageStartBalance, risky: game.risky, safe: game.safe, lies: game.lies,
-            successStreak: game.successStreak, failStreak: game.failStreak, difficultyOffset: game.difficultyOffset,
-            banNotificationShown: game.banNotificationShown,
-            availableQuestions: availableQuestions, usedQuestions: usedQuestions,
-            lastActivityWasQuestion: lastActivityWasQuestion
-        };
-        localStorage.setItem('mindGameFinal', JSON.stringify(save));
-    }
-    
-    function loadGame() {
-        const saved = localStorage.getItem('mindGameFinal');
-        if (saved) {
-            const data = JSON.parse(saved);
-            Object.assign(game, data);
-            if (data.availableQuestions) availableQuestions = data.availableQuestions;
-            if (data.usedQuestions) usedQuestions = data.usedQuestions;
-            lastActivityWasQuestion = data.lastActivityWasQuestion || false;
+    function loadGame(){
+        const saved=localStorage.getItem('mindGameFinal');
+        if(saved){
+            const data=JSON.parse(saved);
+            Object.assign(game,data);
+            if(data.availableQuestions) availableQuestions=data.availableQuestions;
+            if(data.usedQuestions) usedQuestions=data.usedQuestions;
+            lastActivityWasQuestion=data.lastActivityWasQuestion||false;
             return true;
         }
         return false;
     }
-    
-    function startGame(balanceStr) {
-        const bal = parseInt(balanceStr);
-        if (isNaN(bal) || bal <= 0) { alert("Введи корректный стартовый баланс"); return; }
-        game.balance = bal;
-        game.balanceStart = bal;
-        game.stageStartBalance = bal;
-        game.stress = 30;
-        game.trust = 55;
-        game.stage = 0;
-        game.completedInStage = 0;
-        game.totalCompleted = 0;
-        game.risky = 0;
-        game.safe = 0;
-        game.lies = 0;
-        game.successStreak = 0;
-        game.failStreak = 0;
-        game.difficultyOffset = 0;
-        game.waitingTransition = false;
-        game.banNotificationShown = false;
-        game.currentQuestionMode = false;
-        game.currentQuestionObj = null;
-        game.hintUsedForCurrentQuestion = false;
-        game.pendingTaskDifficulty = null;
-        lastActivityWasQuestion = false;
-        availableQuestions = [...HARD_QUESTIONS];
-        usedQuestions = [];
-        gameStarted = true;
+    function startGame(balanceStr){
+        const bal=parseInt(balanceStr);
+        if(isNaN(bal)||bal<=0){ alert("Введи корректный стартовый баланс"); return; }
+        game.balance=bal; game.balanceStart=bal; game.stageStartBalance=bal;
+        game.stress=30; game.trust=55; game.stage=0; game.completedInStage=0; game.totalCompleted=0;
+        game.risky=0; game.safe=0; game.lies=0; game.successStreak=0; game.failStreak=0;
+        game.difficultyOffset=0; game.waitingTransition=false; game.banNotificationShown=false;
+        game.currentQuestionMode=false; game.currentQuestionObj=null; game.hintUsedForCurrentQuestion=false;
+        game.pendingTaskDifficulty=null;
+        lastActivityWasQuestion=false;
+        availableQuestions=[...HARD_QUESTIONS]; usedQuestions=[];
+        gameStarted=true;
         updateUI();
         document.getElementById('startModal').classList.add('hidden');
         loadNextActivity();
-        showMessage("Система активирована. Не верь своим глазам.", true);
-        startGlitchyCounter();
-        startQuestGlitch();
-        setInterval(() => {
-            if (gameStarted && !eventActive && !game.waitingTransition && Math.random() < 0.1 && game.totalCompleted > 2) {
-                suddenPoll();
-            }
-        }, 45000);
+        showMessage("Система активирована. Не верь своим глазам.",true);
+        startGlitchyCounter(); startQuestGlitch(); startLightning(); addRainOverlay(); updateHeartbeat(); updateBloodOverlay(); startCameraBreathing();
+        setInterval(()=>{ if(gameStarted && !eventActive && !game.waitingTransition && Math.random()<0.1 && game.totalCompleted>2) suddenPoll(); },45000);
         saveGame();
     }
-    
-    function init() {
-        const hasSave = loadGame();
-        if (!hasSave || game.balance === 0) {
-            document.getElementById('startModal').classList.remove('hidden');
-        } else {
-            gameStarted = true;
+    function suddenPoll(){
+        if(!gameStarted || eventActive || game.waitingTransition) return;
+        eventActive=true;
+        const modal=document.getElementById('questionModal');
+        document.getElementById('questionModalTitle').innerText="⚠️ СИСТЕМНЫЙ ЗАПРОС";
+        document.getElementById('questionText').innerHTML="Какого цвета была кнопка 'ВЫПОЛНЕНО' 5 секунд назад? (любой ответ)";
+        const container=document.getElementById('questionButtons'); container.innerHTML='';
+        const input=document.createElement('input'); input.type='text'; input.placeholder="Напиши цвет..."; input.className="balance-input";
+        const submit=document.createElement('button'); submit.innerText="ОТВЕТИТЬ"; submit.className="modal-btn";
+        submit.onclick=()=>{
+            showMessage("❌ Неверно. Система запомнила твою неуверенность.",true);
+            game.stress=Math.min(100,game.stress+5); game.trust=Math.max(0,game.trust-3);
+            updateUI(); modal.classList.add('hidden'); eventActive=false; saveGame(); soundError();
+        };
+        container.appendChild(input); container.appendChild(submit);
+        document.getElementById('closeQuestionModal').onclick=()=>{
+            modal.classList.add('hidden'); eventActive=false;
+            showMessage("Ты проигнорировал запрос. Стресс растёт.",true);
+            game.stress=Math.min(100,game.stress+8); updateUI(); saveGame(); soundError();
+        };
+        modal.classList.remove('hidden');
+    }
+    function init(){
+        const hasSave=loadGame();
+        if(!hasSave || game.balance===0) document.getElementById('startModal').classList.remove('hidden');
+        else {
+            gameStarted=true;
             updateUI();
-            if (!game.waitingTransition && game.stage < STAGES.length) {
-                if (game.currentQuestionMode && game.currentQuestionObj) {
-                    eventActive = true;
-                    renderQuestion();
-                } else {
-                    loadNextActivity();
-                }
+            if(!game.waitingTransition && game.stage<STAGES.length){
+                if(game.currentQuestionMode && game.currentQuestionObj){ eventActive=true; renderQuestion(); }
+                else loadNextActivity();
             }
-            startGlitchyCounter();
-            startQuestGlitch();
-            updateFlicker();
+            startGlitchyCounter(); startQuestGlitch(); startLightning(); addRainOverlay(); updateHeartbeat(); updateBloodOverlay(); startCameraBreathing();
         }
-        document.getElementById('resetBtn').onclick = resetGame;
-        document.getElementById('closeFinal').onclick = resetGame;
-        document.getElementById('hintBtn').onclick = giveHint;
-        document.getElementById('submitRealBalance').onclick = submitRealBalance;
-        const startBtn = document.getElementById('confirmStartBtn');
-        if (startBtn) startBtn.onclick = () => startGame(document.getElementById('startBalance').value);
-        
-        document.body.addEventListener('click', () => {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                audioCtx.resume();
-            }
-        });
+        document.getElementById('resetBtn').onclick=resetGame;
+        document.getElementById('closeFinal').onclick=resetGame;
+        document.getElementById('hintBtn').onclick=giveHint;
+        document.getElementById('submitRealBalance').onclick=submitRealBalance;
+        document.getElementById('confirmStartBtn').onclick=()=>startGame(document.getElementById('startBalance').value);
+        document.body.addEventListener('click',()=>{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); } });
     }
     init();
 })();
