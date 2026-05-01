@@ -17,12 +17,20 @@
             color: #0f0;
             padding: 20px;
             min-height: 100vh;
-            transition: background 0.2s;
+            transition: background 0.3s ease;
         }
-        body.glitch-bg { animation: bgPulse 0.15s infinite alternate; }
-        @keyframes bgPulse {
+        /* Эффект сильного глитча (красная вспышка) */
+        body.glitch-bg {
+            animation: bgPulseRed 0.15s infinite alternate;
+        }
+        @keyframes bgPulseRed {
             0% { background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101); }
-            100% { background: radial-gradient(circle at 80% 70%, #1a0f0f, #000000); }
+            100% { background: radial-gradient(circle at 80% 70%, #4a0f0f, #330000); }
+        }
+        /* Постоянное мерцание при высоком стрессе (анимация навешивается отдельно) */
+        @keyframes bgPulseConstant {
+            0% { background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101); }
+            100% { background: radial-gradient(circle at 80% 70%, #2a0f0f, #1a0000); }
         }
         .glitch-overlay {
             position: fixed;
@@ -49,6 +57,7 @@
             box-shadow: 0 0 40px rgba(0,255,0,0.2), inset 0 0 10px rgba(0,255,0,0.1);
             position: relative;
             z-index: 2;
+            transition: box-shadow 0.3s;
         }
         .status-bar {
             display: flex;
@@ -518,10 +527,10 @@
     let isShowingMessage = false;
     let fakeCounterInterval = null;
     let questGlitchInterval = null;
-    let flickerInterval = null;
+    let flickerInterval = false;   // флаг, включено ли постоянное мерцание
     let gameStarted = false;
     let lastActivityWasQuestion = false;
-    let answeringLock = false; // защита от двойного ответа
+    let answeringLock = false;
     
     const els = {
         stageNum: document.getElementById('phaseNum'),
@@ -562,9 +571,15 @@
     }
     function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
     
+    // Улучшенный глитч с длительной вспышкой и звуком
     function triggerGlitch() {
         document.body.classList.add('glitch-bg');
-        setTimeout(() => document.body.classList.remove('glitch-bg'), 300);
+        const container = document.querySelector('.container');
+        if (container) container.style.boxShadow = '0 0 60px rgba(255,0,0,0.5)';
+        setTimeout(() => {
+            document.body.classList.remove('glitch-bg');
+            if (container) container.style.boxShadow = '';
+        }, 600);
         if (window.audioCtx) {
             try {
                 const osc = window.audioCtx.createOscillator();
@@ -572,11 +587,11 @@
                 osc.connect(gain);
                 gain.connect(window.audioCtx.destination);
                 osc.type = "sawtooth";
-                gain.gain.setValueAtTime(0.05, window.audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, window.audioCtx.currentTime+0.2);
-                osc.frequency.value = 400 + Math.random()*300;
+                gain.gain.setValueAtTime(0.1, window.audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, window.audioCtx.currentTime+0.5);
+                osc.frequency.value = 300 + Math.random()*400;
                 osc.start();
-                osc.stop(window.audioCtx.currentTime+0.2);
+                osc.stop(window.audioCtx.currentTime+0.5);
             } catch(e) {}
         }
     }
@@ -594,17 +609,23 @@
         }, 4000);
     }
     
+    // Постоянное мерцание при стрессе > 60 или доверии < 40
     function updateFlicker() {
-        if (game.trust < 40 || game.stress > 60) {
-            if (!flickerInterval) {
-                flickerInterval = setInterval(() => {
-                    document.body.style.animation = 'bgPulse 0.1s infinite';
-                    setTimeout(() => { document.body.style.animation = ''; }, 100);
-                }, 3000);
-            }
-        } else {
-            if (flickerInterval) clearInterval(flickerInterval);
-            flickerInterval = null;
+        const shouldFlicker = (game.trust < 40 || game.stress > 60);
+        if (shouldFlicker && !flickerInterval) {
+            document.body.style.animation = 'bgPulseConstant 0.8s infinite alternate';
+            const glitchOverlay = document.querySelector('.glitch-overlay');
+            if (glitchOverlay) glitchOverlay.style.animation = 'glitchShift 0.5s infinite';
+            flickerInterval = true;
+        } else if (!shouldFlicker && flickerInterval) {
+            document.body.style.animation = '';
+            const glitchOverlay = document.querySelector('.glitch-overlay');
+            if (glitchOverlay) glitchOverlay.style.animation = 'glitchShift 8s infinite';
+            flickerInterval = false;
+        }
+        // Дополнительный глитч-вспышка при стрессе > 70
+        if (game.stress > 70 && Math.random() < 0.1) {
+            triggerGlitch();
         }
     }
     
@@ -687,7 +708,7 @@
         modal.classList.remove('hidden');
     }
     
-    // Новая логика сложности с учётом баланса
+    // Сложность с учётом баланса
     function getNextTaskDifficulty() {
         if (game.pendingTaskDifficulty !== null) {
             let diff = game.pendingTaskDifficulty;
@@ -704,7 +725,6 @@
         if (game.difficultyOffset === 1) base = Math.min(2, base+1);
         else if (game.difficultyOffset === -1) base = Math.max(0, base-1);
         
-        // Адаптация под баланс
         const isFinalStage = (game.stage >= 3);
         const balanceRatio = game.balance / game.balanceStart;
         let balanceMod = 0;
@@ -814,8 +834,12 @@
         }
     }
     
+    // ИСПРАВЛЕННАЯ ПОДСКАЗКА
     function giveHint() {
-        if (!gameStarted || eventActive === false || game.waitingTransition) return;
+        // Запрещаем только если идёт активный процесс (eventActive === true) или переход этапа
+        if (!gameStarted || eventActive === true || game.waitingTransition) return;
+        
+        // Подсказка во время вопроса
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
             const isLie = Math.random() < 0.6;
@@ -832,9 +856,11 @@
                 game.trust = Math.min(100, game.trust + 3);
             }
             updateUI();
-            if (game.currentQuestionMode) renderQuestion(); // обновить кнопки и сообщение о подсказке
+            if (game.currentQuestionMode) renderQuestion(); // обновляем интерфейс вопроса
             return;
         }
+        
+        // Подсказка для обычного задания
         if (currentTask && !game.currentQuestionMode) {
             const isLie = Math.random() < 0.5;
             if (isLie) {
@@ -846,9 +872,11 @@
                 game.trust = Math.min(100, game.trust + 3);
             }
             updateUI();
-        } else {
-            showMessage("Нет активного вопроса или задания для подсказки.", false);
+            // Никакого перехода к следующему заданию!
+            return;
         }
+        
+        showMessage("Нет активного вопроса или задания для подсказки.", false);
     }
     
     function completeSpinTask(success) {
@@ -1038,7 +1066,10 @@
         gameStarted = false;
         if (fakeCounterInterval) clearInterval(fakeCounterInterval);
         if (questGlitchInterval) clearInterval(questGlitchInterval);
-        if (flickerInterval) clearInterval(flickerInterval);
+        if (flickerInterval) {
+            document.body.style.animation = '';
+            flickerInterval = false;
+        }
     }
     
     function resetGame() {
