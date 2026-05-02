@@ -1058,7 +1058,7 @@
         els.actionButtons.innerHTML = '';
         const q = game.currentQuestionObj;
         if (!q) return;
-        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери жуткий ответ:</span>`;
+        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери ответ:</span>`;
         const optionsDiv = document.createElement('div');
         optionsDiv.className = 'question-options';
         q.options.forEach((opt, idx) => {
