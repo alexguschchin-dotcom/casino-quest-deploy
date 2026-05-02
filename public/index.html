@@ -586,39 +586,15 @@
     let gameStarted = false;
     let lastActivityWasQuestion = false;
     let answeringLock = false;
-    let soundMuted = false;   // состояние звука
+    let soundMuted = false;
     
-    // Интервалы и эффекты
-    let thunderInterval = null;
-    let heartbeatInterval = null;
-    let fakeCounterInterval = null;
-    let questGlitchInterval = null;
-    let breathInterval = null;
-    let bloodOverlay = null;
-    let rainCanvas = null;
-    let rainAnimationId = null;
     let audioCtx = null;
-    let rainIntervalId = null;   // интервал для капель дождя
+    let rainNoiseSource = null;      // узел для фонового шума дождя
+    let rainNoiseGain = null;
+    let rainDropInterval = null;
+    let noiseScriptNode = null;       // для генерации шума
     
-    const els = {
-        stageNum: document.getElementById('phaseNum'),
-        stageName: document.getElementById('phaseNameBadge'),
-        stressFill: document.getElementById('stressFill'),
-        stressVal: document.getElementById('stressValue'),
-        trustFill: document.getElementById('trustFill'),
-        trustVal: document.getElementById('trustValue'),
-        phaseFill: document.getElementById('phaseFill'),
-        riskStat: document.getElementById('riskStat'),
-        safeStat: document.getElementById('safeStat'),
-        lieStat: document.getElementById('mistakeStat'),
-        balanceStat: document.getElementById('balanceStat'),
-        questText: document.getElementById('questText'),
-        actionButtons: document.getElementById('actionButtons'),
-        phaseList: document.getElementById('phaseList'),
-        systemComment: document.getElementById('systemComment')
-    };
-    
-    // ========== ЗВУКИ С УЧЁТОМ MUTE ==========
+    // Вспомогательные звуки
     function playBeep(freq, duration, type='sine', volume=0.1) {
         if (soundMuted) return;
         if (!audioCtx) return;
@@ -640,10 +616,47 @@
     function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
     function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
     
-    // Звук капли дождя (короткий высокий щелчок)
+    // РЕАЛИСТИЧНЫЙ ДОЖДЬ: фоновый шум + капли
+    function startRainSound() {
+        if (!audioCtx || soundMuted) return;
+        if (rainNoiseSource) return;
+        
+        // 1. Фоновый шум дождя (розовый шум с фильтром высоких частот)
+        let bufferSize = 4096;
+        let noiseNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+        noiseNode.onaudioprocess = function(e) {
+            let output = e.outputBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                // Случайные значения, смещённые в сторону низких частот (имитация дождя)
+                output[i] = (Math.random() * 2 - 1) * 0.12;
+            }
+        };
+        let filter = audioCtx.createBiquadFilter();
+        filter.type = "highpass";
+        filter.frequency.value = 600;  // низкие частоты убираем, оставляем шум капель
+        filter.Q.value = 2;
+        
+        rainNoiseGain = audioCtx.createGain();
+        rainNoiseGain.gain.value = 0.12;  // громкость фона
+        
+        noiseNode.connect(filter);
+        filter.connect(rainNoiseGain);
+        rainNoiseGain.connect(audioCtx.destination);
+        noiseNode.start();
+        rainNoiseSource = noiseNode;
+        
+        // 2. Звук отдельных капель (короткие импульсы с разной высотой)
+        if (rainDropInterval) clearInterval(rainDropInterval);
+        rainDropInterval = setInterval(() => {
+            if (!gameStarted || soundMuted || !audioCtx) return;
+            if (Math.random() > 0.3) {
+                playRainDrop();
+            }
+        }, 120);
+    }
+    
     function playRainDrop() {
-        if (soundMuted) return;
-        if (!audioCtx) return;
+        if (soundMuted || !audioCtx) return;
         try {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
@@ -651,26 +664,27 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.type = 'sine';
-            osc.frequency.value = 1800 + Math.random() * 400;
-            gain.gain.setValueAtTime(0.03, now);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+            // случайная высота от 1800 до 2500 Гц – реалистичные капли
+            osc.frequency.value = 1800 + Math.random() * 700;
+            gain.gain.setValueAtTime(0.06, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
             osc.start();
-            osc.stop(now + 0.08);
+            osc.stop(now + 0.1);
         } catch(e) {}
     }
     
-    // Запуск дождя (случайные капли с интервалом 100-300 мс)
-    function startRainDrops() {
-        if (rainIntervalId) clearInterval(rainIntervalId);
-        rainIntervalId = setInterval(() => {
-            if (gameStarted && !soundMuted && Math.random() < 0.7) {
-                playRainDrop();
-            }
-        }, 150);
-    }
-    function stopRainDrops() {
-        if (rainIntervalId) clearInterval(rainIntervalId);
-        rainIntervalId = null;
+    function stopRainSound() {
+        if (rainNoiseSource) {
+            try {
+                rainNoiseSource.disconnect();
+                rainNoiseSource.stop();
+            } catch(e) {}
+            rainNoiseSource = null;
+        }
+        if (rainDropInterval) clearInterval(rainDropInterval);
+        rainDropInterval = null;
+        if (rainNoiseGain) rainNoiseGain.disconnect();
+        rainNoiseGain = null;
     }
     
     // Гром с затемнением
@@ -695,7 +709,6 @@
             setTimeout(() => darken.remove(), 300);
         }, 1000);
         
-        // Звук грома
         if (!soundMuted && audioCtx) {
             try {
                 const now = audioCtx.currentTime;
@@ -715,15 +728,7 @@
         shakeScreen(400, 6);
     }
     
-    function startThunderInterval() {
-        if (thunderInterval) clearInterval(thunderInterval);
-        thunderInterval = setInterval(() => {
-            if (!gameStarted) return;
-            setTimeout(() => { if (gameStarted) triggerThunder(); }, Math.random() * 30000);
-        }, 90000);
-    }
-    
-    // Остальные эффекты (без изменений, но с проверкой mute)
+    // ========== ОСТАЛЬНЫЕ ЭФФЕКТЫ ==========
     function triggerGlitch() {
         document.body.classList.add('glitch-bg');
         const container = document.querySelector('.container');
@@ -879,6 +884,23 @@
         drawRain();
     }
     
+    let thunderInterval = null;
+    let heartbeatInterval = null;
+    let fakeCounterInterval = null;
+    let questGlitchInterval = null;
+    let breathInterval = null;
+    let rainAnimationId = null;
+    let rainCanvas = null;
+    let bloodOverlay = null;
+    
+    function startThunderInterval() {
+        if (thunderInterval) clearInterval(thunderInterval);
+        thunderInterval = setInterval(() => {
+            if (!gameStarted) return;
+            setTimeout(() => { if (gameStarted) triggerThunder(); }, Math.random() * 30000);
+        }, 90000);
+    }
+    
     function startCameraBreathing() {
         if (breathInterval) clearInterval(breathInterval);
         let scale = 1;
@@ -922,7 +944,7 @@
         shadowTimeout = setTimeout(() => { shadowTimeout = null; }, 3000);
     }
     
-    // ========== ИГРОВАЯ ЛОГИКА ==========
+    // ========== ИГРОВАЯ ЛОГИКА (без изменений, но с запуском дождя) ==========
     function getRandomFromArray(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
     }
@@ -1374,7 +1396,7 @@
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         if (breathInterval) clearInterval(breathInterval);
         if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
-        stopRainDrops();
+        stopRainSound();
         if (byBreak) {
             document.getElementById('finalVerdict').innerText = "💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
             document.getElementById('finalDesc').innerText = "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание.";
@@ -1406,7 +1428,7 @@
     function saveGame() {
         if (!gameStarted) return;
         const save = {
-            version: 3,
+            version: 4,
             stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
             stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
             stageStartBalance: game.stageStartBalance, risky: game.risky, safe: game.safe, lies: game.lies,
@@ -1424,7 +1446,7 @@
         if (!saved) return false;
         try {
             const data = JSON.parse(saved);
-            if (data.version !== 3) return false;
+            if (data.version !== 4) return false;
             Object.assign(game, data);
             if (data.availableQuestions) availableQuestions = data.availableQuestions;
             if (data.usedQuestions) usedQuestions = data.usedQuestions;
@@ -1440,8 +1462,10 @@
         const btn = document.getElementById('soundToggleBtn');
         if (soundMuted) {
             btn.innerHTML = '<i class="fas fa-volume-mute"></i> ЗВУК ВЫКЛ';
+            stopRainSound();
         } else {
             btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
+            if (gameStarted && audioCtx) startRainSound();
         }
     }
     
@@ -1479,7 +1503,7 @@
         showMessage("Система активирована. Не верь своим глазам.", true);
         
         addRainOverlay();
-        startRainDrops();
+        if (!soundMuted && audioCtx) startRainSound();
         startThunderInterval();
         updateHeartbeat();
         updateBloodOverlay();
@@ -1528,7 +1552,7 @@
                 }
             }
             addRainOverlay();
-            startRainDrops();
+            if (!soundMuted && audioCtx) startRainSound();
             startThunderInterval();
             updateHeartbeat();
             updateBloodOverlay();
@@ -1569,7 +1593,7 @@
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 audioCtx.resume();
-                if (!soundMuted) startRainDrops();
+                if (gameStarted && !soundMuted) startRainSound();
             }
         });
     }
