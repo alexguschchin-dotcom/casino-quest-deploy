@@ -614,14 +614,11 @@
         systemComment: document.getElementById('systemComment')
     };
     
-    // ========== ОЧЕРЕДЬ СООБЩЕНИЙ (с возможностью мгновенного вывода) ==========
+    // ========== ОЧЕРЕДЬ СООБЩЕНИЙ ==========
     let msgTimeout = null;
     function showMessageImmediate(msg, urgent = false) {
-        // Сбрасываем текущий таймер, чтобы новое сообщение появилось сразу
         if (msgTimeout) clearTimeout(msgTimeout);
         isShowingMessage = false;
-        // Очищаем очередь? Не будем, просто покажем это сообщение поверх.
-        // Чтобы не конфликтовать, очистим очередь.
         messageQueue = [];
         els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
         els.systemComment.style.borderLeftColor = urgent ? "#ffaa33" : "#ff3366";
@@ -679,7 +676,6 @@
     
     function triggerThunder() {
         if (!gameStarted) return;
-        // 1. Яркая белая вспышка
         const flash = document.createElement('div');
         flash.style.position = 'fixed';
         flash.style.top = 0;
@@ -698,7 +694,6 @@
             setTimeout(() => flash.remove(), 200);
         }, 100);
         
-        // 2. Затемнение на 1.5 секунды
         const darken = document.createElement('div');
         darken.style.position = 'fixed';
         darken.style.top = 0;
@@ -717,7 +712,6 @@
             setTimeout(() => darken.remove(), 500);
         }, 1500);
         
-        // 3. Звук грома
         if (!soundMuted && audioCtx) {
             try {
                 const now = audioCtx.currentTime;
@@ -739,15 +733,13 @@
     
     function startThunderInterval() {
         if (thunderInterval) clearInterval(thunderInterval);
-        // Каждые 90 секунд, но с небольшим случайным смещением, чтобы не было точно по таймеру
         thunderInterval = setInterval(() => {
             if (!gameStarted) return;
-            const delay = Math.random() * 30000; // до 30 секунд дополнительно
+            const delay = Math.random() * 30000;
             setTimeout(() => {
                 if (gameStarted) triggerThunder();
             }, delay);
         }, 90000);
-        // Для теста: первый гром через 10 секунд после старта
         setTimeout(() => { if (gameStarted) triggerThunder(); }, 10000);
     }
     
@@ -860,7 +852,7 @@
         canvas.style.height = '100%';
         canvas.style.pointerEvents = 'none';
         canvas.style.zIndex = 9995;
-        canvas.style.opacity = 0.55; // сделали дождь заметнее
+        canvas.style.opacity = 0.55;
         document.body.appendChild(canvas);
         rainCanvas = canvas;
         let ctx = canvas.getContext('2d');
@@ -872,7 +864,7 @@
             canvas.width = width;
             canvas.height = height;
             raindrops = [];
-            for (let i = 0; i < 400; i++) { // больше капель
+            for (let i = 0; i < 400; i++) {
                 raindrops.push({
                     x: Math.random() * width,
                     y: Math.random() * height,
@@ -1043,7 +1035,7 @@
                 soundSuccess();
             } else {
                 showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
-                game.stress = Math.min(100, game.stress + 10);
+                game.stress = Math.min(100, game.stress + 5);  // ИСПРАВЛЕНО: было +10, теперь +5
                 game.trust = Math.max(0, game.trust - 3);
                 game.pendingTaskDifficulty = 2;
                 soundError();
@@ -1095,7 +1087,6 @@
     
     function giveHint() {
         if (!gameStarted || game.waitingTransition) return;
-        // Мгновенный вывод сообщения, минуя очередь
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
             const isLie = Math.random() < 0.6;
@@ -1433,7 +1424,7 @@
     function saveGame() {
         if (!gameStarted) return;
         const save = {
-            version: 6,
+            version: 7,
             stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
             stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
             stageStartBalance: game.stageStartBalance, risky: game.risky, safe: game.safe, lies: game.lies,
@@ -1451,7 +1442,7 @@
         if (!saved) return false;
         try {
             const data = JSON.parse(saved);
-            if (data.version !== 6) return false;
+            if (data.version !== 7) return false;
             Object.assign(game, data);
             if (data.availableQuestions) availableQuestions = data.availableQuestions;
             if (data.usedQuestions) usedQuestions = data.usedQuestions;
