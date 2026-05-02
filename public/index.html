@@ -347,6 +347,21 @@
             width: 0;
             height: 0;
         }
+        .sound-toggle {
+            background: #111;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 6px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-left: 10px;
+            font-size: 0.9rem;
+        }
+        .sound-toggle:hover {
+            background: #0f0;
+            color: black;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -356,7 +371,10 @@
 <div class="container">
     <div class="status-bar">
         <div class="sys-tag"><i class="fas fa-brain"></i> НЕЙРОСЕТЬ v.3.2</div>
-        <button id="resetBtn" class="btn-outline"><i class="fas fa-sync-alt"></i> ПЕРЕЗАГРУЗКА</button>
+        <div style="display: flex; gap: 10px;">
+            <button id="soundToggleBtn" class="sound-toggle"><i class="fas fa-volume-up"></i> ЗВУК ВКЛ</button>
+            <button id="resetBtn" class="btn-outline"><i class="fas fa-sync-alt"></i> ПЕРЕЗАГРУЗКА</button>
+        </div>
     </div>
     <div class="main-grid">
         <div class="left-panel">
@@ -490,20 +508,10 @@
         ]
     };
     
-    // НОВЫЕ ЗНАЧЕНИЯ СТАВОК И ПОКУПОК (разбиты по сложности)
-    // Для простоты: для каждого уровня сложности выбираем случайно из двух вариантов
-    const BET_VALUES = {
-        easy: [6, 8],
-        medium: [12, 15],
-        hard: [18]
-    };
-    const BUY_VALUES = {
-        easy: [400, 600],
-        medium: [800, 1000],
-        hard: [1200]
-    };
+    // Значения для ставок и покупок
+    const BET_VALUES = { easy: [6, 8], medium: [12, 15], hard: [18] };
+    const BUY_VALUES = { easy: [400, 600], medium: [800, 1000], hard: [1200] };
     
-    // Остальные переменные
     const VAR_VALUES = {
         spins: [[15,20,25], [25,30,40], [35,45,60]],
         p: [[50,50,50], [75,75,75], [100,100,100]],
@@ -568,7 +576,7 @@
         currentQuestionObj: null,
         hintUsedForCurrentQuestion: false,
         pendingTaskDifficulty: null,
-        uniqueEventsTriggered: [] // хранит индексы уже показанных уникальных событий
+        uniqueEventsTriggered: []
     };
     
     let currentTask = null;
@@ -578,9 +586,9 @@
     let gameStarted = false;
     let lastActivityWasQuestion = false;
     let answeringLock = false;
+    let soundMuted = false;   // состояние звука
     
     // Интервалы и эффекты
-    let lightningInterval = null;
     let thunderInterval = null;
     let heartbeatInterval = null;
     let fakeCounterInterval = null;
@@ -589,8 +597,8 @@
     let bloodOverlay = null;
     let rainCanvas = null;
     let rainAnimationId = null;
-    let rainNoiseNode = null;   // для шума дождя
     let audioCtx = null;
+    let rainIntervalId = null;   // интервал для капель дождя
     
     const els = {
         stageNum: document.getElementById('phaseNum'),
@@ -610,30 +618,9 @@
         systemComment: document.getElementById('systemComment')
     };
     
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-    function processMessageQueue() {
-        if (isShowingMessage) return;
-        if (messageQueue.length === 0) return;
-        isShowingMessage = true;
-        const { msg, isUrgent } = messageQueue.shift();
-        els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
-        els.systemComment.style.borderLeftColor = isUrgent ? "#ffaa33" : "#ff3366";
-        // Убираем задержку – сообщение появляется сразу, но исчезает через 4.5 сек
-        setTimeout(() => {
-            isShowingMessage = false;
-            processMessageQueue();
-            if (messageQueue.length === 0 && !isShowingMessage) {
-                setTimeout(() => {
-                    if (!isShowingMessage && messageQueue.length === 0)
-                        els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
-                }, 3000);
-            }
-        }, 4500);
-    }
-    function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
-    
-    // Звуки
+    // ========== ЗВУКИ С УЧЁТОМ MUTE ==========
     function playBeep(freq, duration, type='sine', volume=0.1) {
+        if (soundMuted) return;
         if (!audioCtx) return;
         try {
             const now = audioCtx.currentTime;
@@ -653,45 +640,43 @@
     function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
     function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
     
-    // Шум дождя (белый шум с огибающей)
-    let rainGain = null;
-    function startRainNoise() {
+    // Звук капли дождя (короткий высокий щелчок)
+    function playRainDrop() {
+        if (soundMuted) return;
         if (!audioCtx) return;
-        if (rainNoiseNode) return;
         try {
-            const bufferSize = 4096;
-            const noiseNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
-            noiseNode.onaudioprocess = function(e) {
-                const output = e.outputBuffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = (Math.random() * 2 - 1) * 0.15;
-                }
-            };
-            rainGain = audioCtx.createGain();
-            rainGain.gain.value = 0.12;
-            noiseNode.connect(rainGain);
-            rainGain.connect(audioCtx.destination);
-            noiseNode.start();
-            rainNoiseNode = noiseNode;
-        } catch(e) { console.warn("Rain noise not supported"); }
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = 1800 + Math.random() * 400;
+            gain.gain.setValueAtTime(0.03, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+            osc.start();
+            osc.stop(now + 0.08);
+        } catch(e) {}
     }
     
-    function stopRainNoise() {
-        if (rainNoiseNode) {
-            try {
-                rainNoiseNode.disconnect();
-                rainNoiseNode.stop();
-            } catch(e) {}
-            rainNoiseNode = null;
-        }
-        if (rainGain) rainGain.disconnect();
-        rainGain = null;
+    // Запуск дождя (случайные капли с интервалом 100-300 мс)
+    function startRainDrops() {
+        if (rainIntervalId) clearInterval(rainIntervalId);
+        rainIntervalId = setInterval(() => {
+            if (gameStarted && !soundMuted && Math.random() < 0.7) {
+                playRainDrop();
+            }
+        }, 150);
+    }
+    function stopRainDrops() {
+        if (rainIntervalId) clearInterval(rainIntervalId);
+        rainIntervalId = null;
     }
     
     // Гром с затемнением
     function triggerThunder() {
         if (!gameStarted) return;
-        // Полное затемнение экрана на 1 секунду
+        // Затемнение
         const darken = document.createElement('div');
         darken.style.position = 'fixed';
         darken.style.top = 0;
@@ -711,7 +696,7 @@
         }, 1000);
         
         // Звук грома
-        if (audioCtx) {
+        if (!soundMuted && audioCtx) {
             try {
                 const now = audioCtx.currentTime;
                 const gain = audioCtx.createGain();
@@ -720,14 +705,13 @@
                 osc.connect(gain);
                 osc.type = 'sawtooth';
                 osc.frequency.value = 70;
-                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.setValueAtTime(0.35, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
                 osc.frequency.exponentialRampToValue(35, 1.0);
                 osc.start();
                 osc.stop(now + 1.2);
             } catch(e) {}
         }
-        // Дополнительный эффект: встряска экрана
         shakeScreen(400, 6);
     }
     
@@ -735,14 +719,11 @@
         if (thunderInterval) clearInterval(thunderInterval);
         thunderInterval = setInterval(() => {
             if (!gameStarted) return;
-            // Каждые 90 секунд плюс случайная задержка до 30 секунд
-            setTimeout(() => {
-                if (gameStarted) triggerThunder();
-            }, Math.random() * 30000);
+            setTimeout(() => { if (gameStarted) triggerThunder(); }, Math.random() * 30000);
         }, 90000);
     }
     
-    // Эффекты
+    // Остальные эффекты (без изменений, но с проверкой mute)
     function triggerGlitch() {
         document.body.classList.add('glitch-bg');
         const container = document.querySelector('.container');
@@ -799,7 +780,7 @@
             if (!heartbeatInterval) {
                 const interval = Math.max(350, 1000 - Math.floor(game.stress / 2) * 8);
                 heartbeatInterval = setInterval(() => {
-                    if (game.stress > 60 && audioCtx) {
+                    if (game.stress > 60 && !soundMuted && audioCtx) {
                         try {
                             const now = audioCtx.currentTime;
                             const osc = audioCtx.createOscillator();
@@ -819,7 +800,7 @@
                 clearInterval(heartbeatInterval);
                 const newInterval = Math.max(350, 1000 - Math.floor(game.stress / 2) * 8);
                 heartbeatInterval = setInterval(() => {
-                    if (game.stress > 60 && audioCtx) {
+                    if (game.stress > 60 && !soundMuted && audioCtx) {
                         try {
                             const now = audioCtx.currentTime;
                             const osc = audioCtx.createOscillator();
@@ -852,7 +833,7 @@
         canvas.style.height = '100%';
         canvas.style.pointerEvents = 'none';
         canvas.style.zIndex = 9995;
-        canvas.style.opacity = 0.2;
+        canvas.style.opacity = 0.25;
         document.body.appendChild(canvas);
         rainCanvas = canvas;
         let ctx = canvas.getContext('2d');
@@ -878,7 +859,7 @@
             if (!gameStarted || !ctx) return;
             ctx.clearRect(0, 0, width, height);
             ctx.strokeStyle = '#aaf';
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 1.2;
             for (let r of raindrops) {
                 ctx.beginPath();
                 ctx.moveTo(r.x, r.y);
@@ -980,9 +961,7 @@
         const tmpl = STAGE_TASKS[stage][taskIndex];
         let text = tmpl.baseText;
         let goal = tmpl.goal;
-        // Определяем уровень сложности строкой
         const difficultyStr = ["easy","medium","hard"][level];
-        // Подставляем bet и buy в зависимости от сложности
         for (let v of tmpl.vars) {
             if (v === "bet") {
                 let val = getRandomFromArray(BET_VALUES[difficultyStr]);
@@ -1089,7 +1068,6 @@
     
     function giveHint() {
         if (!gameStarted || game.waitingTransition) return;
-        
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
             const isLie = Math.random() < 0.6;
@@ -1111,7 +1089,6 @@
             if (game.currentQuestionMode) renderQuestion();
             return;
         }
-        
         if (currentTask && !game.currentQuestionMode) {
             const isLie = Math.random() < 0.5;
             if (isLie) {
@@ -1229,13 +1206,10 @@
         saveGame();
     }
     
-    // Показываем уникальное событие (внезапный запрос) не чаще 1 раза за игру
     function tryTriggerUniqueEvent() {
         if (!gameStarted || game.waitingTransition) return;
         if (game.uniqueEventsTriggered.length >= UNIQUE_EVENTS.length) return;
-        // Не показываем, если уже активен другой модальный процесс
         if (eventActive) return;
-        
         const availableIndices = [];
         for (let i = 0; i < UNIQUE_EVENTS.length; i++) {
             if (!game.uniqueEventsTriggered.includes(i)) availableIndices.push(i);
@@ -1244,7 +1218,6 @@
         const idx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
         const ev = UNIQUE_EVENTS[idx];
         game.uniqueEventsTriggered.push(idx);
-        
         eventActive = true;
         const modal = document.getElementById('questionModal');
         document.getElementById('questionModalTitle').innerText = "⚠️ СИСТЕМНЫЙ ЗАПРОС";
@@ -1401,7 +1374,7 @@
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         if (breathInterval) clearInterval(breathInterval);
         if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
-        stopRainNoise();
+        stopRainDrops();
         if (byBreak) {
             document.getElementById('finalVerdict').innerText = "💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
             document.getElementById('finalDesc').innerText = "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание.";
@@ -1433,7 +1406,7 @@
     function saveGame() {
         if (!gameStarted) return;
         const save = {
-            version: 2,
+            version: 3,
             stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
             stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
             stageStartBalance: game.stageStartBalance, risky: game.risky, safe: game.safe, lies: game.lies,
@@ -1451,7 +1424,7 @@
         if (!saved) return false;
         try {
             const data = JSON.parse(saved);
-            if (data.version !== 2) return false;
+            if (data.version !== 3) return false;
             Object.assign(game, data);
             if (data.availableQuestions) availableQuestions = data.availableQuestions;
             if (data.usedQuestions) usedQuestions = data.usedQuestions;
@@ -1460,6 +1433,16 @@
             else game.uniqueEventsTriggered = [];
             return true;
         } catch(e) { return false; }
+    }
+    
+    function toggleSound() {
+        soundMuted = !soundMuted;
+        const btn = document.getElementById('soundToggleBtn');
+        if (soundMuted) {
+            btn.innerHTML = '<i class="fas fa-volume-mute"></i> ЗВУК ВЫКЛ';
+        } else {
+            btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
+        }
     }
     
     function startGame(balanceStr) {
@@ -1495,9 +1478,8 @@
         loadNextActivity();
         showMessage("Система активирована. Не верь своим глазам.", true);
         
-        startRainNoise();
         addRainOverlay();
-        startLightning(); // для совместимости оставим пустышку или молнии – но у нас уже есть гром
+        startRainDrops();
         startThunderInterval();
         updateHeartbeat();
         updateBloodOverlay();
@@ -1523,16 +1505,12 @@
             }
         }, 12000);
         
-        // Уникальные системные запросы (один раз) – запускаем с задержками
         setTimeout(() => tryTriggerUniqueEvent(), 45000);
         setTimeout(() => tryTriggerUniqueEvent(), 120000);
         setTimeout(() => tryTriggerUniqueEvent(), 210000);
         
         saveGame();
     }
-    
-    // Пустая заглушка для совместимости с удалённой функцией
-    function startLightning() {}
     
     function init() {
         const hasSave = loadGame();
@@ -1549,8 +1527,8 @@
                     loadNextActivity();
                 }
             }
-            startRainNoise();
             addRainOverlay();
+            startRainDrops();
             startThunderInterval();
             updateHeartbeat();
             updateBloodOverlay();
@@ -1573,7 +1551,6 @@
                     }, 3000);
                 }
             }, 12000);
-            // Запланировать уникальные события, если они ещё не были показаны
             if (game.uniqueEventsTriggered.length < UNIQUE_EVENTS.length) {
                 setTimeout(() => tryTriggerUniqueEvent(), 45000);
                 if (game.uniqueEventsTriggered.length < 2) setTimeout(() => tryTriggerUniqueEvent(), 120000);
@@ -1584,6 +1561,7 @@
         document.getElementById('closeFinal').onclick = resetGame;
         document.getElementById('hintBtn').onclick = giveHint;
         document.getElementById('submitRealBalance').onclick = submitRealBalance;
+        document.getElementById('soundToggleBtn').onclick = toggleSound;
         const startBtn = document.getElementById('confirmStartBtn');
         if (startBtn) startBtn.onclick = () => startGame(document.getElementById('startBalance').value);
         
@@ -1591,7 +1569,7 @@
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 audioCtx.resume();
-                startRainNoise();
+                if (!soundMuted) startRainDrops();
             }
         });
     }
