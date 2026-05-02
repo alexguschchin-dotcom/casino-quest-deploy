@@ -490,10 +490,22 @@
         ]
     };
     
+    // НОВЫЕ ЗНАЧЕНИЯ СТАВОК И ПОКУПОК (разбиты по сложности)
+    // Для простоты: для каждого уровня сложности выбираем случайно из двух вариантов
+    const BET_VALUES = {
+        easy: [6, 8],
+        medium: [12, 15],
+        hard: [18]
+    };
+    const BUY_VALUES = {
+        easy: [400, 600],
+        medium: [800, 1000],
+        hard: [1200]
+    };
+    
+    // Остальные переменные
     const VAR_VALUES = {
         spins: [[15,20,25], [25,30,40], [35,45,60]],
-        bet: [[8,8,8], [12,12,12], [16,16,16]],
-        buy: [[300,300,300], [500,500,500], [1000,1000,1000]],
         p: [[50,50,50], [75,75,75], [100,100,100]],
         max: [[80,120,180], [150,220,350], [250,400,700]],
         mult: [[20,30,40], [35,50,75], [60,90,150]],
@@ -532,6 +544,13 @@
         { text: "Клиническая смерть с точки зрения парапсихологии?", options: ["Путешествие души", "Временная остановка сердца", "Выход в астрал"], correct: 1 }
     ];
     
+    // Уникальные системные запросы (появляются один раз за игру)
+    const UNIQUE_EVENTS = [
+        { text: "Какого цвета была кнопка 'ВЫПОЛНЕНО' 5 секунд назад? (любой ответ)", effect: { stress: 5, trust: -3 } },
+        { text: "Система фиксирует аномальную активность. Назови любое число от 1 до 10.", effect: { stress: 3, trust: -2 } },
+        { text: "Ты чувствуешь, что за тобой следят. Кто это? (напиши что угодно)", effect: { stress: 8, trust: -5 } }
+    ];
+    
     let availableQuestions = [...HARD_QUESTIONS];
     let usedQuestions = [];
     
@@ -549,6 +568,7 @@
         currentQuestionObj: null,
         hintUsedForCurrentQuestion: false,
         pendingTaskDifficulty: null,
+        uniqueEventsTriggered: [] // хранит индексы уже показанных уникальных событий
     };
     
     let currentTask = null;
@@ -561,6 +581,7 @@
     
     // Интервалы и эффекты
     let lightningInterval = null;
+    let thunderInterval = null;
     let heartbeatInterval = null;
     let fakeCounterInterval = null;
     let questGlitchInterval = null;
@@ -568,6 +589,7 @@
     let bloodOverlay = null;
     let rainCanvas = null;
     let rainAnimationId = null;
+    let rainNoiseNode = null;   // для шума дождя
     let audioCtx = null;
     
     const els = {
@@ -596,6 +618,7 @@
         const { msg, isUrgent } = messageQueue.shift();
         els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
         els.systemComment.style.borderLeftColor = isUrgent ? "#ffaa33" : "#ff3366";
+        // Убираем задержку – сообщение появляется сразу, но исчезает через 4.5 сек
         setTimeout(() => {
             isShowingMessage = false;
             processMessageQueue();
@@ -609,6 +632,7 @@
     }
     function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
     
+    // Звуки
     function playBeep(freq, duration, type='sine', volume=0.1) {
         if (!audioCtx) return;
         try {
@@ -629,6 +653,96 @@
     function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
     function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
     
+    // Шум дождя (белый шум с огибающей)
+    let rainGain = null;
+    function startRainNoise() {
+        if (!audioCtx) return;
+        if (rainNoiseNode) return;
+        try {
+            const bufferSize = 4096;
+            const noiseNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+            noiseNode.onaudioprocess = function(e) {
+                const output = e.outputBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * 0.15;
+                }
+            };
+            rainGain = audioCtx.createGain();
+            rainGain.gain.value = 0.12;
+            noiseNode.connect(rainGain);
+            rainGain.connect(audioCtx.destination);
+            noiseNode.start();
+            rainNoiseNode = noiseNode;
+        } catch(e) { console.warn("Rain noise not supported"); }
+    }
+    
+    function stopRainNoise() {
+        if (rainNoiseNode) {
+            try {
+                rainNoiseNode.disconnect();
+                rainNoiseNode.stop();
+            } catch(e) {}
+            rainNoiseNode = null;
+        }
+        if (rainGain) rainGain.disconnect();
+        rainGain = null;
+    }
+    
+    // Гром с затемнением
+    function triggerThunder() {
+        if (!gameStarted) return;
+        // Полное затемнение экрана на 1 секунду
+        const darken = document.createElement('div');
+        darken.style.position = 'fixed';
+        darken.style.top = 0;
+        darken.style.left = 0;
+        darken.style.width = '100%';
+        darken.style.height = '100%';
+        darken.style.backgroundColor = 'black';
+        darken.style.zIndex = 10000;
+        darken.style.pointerEvents = 'none';
+        darken.style.opacity = 0;
+        document.body.appendChild(darken);
+        darken.style.transition = 'opacity 0.1s';
+        darken.style.opacity = 0.95;
+        setTimeout(() => {
+            darken.style.opacity = 0;
+            setTimeout(() => darken.remove(), 300);
+        }, 1000);
+        
+        // Звук грома
+        if (audioCtx) {
+            try {
+                const now = audioCtx.currentTime;
+                const gain = audioCtx.createGain();
+                gain.connect(audioCtx.destination);
+                const osc = audioCtx.createOscillator();
+                osc.connect(gain);
+                osc.type = 'sawtooth';
+                osc.frequency.value = 70;
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+                osc.frequency.exponentialRampToValue(35, 1.0);
+                osc.start();
+                osc.stop(now + 1.2);
+            } catch(e) {}
+        }
+        // Дополнительный эффект: встряска экрана
+        shakeScreen(400, 6);
+    }
+    
+    function startThunderInterval() {
+        if (thunderInterval) clearInterval(thunderInterval);
+        thunderInterval = setInterval(() => {
+            if (!gameStarted) return;
+            // Каждые 90 секунд плюс случайная задержка до 30 секунд
+            setTimeout(() => {
+                if (gameStarted) triggerThunder();
+            }, Math.random() * 30000);
+        }, 90000);
+    }
+    
+    // Эффекты
     function triggerGlitch() {
         document.body.classList.add('glitch-bg');
         const container = document.querySelector('.container');
@@ -677,72 +791,6 @@
         }
         if (game.stress > 80) bloodOverlay.classList.add('active');
         else bloodOverlay.classList.remove('active');
-    }
-    
-    function triggerLightning() {
-        if (!gameStarted) return;
-        const flash = document.createElement('div');
-        flash.style.position = 'fixed';
-        flash.style.top = 0;
-        flash.style.left = 0;
-        flash.style.width = '100%';
-        flash.style.height = '100%';
-        flash.style.backgroundColor = 'white';
-        flash.style.zIndex = 9999;
-        flash.style.pointerEvents = 'none';
-        flash.style.opacity = 0;
-        document.body.appendChild(flash);
-        flash.style.transition = 'opacity 0.05s';
-        flash.style.opacity = 0.9;
-        setTimeout(() => {
-            flash.style.opacity = 0;
-            setTimeout(() => flash.remove(), 500);
-        }, 100);
-        const darken = document.createElement('div');
-        darken.style.position = 'fixed';
-        darken.style.top = 0;
-        darken.style.left = 0;
-        darken.style.width = '100%';
-        darken.style.height = '100%';
-        darken.style.backgroundColor = 'black';
-        darken.style.zIndex = 9998;
-        darken.style.pointerEvents = 'none';
-        darken.style.opacity = 0;
-        document.body.appendChild(darken);
-        setTimeout(() => {
-            darken.style.transition = 'opacity 0.2s';
-            darken.style.opacity = 0.5;
-            setTimeout(() => {
-                darken.style.opacity = 0;
-                setTimeout(() => darken.remove(), 300);
-            }, 300);
-        }, 50);
-        if (audioCtx) {
-            try {
-                const now = audioCtx.currentTime;
-                const gain = audioCtx.createGain();
-                gain.connect(audioCtx.destination);
-                const osc = audioCtx.createOscillator();
-                osc.connect(gain);
-                osc.type = 'sawtooth';
-                osc.frequency.value = 80;
-                gain.gain.setValueAtTime(0.25, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
-                osc.frequency.exponentialRampToValue(40, 1.2);
-                osc.start();
-                osc.stop(now + 1.5);
-            } catch(e) {}
-        }
-    }
-    
-    function startLightning() {
-        if (lightningInterval) clearInterval(lightningInterval);
-        lightningInterval = setInterval(() => {
-            if (!gameStarted) return;
-            if (Math.random() < 0.3 && game.stress > 30) {
-                triggerLightning();
-            }
-        }, 30000);
     }
     
     function updateHeartbeat() {
@@ -894,6 +942,10 @@
     }
     
     // ========== ИГРОВАЯ ЛОГИКА ==========
+    function getRandomFromArray(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
     function getNextTaskDifficulty() {
         if (game.pendingTaskDifficulty !== null) {
             let diff = game.pendingTaskDifficulty;
@@ -928,13 +980,25 @@
         const tmpl = STAGE_TASKS[stage][taskIndex];
         let text = tmpl.baseText;
         let goal = tmpl.goal;
+        // Определяем уровень сложности строкой
+        const difficultyStr = ["easy","medium","hard"][level];
+        // Подставляем bet и buy в зависимости от сложности
         for (let v of tmpl.vars) {
-            if (!VAR_VALUES[v]) continue;
-            let val = VAR_VALUES[v][level][Math.floor(Math.random() * VAR_VALUES[v][level].length)];
-            text = text.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
-            if (goal.includes(`{${v}}`)) goal = goal.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
+            if (v === "bet") {
+                let val = getRandomFromArray(BET_VALUES[difficultyStr]);
+                text = text.replace(`{bet}`, val);
+                if (goal.includes("{bet}")) goal = goal.replace("{bet}", val);
+            } else if (v === "buy") {
+                let val = getRandomFromArray(BUY_VALUES[difficultyStr]);
+                text = text.replace(`{buy}`, val);
+                if (goal.includes("{buy}")) goal = goal.replace("{buy}", val);
+            } else if (VAR_VALUES[v]) {
+                let val = VAR_VALUES[v][level][Math.floor(Math.random() * VAR_VALUES[v][level].length)];
+                text = text.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
+                if (goal.includes(`{${v}}`)) goal = goal.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
+            }
         }
-        return { text, goal, difficulty: ["easy","medium","hard"][level], type: "spin" };
+        return { text, goal, difficulty: difficultyStr, type: "spin" };
     }
     
     function getNextSpinTask() {
@@ -998,7 +1062,7 @@
         els.actionButtons.innerHTML = '';
         const q = game.currentQuestionObj;
         if (!q) return;
-        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери ответ:</span>`;
+        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери жуткий ответ:</span>`;
         const optionsDiv = document.createElement('div');
         optionsDiv.className = 'question-options';
         q.options.forEach((opt, idx) => {
@@ -1143,7 +1207,6 @@
     function loadNextActivity() {
         if (eventActive || game.waitingTransition || !gameStarted) return;
         let willBeQuestion = false;
-        // Теперь вопрос может выпасть с вероятностью 50% на каждом шаге, даже первом
         if (Math.random() < 0.5 && !lastActivityWasQuestion) {
             willBeQuestion = true;
         }
@@ -1166,6 +1229,59 @@
         saveGame();
     }
     
+    // Показываем уникальное событие (внезапный запрос) не чаще 1 раза за игру
+    function tryTriggerUniqueEvent() {
+        if (!gameStarted || game.waitingTransition) return;
+        if (game.uniqueEventsTriggered.length >= UNIQUE_EVENTS.length) return;
+        // Не показываем, если уже активен другой модальный процесс
+        if (eventActive) return;
+        
+        const availableIndices = [];
+        for (let i = 0; i < UNIQUE_EVENTS.length; i++) {
+            if (!game.uniqueEventsTriggered.includes(i)) availableIndices.push(i);
+        }
+        if (availableIndices.length === 0) return;
+        const idx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+        const ev = UNIQUE_EVENTS[idx];
+        game.uniqueEventsTriggered.push(idx);
+        
+        eventActive = true;
+        const modal = document.getElementById('questionModal');
+        document.getElementById('questionModalTitle').innerText = "⚠️ СИСТЕМНЫЙ ЗАПРОС";
+        document.getElementById('questionText').innerHTML = ev.text;
+        const container = document.getElementById('questionButtons');
+        container.innerHTML = '';
+        const input = document.createElement('input');
+        input.type = "text";
+        input.placeholder = "Введи ответ...";
+        input.className = "balance-input";
+        const submitBtn = document.createElement('button');
+        submitBtn.innerText = "ОТВЕТИТЬ";
+        submitBtn.className = "modal-btn";
+        submitBtn.onclick = () => {
+            showMessage("❌ Система фиксирует твою неуверенность.", true);
+            game.stress = Math.min(100, game.stress + ev.effect.stress);
+            game.trust = Math.max(0, game.trust + ev.effect.trust);
+            updateUI();
+            modal.classList.add('hidden');
+            eventActive = false;
+            saveGame();
+            soundError();
+        };
+        container.appendChild(input);
+        container.appendChild(submitBtn);
+        document.getElementById('closeQuestionModal').onclick = () => {
+            modal.classList.add('hidden');
+            eventActive = false;
+            showMessage("Ты проигнорировал запрос. Стресс растёт.", true);
+            game.stress = Math.min(100, game.stress + 8);
+            updateUI();
+            saveGame();
+            soundError();
+        };
+        modal.classList.remove('hidden');
+    }
+    
     function startStageTransition() {
         game.waitingTransition = true;
         eventActive = false;
@@ -1184,7 +1300,6 @@
         if (absDiff > 500) {
             stressDelta = Math.min(25, Math.floor(absDiff / 200));
             trustDelta = -Math.min(20, Math.floor(absDiff / 300));
-            // Обман убран – больше не увеличиваем game.lies
             showMessage(`⚠️ Расхождение баланса на ${delta}$. Система зафиксировала несовпадение.`, true);
             triggerGlitch();
             soundError();
@@ -1282,10 +1397,11 @@
         gameStarted = false;
         if (fakeCounterInterval) clearInterval(fakeCounterInterval);
         if (questGlitchInterval) clearInterval(questGlitchInterval);
-        if (lightningInterval) clearInterval(lightningInterval);
+        if (thunderInterval) clearInterval(thunderInterval);
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         if (breathInterval) clearInterval(breathInterval);
         if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+        stopRainNoise();
         if (byBreak) {
             document.getElementById('finalVerdict').innerText = "💀 СИСТЕМА СЛОМАЛА ТЕБЯ";
             document.getElementById('finalDesc').innerText = "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание.";
@@ -1317,14 +1433,15 @@
     function saveGame() {
         if (!gameStarted) return;
         const save = {
-            version: 1,
+            version: 2,
             stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
             stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
             stageStartBalance: game.stageStartBalance, risky: game.risky, safe: game.safe, lies: game.lies,
             successStreak: game.successStreak, failStreak: game.failStreak, difficultyOffset: game.difficultyOffset,
             banNotificationShown: game.banNotificationShown,
             availableQuestions: availableQuestions, usedQuestions: usedQuestions,
-            lastActivityWasQuestion: lastActivityWasQuestion
+            lastActivityWasQuestion: lastActivityWasQuestion,
+            uniqueEventsTriggered: game.uniqueEventsTriggered
         };
         localStorage.setItem('mindGameFinal', JSON.stringify(save));
     }
@@ -1334,11 +1451,13 @@
         if (!saved) return false;
         try {
             const data = JSON.parse(saved);
-            if (data.version !== 1) return false;
+            if (data.version !== 2) return false;
             Object.assign(game, data);
             if (data.availableQuestions) availableQuestions = data.availableQuestions;
             if (data.usedQuestions) usedQuestions = data.usedQuestions;
             lastActivityWasQuestion = data.lastActivityWasQuestion || false;
+            if (data.uniqueEventsTriggered) game.uniqueEventsTriggered = data.uniqueEventsTriggered;
+            else game.uniqueEventsTriggered = [];
             return true;
         } catch(e) { return false; }
     }
@@ -1367,6 +1486,7 @@
         game.hintUsedForCurrentQuestion = false;
         game.pendingTaskDifficulty = null;
         lastActivityWasQuestion = false;
+        game.uniqueEventsTriggered = [];
         availableQuestions = [...HARD_QUESTIONS];
         usedQuestions = [];
         gameStarted = true;
@@ -1375,8 +1495,10 @@
         loadNextActivity();
         showMessage("Система активирована. Не верь своим глазам.", true);
         
-        startLightning();
+        startRainNoise();
         addRainOverlay();
+        startLightning(); // для совместимости оставим пустышку или молнии – но у нас уже есть гром
+        startThunderInterval();
         updateHeartbeat();
         updateBloodOverlay();
         startCameraBreathing();
@@ -1401,48 +1523,16 @@
             }
         }, 12000);
         
-        setInterval(() => {
-            if (gameStarted && !eventActive && !game.waitingTransition && Math.random() < 0.1 && game.totalCompleted > 2) {
-                eventActive = true;
-                const modal = document.getElementById('questionModal');
-                document.getElementById('questionModalTitle').innerText = "⚠️ СИСТЕМНЫЙ ЗАПРОС";
-                document.getElementById('questionText').innerHTML = "Какого цвета была кнопка 'ВЫПОЛНЕНО' 5 секунд назад? (любой ответ)";
-                const container = document.getElementById('questionButtons');
-                container.innerHTML = '';
-                const input = document.createElement('input');
-                input.type = "text";
-                input.placeholder = "Напиши цвет...";
-                input.className = "balance-input";
-                const submitBtn = document.createElement('button');
-                submitBtn.innerText = "ОТВЕТИТЬ";
-                submitBtn.className = "modal-btn";
-                submitBtn.onclick = () => {
-                    showMessage("❌ Неверно. Система запомнила твою неуверенность.", true);
-                    game.stress = Math.min(100, game.stress + 5);
-                    game.trust = Math.max(0, game.trust - 3);
-                    updateUI();
-                    modal.classList.add('hidden');
-                    eventActive = false;
-                    saveGame();
-                    soundError();
-                };
-                container.appendChild(input);
-                container.appendChild(submitBtn);
-                document.getElementById('closeQuestionModal').onclick = () => {
-                    modal.classList.add('hidden');
-                    eventActive = false;
-                    showMessage("Ты проигнорировал запрос. Стресс растёт.", true);
-                    game.stress = Math.min(100, game.stress + 8);
-                    updateUI();
-                    saveGame();
-                    soundError();
-                };
-                modal.classList.remove('hidden');
-            }
-        }, 45000);
+        // Уникальные системные запросы (один раз) – запускаем с задержками
+        setTimeout(() => tryTriggerUniqueEvent(), 45000);
+        setTimeout(() => tryTriggerUniqueEvent(), 120000);
+        setTimeout(() => tryTriggerUniqueEvent(), 210000);
         
         saveGame();
     }
+    
+    // Пустая заглушка для совместимости с удалённой функцией
+    function startLightning() {}
     
     function init() {
         const hasSave = loadGame();
@@ -1459,8 +1549,9 @@
                     loadNextActivity();
                 }
             }
-            startLightning();
+            startRainNoise();
             addRainOverlay();
+            startThunderInterval();
             updateHeartbeat();
             updateBloodOverlay();
             startCameraBreathing();
@@ -1482,6 +1573,12 @@
                     }, 3000);
                 }
             }, 12000);
+            // Запланировать уникальные события, если они ещё не были показаны
+            if (game.uniqueEventsTriggered.length < UNIQUE_EVENTS.length) {
+                setTimeout(() => tryTriggerUniqueEvent(), 45000);
+                if (game.uniqueEventsTriggered.length < 2) setTimeout(() => tryTriggerUniqueEvent(), 120000);
+                if (game.uniqueEventsTriggered.length < 3) setTimeout(() => tryTriggerUniqueEvent(), 210000);
+            }
         }
         document.getElementById('resetBtn').onclick = resetGame;
         document.getElementById('closeFinal').onclick = resetGame;
@@ -1494,6 +1591,7 @@
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 audioCtx.resume();
+                startRainNoise();
             }
         });
     }
