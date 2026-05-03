@@ -1087,12 +1087,10 @@
         if (!gameStarted || game.waitingTransition) return;
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
-            // КОВАРНАЯ ПОДСКАЗКА: 60% ложь, но ложь может быть отвлекающей или вероятностной
             const random = Math.random();
             const isLie = random < 0.6;
             let hintAnswer = "";
             if (isLie) {
-                // Ложь: либо неправильный ответ, либо отвлекающая фраза
                 if (Math.random() < 0.4) {
                     hintAnswer = `Я бы сказал, что шанс успеха ~${Math.floor(Math.random() * 40 + 20)}%... но не уверен.`;
                 } else {
@@ -1104,7 +1102,6 @@
                 game.lies++;
                 soundError();
             } else {
-                // Правдивая, но может быть вероятностной
                 if (Math.random() < 0.3) {
                     hintAnswer = `Мне кажется, правильный ответ — "${game.currentQuestionObj.options[game.currentQuestionObj.correct]}", но я не на 100% уверен.`;
                 } else {
@@ -1293,7 +1290,6 @@
     function startStageTransition() {
         game.waitingTransition = true;
         eventActive = false;
-        // Принудительно закрываем любые модалки и сбрасываем активные режимы
         document.getElementById('questionModal').classList.add('hidden');
         if (game.currentQuestionMode) {
             game.currentQuestionMode = false;
@@ -1305,31 +1301,24 @@
         document.getElementById('stageTransitionModal').classList.remove('hidden');
     }
     
+    // ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ: стресс и доверие не меняются =====
     function submitRealBalance() {
         const realBalance = parseInt(document.getElementById('realBalanceInput').value);
         if (isNaN(realBalance)) { showMessage("Введи корректное число", true); return; }
         document.getElementById('stageTransitionModal').classList.add('hidden');
         const delta = realBalance - game.stageStartBalance;
-        const absDiff = Math.abs(delta);
-        let stressDelta = 0, trustDelta = 0;
-        if (absDiff > 500) {
-            stressDelta = Math.min(25, Math.floor(absDiff / 200));
-            trustDelta = -Math.min(20, Math.floor(absDiff / 300));
-            showMessage(`⚠️ Расхождение баланса на ${delta}$. Система зафиксировала несовпадение.`, true);
-            triggerGlitch();
-            soundError();
-        } else {
-            stressDelta = -2;
-            trustDelta = 2;
-            showMessage(`✅ Баланс подтверждён. Изменение: ${delta}$.`, false);
-            soundSuccess();
-        }
+        // Обновляем баланс
         game.balance = realBalance;
-        game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
-        game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
+        // Определяем изменение сложности на основе изменения баланса (без штрафов за стресс)
         if (delta > 0) game.difficultyOffset = 1;
         else if (delta < -1000) game.difficultyOffset = -1;
         else game.difficultyOffset = 0;
+        // Информационное сообщение без изменения стресса или доверия
+        if (Math.abs(delta) > 500) {
+            showMessage(`⚠️ Расхождение баланса на ${delta}$. Система заметила несовпадение, но не наказывает.`, true);
+        } else {
+            showMessage(`✅ Баланс подтверждён. Изменение: ${delta}$.`, false);
+        }
         updateUI();
         game.stage++;
         game.completedInStage = 0;
@@ -1339,7 +1328,7 @@
             game.stageStartBalance = game.balance;
             game.waitingTransition = false;
             showMessage(`🔥 ПЕРЕХОД НА ЭТАП: ${STAGES[game.stage].name} (сложность: ${game.difficultyOffset===1?'повышена':game.difficultyOffset===-1?'понижена':'стандарт'})`, true);
-            triggerGlitch();
+            triggerGlitch(); // лёгкий глитч для атмосферы
             saveGame();
             loadNextActivity();
             if (!game.banNotificationShown && game.stage === 2) {
@@ -1405,10 +1394,8 @@
         });
     }
     
-    // Функция определения концовки (расширенная)
     function getEnding() {
         const profit = game.balance - game.balanceStart;
-        const highStress = game.stress >= 70;
         const lowStress = game.stress < 35;
         const highTrust = game.trust >= 70;
         const lowTrust = game.trust < 30;
@@ -1423,10 +1410,10 @@
         if (lowStress && noLies && profit > 0) {
             return { title: "🔓 ОСВОБОЖДЕНИЕ", desc: "Ты выжил и сохранил разум. Система повержена. Ты свободен." };
         }
-        if (highTrust && !lowStress) {
+        if (highTrust && !(game.stress < 35)) {
             return { title: "🤖 АГЕНТ СИСТЕМЫ", desc: "Слишком много доверия — теперь ты часть машины. Твой разум переписан." };
         }
-        if (highStress && lowTrust) {
+        if (game.stress >= 70 && lowTrust) {
             return { title: "🌀 БЕЗУМИЕ", desc: "Ты раздавлен между страхом и недоверием. Реальность растворилась." };
         }
         if (bigProfit && manyLies) {
