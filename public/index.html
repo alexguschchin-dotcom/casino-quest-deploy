@@ -1097,7 +1097,7 @@
                     const wrongOptions = game.currentQuestionObj.options.filter((_,idx) => idx !== game.currentQuestionObj.correct);
                     hintAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
                 }
-                showMessageImmediate(`💡 [ЛОЖНАЯ ПОДСКАЗКА] ${hintAnswer}`, true);
+                showMessageImmediate(`💡 [ПОДСКАЗКА] ${hintAnswer}`, true);
                 game.trust = Math.max(0, game.trust - 8);
                 game.lies++;
                 soundError();
