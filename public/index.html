@@ -423,7 +423,7 @@
             <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность следующего этапа, но стресс и доверие не сбрасываются.</p>
             <p><strong>🔹 Поражение:</strong> стресс = 100% или обман > 3. Победа: пройти 5 этапов.</p>
             <hr>
-            <p>Введи СТАРТОВЫЙ БАЛАНС :</p>
+            <p>Введи СТАРТОВЫЙ БАЛАНС (положительное число):</p>
             <input type="number" id="startBalance" class="balance-input" placeholder="20000" value="20000">
             <button id="confirmStartBtn" class="modal-btn">ЗАПУСТИТЬ</button>
         </div>
@@ -433,17 +433,21 @@
     <div class="modal-content">
         <h2>📊 ВВОД БАЛАНСА</h2>
         <p>Ты выполнил задания этапа <span id="stageNameSpan"></span>.</p>
-        <p>Введи свой ТЕКУЩИЙ баланс:</p>
+        <p>Введи свой ТЕКУЩИЙ баланс (положительное число):</p>
         <input type="number" id="realBalanceInput" class="balance-input" placeholder="Баланс">
         <button id="submitRealBalance" class="modal-btn">ПОДТВЕРДИТЬ</button>
     </div>
 </div>
 <div id="finalModal" class="modal hidden">
     <div class="modal-content">
-        <h2>🔮 ПРИГОВОР</h2>
+        <h2>🔮 ПРИГОВОР СИСТЕМЫ</h2>
         <p id="finalVerdict"></p>
         <p id="finalDesc"></p>
-        <button id="closeFinal" class="modal-btn">НАЧАТЬ ЗАНОВО</button>
+        <div class="modal-buttons" style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+            <button id="safeFinal" class="modal-btn">ЗАБРАТЬ</button>
+            <button id="riskFinal" class="modal-btn risk" style="background: #ff3366; color: white;">ДОКАЗАТЬ</button>
+        </div>
+        <button id="closeFinal" class="modal-btn" style="display: none;">НАЧАТЬ ЗАНОВО</button>
     </div>
 </div>
 <div id="questionModal" class="modal hidden">
@@ -474,7 +478,6 @@
         { name: "ФИНАЛ", missions: 2 }
     ];
     
-    // Шаблоны заданий (без изменений)
     const STAGE_TASKS = {
         0: [
             { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. ", goal: "бонус", vars: ["bet"] },
@@ -557,6 +560,15 @@
         { text: "Ты чувствуешь, что за тобой следят. Кто это?", effect: { stress: 8, trust: -5 } }
     ];
     
+    // Динамические подсказки по этапам
+    const HINT_TEXTS = {
+        0: ["Чат советует: доверяй интуиции, не поддавайся панике", "Зрители шепчут: 'Первый этап — обманка, не верь системе!'", "Подсказка: не торопись нажимать кнопки, система следит за скоростью"],
+        1: ["Чат кричит: 'Они знают, что ты делаешь! Не нажимай ПРОВАЛ!'", "Зрители заметили: 'Стресс растёт — возьми паузу'", "Система попытается тебя запутать, не поддавайся"],
+        2: ["Чат в ужасе: 'Это ловушка! Любой выбор ведёт в тупик!'", "Зрители: 'Доверие падает — не бери подсказки, они ложные'", "Подсказка: на этом этапе важно сохранить холодный рассудок"],
+        3: ["Чат: 'Ты почти сломлен, но не сдавайся!'", "Зрители молятся: 'Не дай системе сломать тебя, борись!'", "Система на грани — твои решения решают всё"],
+        4: ["Финальный рывок! Чат скандирует: 'Не верь ничему, кроме своего чутья!'", "Зрители: 'Последний этап — система будет врать в каждом совете'", "Ты на финишной прямой, не ошибись!"]
+    };
+    
     let availableQuestions = [...HARD_QUESTIONS];
     let usedQuestions = [];
     
@@ -612,7 +624,7 @@
         systemComment: document.getElementById('systemComment')
     };
     
-    // ========== ОЧЕРЕДЬ СООБЩЕНИЙ (без изменений) ==========
+    // ========== ОЧЕРЕДЬ СООБЩЕНИЙ ==========
     let msgTimeout = null;
     function showMessageImmediate(msg, urgent = false) {
         if (msgTimeout) clearTimeout(msgTimeout);
@@ -650,10 +662,15 @@
     }
     function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
     
-    // Звуки (без изменений)
+    // ========== ЗВУКИ С БЕЗОПАСНЫМ АУДИОКОНТЕКСТОМ ==========
     function playBeep(freq, duration, type='sine', volume=0.1) {
         if (soundMuted) return;
         if (!audioCtx) return;
+        // Решаем проблему suspended контекста – возобновляем принудительно
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        if (audioCtx.state !== 'running') return;
         try {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
@@ -672,7 +689,7 @@
     function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
     function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
     
-    // Эффекты (без изменений, оставляем все глитчи)
+    // ========== ЭФФЕКТЫ (без изменений) ==========
     function triggerThunder() {
         if (!gameStarted) return;
         const flash = document.createElement('div');
@@ -945,7 +962,6 @@
         return arr[Math.floor(Math.random() * arr.length)];
     }
     
-    // ИСПРАВЛЕННАЯ функция сложности (убрана зависимость от failStreak, successStreak оставлен только для комбо-сообщений)
     function getNextTaskDifficulty() {
         if (game.pendingTaskDifficulty !== null) {
             let diff = game.pendingTaskDifficulty;
@@ -957,14 +973,12 @@
         else if (game.stage >= 3) base = 2;
         else base = 1;
         
-        // Убираем влияние successStreak и failStreak на сложность, чтобы не было снежного кома
-        // Оставляем только влияние стресса и баланса
         if (game.stress > 70) base = Math.min(2, base+1);
         if (game.difficultyOffset === 1) base = Math.min(2, base+1);
         else if (game.difficultyOffset === -1) base = Math.max(0, base-1);
         
         const isFinalStage = (game.stage >= 3);
-        const balanceRatio = game.balance / game.balanceStart;
+        const balanceRatio = game.balance / (game.balanceStart || 1);
         let balanceMod = 0;
         if (!isFinalStage) {
             if (balanceRatio <= 0.3) balanceMod = -1;
@@ -1031,12 +1045,12 @@
             if (isCorrect) {
                 showMessage("✅ Правильно! Следующее задание будет лёгким.", false);
                 game.trust = Math.min(100, game.trust + 5);
-                game.stress = Math.max(0, game.stress - 4);   // симметрично -4
+                game.stress = Math.max(0, game.stress - 4);
                 game.pendingTaskDifficulty = 0;
                 soundSuccess();
             } else {
                 showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
-                game.stress = Math.min(100, game.stress + 4);  // симметрично +4
+                game.stress = Math.min(100, game.stress + 4);
                 game.trust = Math.max(0, game.trust - 3);
                 game.pendingTaskDifficulty = 2;
                 soundError();
@@ -1086,8 +1100,18 @@
         }
     }
     
+    // Новая версия giveHint с динамическими текстами по этапам и чат-пасхалкой
     function giveHint() {
         if (!gameStarted || game.waitingTransition) return;
+        
+        // Секретная команда чата "!помощь" (можно вызвать в консоли или воображаемом чате)
+        // Для демонстрации: если ввести в консоль window.chatHelp = true, то будет особый совет
+        if (window._chatHelpCalled) {
+            showMessageImmediate("💬 Чат: 'Не верь ложным подсказкам, система пытается выбить тебя из равновесия! Победа близка!'", false);
+            window._chatHelpCalled = false;
+            return;
+        }
+        
         if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
             game.hintUsedForCurrentQuestion = true;
             const random = Math.random();
@@ -1119,20 +1143,23 @@
             return;
         }
         if (currentTask && !game.currentQuestionMode) {
+            // Динамическая подсказка от чата в зависимости от этапа
+            const stageHint = HINT_TEXTS[game.stage] || HINT_TEXTS[0];
             const isLie = Math.random() < 0.5;
             if (isLie) {
                 const fakeAdvice = getRandomFromArray([
-                    "Советую увеличить ставки, бонус близко.",
-                    "Лучше снизь ставку, иначе проиграешь всё.",
-                    "Попробуй купить бонус, я чую удачу.",
-                    "Не рискуй, система против тебя."
+                    "Чат ошибается: 'Увеличь ставки, бонус на подходе!'",
+                    "Зрители кричат: 'Срочно меняй слот, этот проклят!'",
+                    "Подсказка от зрителя: 'Твой баланс скоро улетит в ноль, спасайся!'",
+                    "Чат паникует: 'Нажми ПРОВАЛ, это ловушка!'"
                 ]);
-                showMessageImmediate(`💡 [ЛОЖНАЯ ПОДСКАЗКА] ${fakeAdvice}`, true);
+                showMessageImmediate(`💡 [ЛОЖНАЯ ПОДСКАЗКА ОТ ЧАТА] ${fakeAdvice}`, true);
                 game.trust = Math.max(0, game.trust - 8);
                 game.lies++;
                 soundError();
             } else {
-                showMessageImmediate(`💡 Совет: сфокусируйся на ${currentTask.goal}.`, false);
+                const trueAdvice = getRandomFromArray(stageHint);
+                showMessageImmediate(`💬 [СОВЕТ ЧАТА] ${trueAdvice}`, false);
                 game.trust = Math.min(100, game.trust + 3);
                 soundSuccess();
             }
@@ -1142,13 +1169,11 @@
         showMessageImmediate("Нет активного вопроса или задания для подсказки.", false);
     }
     
-    // ИСПРАВЛЕННАЯ функция completeSpinTask – симметричный стресс, без дикого разрыва
     function completeSpinTask(success) {
         if (eventActive || game.waitingTransition || !gameStarted || game.currentQuestionMode) return;
         if (answeringLock) return;
         answeringLock = true;
         try {
-            // Глитч с кнопками (оставляем)
             if (Math.random() < 0.4) {
                 const successBtn = document.querySelector('.btn-success');
                 const failBtn = document.querySelector('.btn-fail');
@@ -1174,22 +1199,19 @@
             }
             if (success) soundSuccess(); else soundError();
             
-            // Базовое изменение стресса: симметрично -5/+5
             let stressDelta = success ? -5 : 5;
             let trustDelta = success ? 2 : -3;
             
-            // Корректировка на сложность (более мягкая)
             if (currentTask.difficulty === "hard") {
-                stressDelta += success ? -2 : 7;   // успех -7, провал +12
+                stressDelta += success ? -2 : 7;
                 trustDelta += success ? 2 : -4;
             } else if (currentTask.difficulty === "easy") {
-                stressDelta += success ? 0 : 3;    // успех -5, провал +8
+                stressDelta += success ? 0 : 3;
             }
             
             game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
             game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
             
-            // Обновляем стриксы (но они больше не влияют на сложность, только на сообщения)
             if (success) { game.successStreak++; game.failStreak = 0; }
             else { game.successStreak = 0; game.failStreak++; }
             
@@ -1303,21 +1325,25 @@
     function startStageTransition() {
         game.waitingTransition = true;
         eventActive = false;
-        document.getElementById('questionModal').classList.add('hidden');
+        // Принудительная очистка динамической зоны и сброс режимов (баг №1)
+        els.actionButtons.innerHTML = '';
         if (game.currentQuestionMode) {
             game.currentQuestionMode = false;
             game.currentQuestionObj = null;
             game.hintUsedForCurrentQuestion = false;
         }
+        document.getElementById('questionModal').classList.add('hidden');
         document.getElementById('stageNameSpan').innerText = STAGES[game.stage].name;
         document.getElementById('realBalanceInput').value = '';
         document.getElementById('stageTransitionModal').classList.remove('hidden');
     }
     
-    // ИСПРАВЛЕННАЯ submitRealBalance – НЕ меняет стресс и доверие, только сложность
     function submitRealBalance() {
-        const realBalance = parseInt(document.getElementById('realBalanceInput').value);
-        if (isNaN(realBalance)) { showMessage("Введи корректное число", true); return; }
+        let realBalance = parseInt(document.getElementById('realBalanceInput').value);
+        if (isNaN(realBalance) || realBalance <= 0) {
+            showMessage("Введи корректное положительное число", true);
+            return;
+        }
         document.getElementById('stageTransitionModal').classList.add('hidden');
         const delta = realBalance - game.stageStartBalance;
         game.balance = realBalance;
@@ -1332,6 +1358,10 @@
         if (game.stage < STAGES.length) {
             game.stageStartBalance = game.balance;
             game.waitingTransition = false;
+            // Сброс флага вопроса и очистка кнопок после перехода
+            eventActive = false;
+            game.currentQuestionMode = false;
+            els.actionButtons.innerHTML = '';
             showMessage(`🔥 ПЕРЕХОД НА ЭТАП: ${STAGES[game.stage].name}`, true);
             triggerGlitch();
             saveGame();
@@ -1351,9 +1381,87 @@
         }
     }
     
+    // ========== ФИНАЛ С ВЫБОРОМ ==========
+    function finishWithChoice(choice) {
+        const safeBtn = document.getElementById('safeFinal');
+        const riskBtn = document.getElementById('riskFinal');
+        const closeBtn = document.getElementById('closeFinal');
+        
+        if (choice) {
+            document.getElementById('finalVerdict').innerText = "🔐 ПРИНЯЛ ПРАВИЛА";
+            document.getElementById('finalDesc').innerText = "Ты забрал остатки разума и исчез. Система потеряла интерес. Ты свободен, но навсегда изменён.";
+        } else {
+            document.getElementById('finalVerdict').innerText = "⚡ РАЗРУШИЛ СИСТЕМУ";
+            document.getElementById('finalDesc').innerText = "Ты доказал, что система лжёт. Но какой ценой? Твой разум перегружен, но победа за тобой.";
+        }
+        
+        if (safeBtn) safeBtn.style.display = 'none';
+        if (riskBtn) riskBtn.style.display = 'none';
+        if (closeBtn) closeBtn.style.display = 'inline-block';
+        soundSuccess();
+        gameStarted = false;
+    }
+    
+    function finishGame(byBreak) {
+        if (!gameStarted) return;
+        gameStarted = false;
+        
+        if (fakeCounterInterval) clearInterval(fakeCounterInterval);
+        if (questGlitchInterval) clearInterval(questGlitchInterval);
+        if (thunderInterval) clearInterval(thunderInterval);
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        if (breathInterval) clearInterval(breathInterval);
+        if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+        
+        let ending;
+        if (byBreak) {
+            ending = { title: "💀 СИСТЕМА СЛОМАЛА ТЕБЯ", desc: "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание." };
+            soundError();
+        } else {
+            const profit = game.balance - game.balanceStart;
+            const lowStress = game.stress < 35;
+            const highTrust = game.trust >= 70;
+            const lowTrust = game.trust < 30;
+            const manyLies = game.lies >= 3;
+            const noLies = game.lies === 0;
+            const bigProfit = profit > 5000;
+            const bigLoss = profit < -3000;
+            
+            if (lowStress && noLies && profit > 0) {
+                ending = { title: "🔓 ОСВОБОЖДЕНИЕ", desc: "Ты выжил и сохранил разум. Система повержена. Ты свободен." };
+            } else if (highTrust && !(game.stress < 35)) {
+                ending = { title: "🤖 АГЕНТ СИСТЕМЫ", desc: "Слишком много доверия — теперь ты часть машины. Твой разум переписан." };
+            } else if (game.stress >= 70 && lowTrust) {
+                ending = { title: "🌀 БЕЗУМИЕ", desc: "Ты раздавлен между страхом и недоверием. Реальность растворилась." };
+            } else if (bigProfit && manyLies) {
+                ending = { title: "💰 ЦЕНА ОБМАНА", desc: "Ты заработал состояние, но заплатил правдой. Система отпускает, но ты уже не тот." };
+            } else if (bigLoss && lowTrust) {
+                ending = { title: "📉 КРАХ", desc: "Баланс уничтожен, доверие потеряно. Ты изгой." };
+            } else {
+                ending = { title: "⚠️ НЕОПРЕДЕЛЁННОСТЬ", desc: "Финал открыт. Ты остался загадкой. Возможно, это не конец." };
+            }
+            soundSuccess();
+        }
+        
+        document.getElementById('finalVerdict').innerText = ending.title;
+        document.getElementById('finalDesc').innerText = ending.desc;
+        
+        const safeBtn = document.getElementById('safeFinal');
+        const riskBtn = document.getElementById('riskFinal');
+        const closeBtn = document.getElementById('closeFinal');
+        if (safeBtn && riskBtn && closeBtn) {
+            safeBtn.style.display = 'inline-block';
+            riskBtn.style.display = 'inline-block';
+            closeBtn.style.display = 'none';
+        }
+        document.getElementById('finalModal').classList.remove('hidden');
+    }
+    
     function updateUI() {
         if (!gameStarted) return;
-        const percent = (game.completedInStage / STAGES[game.stage].missions) * 100;
+        // Защита от деления на ноль
+        const totalMissions = STAGES[game.stage].missions;
+        const percent = totalMissions > 0 ? (game.completedInStage / totalMissions) * 100 : 0;
         els.phaseFill.style.width = percent + '%';
         els.stressFill.style.width = game.stress + '%';
         els.stressVal.innerText = game.stress;
@@ -1399,60 +1507,6 @@
         });
     }
     
-    function getEnding() {
-        const profit = game.balance - game.balanceStart;
-        const lowStress = game.stress < 35;
-        const highTrust = game.trust >= 70;
-        const lowTrust = game.trust < 30;
-        const manyLies = game.lies >= 3;
-        const noLies = game.lies === 0;
-        const bigProfit = profit > 5000;
-        const bigLoss = profit < -3000;
-        
-        if (game.stress >= 100 || game.lies > 3) {
-            return { title: "💀 СИСТЕМА СЛОМАЛА ТЕБЯ", desc: "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание и стал марионеткой." };
-        }
-        if (lowStress && noLies && profit > 0) {
-            return { title: "🔓 ОСВОБОЖДЕНИЕ", desc: "Ты выжил и сохранил разум. Система повержена. Ты свободен." };
-        }
-        if (highTrust && !(game.stress < 35)) {
-            return { title: "🤖 АГЕНТ СИСТЕМЫ", desc: "Слишком много доверия — теперь ты часть машины. Твой разум переписан." };
-        }
-        if (game.stress >= 70 && lowTrust) {
-            return { title: "🌀 БЕЗУМИЕ", desc: "Ты раздавлен между страхом и недоверием. Реальность растворилась." };
-        }
-        if (bigProfit && manyLies) {
-            return { title: "💰 ЦЕНА ОБМАНА", desc: "Ты заработал состояние, но заплатил правдой. Система отпускает, но ты уже не тот." };
-        }
-        if (bigLoss && lowTrust) {
-            return { title: "📉 КРАХ", desc: "Баланс уничтожен, доверие потеряно. Ты изгой." };
-        }
-        return { title: "⚠️ НЕОПРЕДЕЛЁННОСТЬ", desc: "Финал открыт. Ты остался загадкой. Возможно, это не конец." };
-    }
-    
-    function finishGame(byBreak) {
-        if (!gameStarted) return;
-        gameStarted = false;
-        if (fakeCounterInterval) clearInterval(fakeCounterInterval);
-        if (questGlitchInterval) clearInterval(questGlitchInterval);
-        if (thunderInterval) clearInterval(thunderInterval);
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-        if (breathInterval) clearInterval(breathInterval);
-        if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
-        let ending;
-        if (byBreak) {
-            ending = { title: "💀 СИСТЕМА СЛОМАЛА ТЕБЯ", desc: "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание." };
-            soundError();
-        } else {
-            ending = getEnding();
-            if (ending.title === "🔓 ОСВОБОЖДЕНИЕ") soundSuccess();
-            else soundError();
-        }
-        document.getElementById('finalVerdict').innerText = ending.title;
-        document.getElementById('finalDesc').innerText = ending.desc;
-        document.getElementById('finalModal').classList.remove('hidden');
-    }
-    
     function resetGame() {
         if (confirm("Сбросить эксперимент?")) {
             localStorage.removeItem('mindGameFinal');
@@ -1463,7 +1517,7 @@
     function saveGame() {
         if (!gameStarted) return;
         const save = {
-            version: 9,
+            version: 10, // повысил версию из-за изменений в структуре
             stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
             stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
             stageStartBalance: game.stageStartBalance, lies: game.lies,
@@ -1481,7 +1535,7 @@
         if (!saved) return false;
         try {
             const data = JSON.parse(saved);
-            if (data.version !== 9) return false;
+            if (data.version !== 10) return false;
             Object.assign(game, data);
             if (data.availableQuestions) availableQuestions = data.availableQuestions;
             if (data.usedQuestions) usedQuestions = data.usedQuestions;
@@ -1500,11 +1554,14 @@
     }
     
     function startGame(balanceStr) {
-        const bal = parseInt(balanceStr);
-        if (isNaN(bal) || bal <= 0) { alert("Введи корректный стартовый баланс"); return; }
-        game.balance = bal;
-        game.balanceStart = bal;
-        game.stageStartBalance = bal;
+        let parsed = parseFloat(balanceStr);
+        if (isNaN(parsed) || parsed <= 0) {
+            alert("Ошибка: Стартовый баланс должен быть положительным числом!");
+            return;
+        }
+        game.balance = parsed;
+        game.balanceStart = parsed;
+        game.stageStartBalance = parsed;
         game.stress = 30;
         game.trust = 55;
         game.stage = 0;
@@ -1607,11 +1664,15 @@
                 if (game.uniqueEventsTriggered.length < 3) setTimeout(() => tryTriggerUniqueEvent(), 210000);
             }
         }
+        
         document.getElementById('resetBtn').onclick = resetGame;
         document.getElementById('closeFinal').onclick = resetGame;
         document.getElementById('hintBtn').onclick = giveHint;
         document.getElementById('submitRealBalance').onclick = submitRealBalance;
         document.getElementById('soundToggleBtn').onclick = toggleSound;
+        document.getElementById('safeFinal').onclick = () => finishWithChoice(true);
+        document.getElementById('riskFinal').onclick = () => finishWithChoice(false);
+        
         const startBtn = document.getElementById('confirmStartBtn');
         if (startBtn) startBtn.onclick = () => startGame(document.getElementById('startBalance').value);
         
@@ -1621,6 +1682,9 @@
                 audioCtx.resume();
             }
         });
+        
+        // Секретная команда для чата (можно ввести в консоли: window.chatHelp())
+        window.chatHelp = function() { window._chatHelpCalled = true; giveHint(); };
     }
     init();
 })();
