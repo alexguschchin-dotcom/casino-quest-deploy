@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>КОГНИТИВНЫЙ СБОЙ</title>
     <style>
+        /* ... весь твой стиль без изменений ... */
         * {
             margin: 0;
             padding: 0;
@@ -607,7 +608,6 @@
     let rainCanvas = null;
     let bloodOverlay = null;
     
-    // Новые узлы для фонового аудио-эмбиента
     let rainSoundNode = null;
     let ambientHumNode = null;
     
@@ -752,7 +752,7 @@
         }
     }
     
-    // ========== ГРОМ (обновлённая версия) ==========
+    // ========== НОВЫЙ РЕАЛИСТИЧНЫЙ ГРОМ ==========
     function triggerThunder() {
         if (!gameStarted) return;
         
@@ -782,47 +782,89 @@
             darken.style.opacity = 0;
             setTimeout(() => darken.remove(), 500);
         }, 1500);
-        
-        // --- НОВЫЙ СИНТЕЗАТОР ГРОМА ---
+
+        // --- АКУСТИЧЕСКИЙ ГРОМ (розовый/коричневый шум + фильтры) ---
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
-                const bufferSize = audioCtx.sampleRate * 2.5;
+                
+                // Длительность раската зависит от стресса (от 2 до 4 секунд)
+                const duration = 2.0 + (game.stress / 50);
+                const bufferSize = audioCtx.sampleRate * duration;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                
+                // Генерируем коричневый шум (сглаженный, без резких пиков)
+                let lastOut = 0.0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    data[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = data[i];
+                }
                 
                 const noiseSource = audioCtx.createBufferSource();
                 noiseSource.buffer = buffer;
+                
+                // Основной низкочастотный фильтр (тяжесть удара)
                 const lpFilter = audioCtx.createBiquadFilter();
                 lpFilter.type = 'lowpass';
-                lpFilter.frequency.setValueAtTime(120, now);
-                lpFilter.frequency.exponentialRampToValueAtTime(30, now + 2.0);
-                const thunderGain = audioCtx.createGain();
-                thunderGain.gain.setValueAtTime(0.25, now);
-                thunderGain.gain.linearRampToValueAtTime(0.15, now + 0.3);
-                thunderGain.gain.linearRampToValueAtTime(0.18, now + 0.6);
-                thunderGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
-                noiseSource.connect(lpFilter);
-                lpFilter.connect(thunderGain);
-                thunderGain.connect(audioCtx.destination);
-                noiseSource.start(now);
-                noiseSource.stop(now + 2.5);
+                // При высоком стрессе частота выше — удар резче
+                const baseFreq = 80 + (game.stress * 1.2);
+                lpFilter.frequency.setValueAtTime(baseFreq, now);
+                lpFilter.frequency.linearRampToValueAtTime(25, now + duration);
                 
-                const subOsc = audioCtx.createOscillator();
-                const subGain = audioCtx.createGain();
-                subOsc.type = 'sawtooth';
-                subOsc.frequency.setValueAtTime(45, now);
-                subOsc.frequency.linearRampToValueAtTime(25, now + 1.5);
-                subGain.gain.setValueAtTime(0.2, now);
-                subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
-                subOsc.connect(subGain);
-                subGain.connect(audioCtx.destination);
-                subOsc.start(now);
-                subOsc.stop(now + 1.8);
+                // Полосовой фильтр для эха
+                const bpFilter = audioCtx.createBiquadFilter();
+                bpFilter.type = 'bandpass';
+                bpFilter.frequency.setValueAtTime(60, now);
+                bpFilter.Q.setValueAtTime(1.2, now);
+                
+                // Узел громкости
+                const thunderGain = audioCtx.createGain();
+                const maxVolume = 0.12 + (game.stress / 200); // от 0.12 до 0.62
+                thunderGain.gain.setValueAtTime(maxVolume, now);
+                
+                // Случайные раскаты (эхо) – хаотичные всплески
+                let timeOffset = 0.15;
+                while (timeOffset < duration - 0.4) {
+                    const rumble = maxVolume * (0.3 + Math.random() * 0.6);
+                    const speed = 0.1 + Math.random() * 0.25;
+                    thunderGain.gain.linearRampToValueAtTime(rumble, now + timeOffset);
+                    timeOffset += speed;
+                }
+                thunderGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                
+                noiseSource.connect(lpFilter);
+                lpFilter.connect(bpFilter);
+                bpFilter.connect(thunderGain);
+                thunderGain.connect(audioCtx.destination);
+                
+                noiseSource.start(now);
+                noiseSource.stop(now + duration);
+                
+                // Суб-осциллятор для вибрации (только при стрессе > 40)
+                if (game.stress > 40) {
+                    const subOsc = audioCtx.createOscillator();
+                    const subGain = audioCtx.createGain();
+                    subOsc.type = 'triangle';
+                    subOsc.frequency.setValueAtTime(38, now);
+                    subOsc.frequency.linearRampToValueAtTime(15, now + 0.8);
+                    const subVolume = 0.08 + (game.stress / 300);
+                    subGain.gain.setValueAtTime(subVolume, now);
+                    subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+                    subOsc.connect(subGain);
+                    subGain.connect(audioCtx.destination);
+                    subOsc.start(now);
+                    subOsc.stop(now + 0.9);
+                }
+                
             } catch(e) { console.log("Thunder audio error", e); }
         }
-        shakeScreen(600, 10);
+        
+        // Тряска экрана зависит от стресса
+        const shakeDuration = 500 + (game.stress * 5);
+        const shakeIntensity = 6 + Math.round(game.stress / 10);
+        shakeScreen(shakeDuration, shakeIntensity);
     }
     
     function startThunderInterval() {
