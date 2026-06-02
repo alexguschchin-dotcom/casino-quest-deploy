@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>КОГНИТИВНЫЙ СБОЙ</title>
     <style>
-        /* ... весь твой стиль без изменений ... */
+        /* ... весь твой стиль без изменений (оставлен как был) ... */
         * {
             margin: 0;
             padding: 0;
@@ -752,11 +752,11 @@
         }
     }
     
-    // ========== НОВЫЙ РЕАЛИСТИЧНЫЙ ГРОМ ==========
+    // ========== ИСПРАВЛЕННЫЙ ГРОМ (РАБОТАЕТ) ==========
     function triggerThunder() {
         if (!gameStarted) return;
         
-        // Визуальная вспышка
+        // --- 1. Визуальные эффекты вспышки (твой оригинальный рабочий код) ---
         const flash = document.createElement('div');
         flash.style.position = 'fixed';
         flash.style.top = 0; flash.style.left = 0; flash.style.width = '100%'; flash.style.height = '100%';
@@ -783,87 +783,94 @@
             setTimeout(() => darken.remove(), 500);
         }, 1500);
 
-        // --- АКУСТИЧЕСКИЙ ГРОМ (розовый/коричневый шум + фильтры) ---
+        // --- 2. ИСПРАВЛЕННЫЙ АКУСТИЧЕСКИЙ ГРОМ ---
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
                 
-                // Длительность раската зависит от стресса (от 2 до 4 секунд)
-                const duration = 2.0 + (game.stress / 50);
+                // Длительность раската зависит от стресса (от 3 до 5 секунд)
+                const duration = 3.0 + (game.stress / 50.0); 
+                
                 const bufferSize = audioCtx.sampleRate * duration;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
                 
-                // Генерируем коричневый шум (сглаженный, без резких пиков)
+                // Генерируем качественный "коричневый" (глухой) шум для основы раската
                 let lastOut = 0.0;
                 for (let i = 0; i < bufferSize; i++) {
                     const white = Math.random() * 2 - 1;
+                    // Сглаживающий фильтр для генерации естественного рокота земли
                     data[i] = (lastOut + (0.02 * white)) / 1.02;
                     lastOut = data[i];
+                    data[i] *= 4.0; // Увеличиваем базовую мощность
                 }
                 
                 const noiseSource = audioCtx.createBufferSource();
                 noiseSource.buffer = buffer;
                 
-                // Основной низкочастотный фильтр (тяжесть удара)
+                // Фильтр низких частот. Чем выше стресс, тем ближе и резче удар (больше высоких частот)
                 const lpFilter = audioCtx.createBiquadFilter();
                 lpFilter.type = 'lowpass';
-                // При высоком стрессе частота выше — удар резче
-                const baseFreq = 80 + (game.stress * 1.2);
+                const baseFreq = 120 + (game.stress * 2); // От 120Гц (далекий) до 320Гц (очень близкий удар)
                 lpFilter.frequency.setValueAtTime(baseFreq, now);
-                lpFilter.frequency.linearRampToValueAtTime(25, now + duration);
+                // В процессе раската звук уходит под землю (частота падает до 30Гц)
+                lpFilter.frequency.exponentialRampToValueAtTime(30, now + duration);
                 
-                // Полосовой фильтр для эха
-                const bpFilter = audioCtx.createBiquadFilter();
-                bpFilter.type = 'bandpass';
-                bpFilter.frequency.setValueAtTime(60, now);
-                bpFilter.Q.setValueAtTime(1.2, now);
-                
-                // Узел громкости
+                // Главный узел автоматизации раскатов грома
                 const thunderGain = audioCtx.createGain();
-                const maxVolume = 0.12 + (game.stress / 200); // от 0.12 до 0.62
-                thunderGain.gain.setValueAtTime(maxVolume, now);
+                // Максимальная громкость зависит от стресса (от 0.3 до 0.8)
+                const maxVolume = 0.3 + (game.stress / 200); 
                 
-                // Случайные раскаты (эхо) – хаотичные всплески
+                // Имитируем резкий начальный удар молнии
+                thunderGain.gain.setValueAtTime(0.001, now);
+                thunderGain.gain.linearRampToValueAtTime(maxVolume, now + 0.05); 
+                
+                // Цикл симуляции эхо и перекатов грома в облаках
                 let timeOffset = 0.15;
                 while (timeOffset < duration - 0.4) {
-                    const rumble = maxVolume * (0.3 + Math.random() * 0.6);
-                    const speed = 0.1 + Math.random() * 0.25;
-                    thunderGain.gain.linearRampToValueAtTime(rumble, now + timeOffset);
-                    timeOffset += speed;
+                    const randomRumble = maxVolume * (0.2 + Math.random() * 0.6);
+                    const step = 0.08 + Math.random() * 0.18;
+                    thunderGain.gain.linearRampToValueAtTime(randomRumble, now + timeOffset);
+                    timeOffset += step;
                 }
+                // Плавное затухание в самом конце раската
                 thunderGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
                 
+                // Соединяем исправленную цепочку: Шум -> Фильтр НЧ -> Громкость -> Выход
                 noiseSource.connect(lpFilter);
-                lpFilter.connect(bpFilter);
-                bpFilter.connect(thunderGain);
+                lpFilter.connect(thunderGain);
                 thunderGain.connect(audioCtx.destination);
                 
                 noiseSource.start(now);
                 noiseSource.stop(now + duration);
                 
-                // Суб-осциллятор для вибрации (только при стрессе > 40)
-                if (game.stress > 40) {
+                // --- 3. СУБ-ОСЦИЛЛЯТОР (МОЩНЫЙ ИНФРАЗВУКОВОЙ УДАР ДЛЯ НАУШНИКОВ) ---
+                // Срабатывает при стрессе > 30, создает физический эффект давления в ушах
+                if (game.stress > 30) {
                     const subOsc = audioCtx.createOscillator();
                     const subGain = audioCtx.createGain();
-                    subOsc.type = 'triangle';
-                    subOsc.frequency.setValueAtTime(38, now);
-                    subOsc.frequency.linearRampToValueAtTime(15, now + 0.8);
-                    const subVolume = 0.08 + (game.stress / 300);
+                    
+                    subOsc.type = 'triangle'; // Мягкая басовая волна
+                    subOsc.frequency.setValueAtTime(40, now); // 40 Гц — глубокий саб-бас
+                    subOsc.frequency.linearRampToValueAtTime(20, now + 1.0);
+                    
+                    const subVolume = 0.15 + (game.stress / 250);
                     subGain.gain.setValueAtTime(subVolume, now);
-                    subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+                    subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
+                    
                     subOsc.connect(subGain);
                     subGain.connect(audioCtx.destination);
+                    
                     subOsc.start(now);
-                    subOsc.stop(now + 0.9);
+                    subOsc.stop(now + 1.1);
                 }
                 
-            } catch(e) { console.log("Thunder audio error", e); }
+            } catch(e) { console.log("Thunder audio error:", e); }
         }
         
-        // Тряска экрана зависит от стресса
-        const shakeDuration = 500 + (game.stress * 5);
-        const shakeIntensity = 6 + Math.round(game.stress / 10);
+        // Динамическая тряска экрана в зависимости от стресса подопытного
+        const shakeDuration = 500 + (game.stress * 6);
+        const shakeIntensity = 6 + Math.round(game.stress / 8);
         shakeScreen(shakeDuration, shakeIntensity);
     }
     
@@ -1077,7 +1084,7 @@
         shadowTimeout = setTimeout(() => { shadowTimeout = null; }, 3000);
     }
     
-    // ========== ИГРОВАЯ ЛОГИКА ==========
+    // ========== ИГРОВАЯ ЛОГИКА (без изменений, она рабочая) ==========
     function getRandomFromArray(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
     }
