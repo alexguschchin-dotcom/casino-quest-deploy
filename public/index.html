@@ -560,7 +560,6 @@
         { text: "Ты чувствуешь, что за тобой следят. Кто это?", effect: { stress: 8, trust: -5 } }
     ];
     
-    // Динамические подсказки по этапам
     const HINT_TEXTS = {
         0: ["Чат советует: доверяй интуиции, не поддавайся панике", "Зрители шепчут: 'Первый этап — обманка, не верь системе!'", "Подсказка: не торопись нажимать кнопки, система следит за скоростью"],
         1: ["Чат кричит: 'Они знают, что ты делаешь! Не нажимай ПРОВАЛ!'", "Зрители заметили: 'Стресс растёт — возьми паузу'", "Система попытается тебя запутать, не поддавайся"],
@@ -607,6 +606,10 @@
     let rainAnimationId = null;
     let rainCanvas = null;
     let bloodOverlay = null;
+    
+    // Новые узлы для фонового аудио-эмбиента
+    let rainSoundNode = null;
+    let ambientHumNode = null;
     
     const els = {
         stageNum: document.getElementById('phaseNum'),
@@ -662,14 +665,11 @@
     }
     function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
     
-    // ========== ЗВУКИ С БЕЗОПАСНЫМ АУДИОКОНТЕКСТОМ ==========
+    // ========== ЗВУКИ ==========
     function playBeep(freq, duration, type='sine', volume=0.1) {
         if (soundMuted) return;
         if (!audioCtx) return;
-        // Решаем проблему suspended контекста – возобновляем принудительно
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         if (audioCtx.state !== 'running') return;
         try {
             const now = audioCtx.currentTime;
@@ -689,18 +689,78 @@
     function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
     function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
     
-    // ========== ЭФФЕКТЫ (без изменений) ==========
+    // ========== ПРОЦЕДУРНЫЙ ХОРРОР-ЭМБИЕНТ ==========
+    function startAmbientRain() {
+        if (!audioCtx || soundMuted || rainSoundNode) return;
+        try {
+            const now = audioCtx.currentTime;
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            
+            rainSoundNode = audioCtx.createBufferSource();
+            rainSoundNode.buffer = buffer;
+            rainSoundNode.loop = true;
+            
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1000;
+            filter.Q.value = 0.7;
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.04;
+            
+            rainSoundNode.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            rainSoundNode.start(now);
+        } catch(e) { console.log(e); }
+    }
+    
+    function startAtmosphericHum() {
+        if (!audioCtx || soundMuted || ambientHumNode) return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc1.type = 'sine';   osc1.frequency.value = 50;
+            osc2.type = 'sawtooth'; osc2.frequency.value = 50.5;
+            const lowpass = audioCtx.createBiquadFilter();
+            lowpass.type = 'lowpass';
+            lowpass.frequency.value = 70;
+            gainNode.gain.value = 0.07;
+            osc1.connect(lowpass);
+            osc2.connect(lowpass);
+            lowpass.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc1.start(now);
+            osc2.start(now);
+            ambientHumNode = { osc1, osc2, gainNode };
+        } catch(e) { console.log(e); }
+    }
+    
+    function stopAllAmbientSounds() {
+        if (rainSoundNode) {
+            try { rainSoundNode.stop(); } catch(e){}
+            rainSoundNode = null;
+        }
+        if (ambientHumNode) {
+            try { ambientHumNode.osc1.stop(); ambientHumNode.osc2.stop(); } catch(e){}
+            ambientHumNode = null;
+        }
+    }
+    
+    // ========== ГРОМ (обновлённая версия) ==========
     function triggerThunder() {
         if (!gameStarted) return;
+        
+        // Визуальная вспышка
         const flash = document.createElement('div');
         flash.style.position = 'fixed';
-        flash.style.top = 0;
-        flash.style.left = 0;
-        flash.style.width = '100%';
-        flash.style.height = '100%';
-        flash.style.backgroundColor = 'white';
-        flash.style.zIndex = 10001;
-        flash.style.pointerEvents = 'none';
+        flash.style.top = 0; flash.style.left = 0; flash.style.width = '100%'; flash.style.height = '100%';
+        flash.style.backgroundColor = 'white'; flash.style.zIndex = 10001; flash.style.pointerEvents = 'none';
         flash.style.opacity = 0;
         document.body.appendChild(flash);
         flash.style.transition = 'opacity 0.05s';
@@ -712,13 +772,8 @@
         
         const darken = document.createElement('div');
         darken.style.position = 'fixed';
-        darken.style.top = 0;
-        darken.style.left = 0;
-        darken.style.width = '100%';
-        darken.style.height = '100%';
-        darken.style.backgroundColor = 'black';
-        darken.style.zIndex = 10000;
-        darken.style.pointerEvents = 'none';
+        darken.style.top = 0; darken.style.left = 0; darken.style.width = '100%'; darken.style.height = '100%';
+        darken.style.backgroundColor = 'black'; darken.style.zIndex = 10000; darken.style.pointerEvents = 'none';
         darken.style.opacity = 0;
         document.body.appendChild(darken);
         darken.style.transition = 'opacity 0.1s';
@@ -728,23 +783,46 @@
             setTimeout(() => darken.remove(), 500);
         }, 1500);
         
-        if (!soundMuted && audioCtx) {
+        // --- НОВЫЙ СИНТЕЗАТОР ГРОМА ---
+        if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
-                const gain = audioCtx.createGain();
-                gain.connect(audioCtx.destination);
-                const osc = audioCtx.createOscillator();
-                osc.connect(gain);
-                osc.type = 'sawtooth';
-                osc.frequency.value = 70;
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
-                osc.frequency.exponentialRampToValue(35, 1.2);
-                osc.start();
-                osc.stop(now + 1.5);
-            } catch(e) {}
+                const bufferSize = audioCtx.sampleRate * 2.5;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                
+                const noiseSource = audioCtx.createBufferSource();
+                noiseSource.buffer = buffer;
+                const lpFilter = audioCtx.createBiquadFilter();
+                lpFilter.type = 'lowpass';
+                lpFilter.frequency.setValueAtTime(120, now);
+                lpFilter.frequency.exponentialRampToValueAtTime(30, now + 2.0);
+                const thunderGain = audioCtx.createGain();
+                thunderGain.gain.setValueAtTime(0.25, now);
+                thunderGain.gain.linearRampToValueAtTime(0.15, now + 0.3);
+                thunderGain.gain.linearRampToValueAtTime(0.18, now + 0.6);
+                thunderGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
+                noiseSource.connect(lpFilter);
+                lpFilter.connect(thunderGain);
+                thunderGain.connect(audioCtx.destination);
+                noiseSource.start(now);
+                noiseSource.stop(now + 2.5);
+                
+                const subOsc = audioCtx.createOscillator();
+                const subGain = audioCtx.createGain();
+                subOsc.type = 'sawtooth';
+                subOsc.frequency.setValueAtTime(45, now);
+                subOsc.frequency.linearRampToValueAtTime(25, now + 1.5);
+                subGain.gain.setValueAtTime(0.2, now);
+                subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+                subOsc.connect(subGain);
+                subGain.connect(audioCtx.destination);
+                subOsc.start(now);
+                subOsc.stop(now + 1.8);
+            } catch(e) { console.log("Thunder audio error", e); }
         }
-        shakeScreen(500, 8);
+        shakeScreen(600, 10);
     }
     
     function startThunderInterval() {
@@ -1100,12 +1178,9 @@
         }
     }
     
-    // Новая версия giveHint с динамическими текстами по этапам и чат-пасхалкой
     function giveHint() {
         if (!gameStarted || game.waitingTransition) return;
         
-        // Секретная команда чата "!помощь" (можно вызвать в консоли или воображаемом чате)
-        // Для демонстрации: если ввести в консоль window.chatHelp = true, то будет особый совет
         if (window._chatHelpCalled) {
             showMessageImmediate("💬 Чат: 'Не верь ложным подсказкам, система пытается выбить тебя из равновесия! Победа близка!'", false);
             window._chatHelpCalled = false;
@@ -1143,7 +1218,6 @@
             return;
         }
         if (currentTask && !game.currentQuestionMode) {
-            // Динамическая подсказка от чата в зависимости от этапа
             const stageHint = HINT_TEXTS[game.stage] || HINT_TEXTS[0];
             const isLie = Math.random() < 0.5;
             if (isLie) {
@@ -1325,7 +1399,6 @@
     function startStageTransition() {
         game.waitingTransition = true;
         eventActive = false;
-        // Принудительная очистка динамической зоны и сброс режимов (баг №1)
         els.actionButtons.innerHTML = '';
         if (game.currentQuestionMode) {
             game.currentQuestionMode = false;
@@ -1358,7 +1431,6 @@
         if (game.stage < STAGES.length) {
             game.stageStartBalance = game.balance;
             game.waitingTransition = false;
-            // Сброс флага вопроса и очистка кнопок после перехода
             eventActive = false;
             game.currentQuestionMode = false;
             els.actionButtons.innerHTML = '';
@@ -1381,7 +1453,6 @@
         }
     }
     
-    // ========== ФИНАЛ С ВЫБОРОМ ==========
     function finishWithChoice(choice) {
         const safeBtn = document.getElementById('safeFinal');
         const riskBtn = document.getElementById('riskFinal');
@@ -1400,6 +1471,7 @@
         if (closeBtn) closeBtn.style.display = 'inline-block';
         soundSuccess();
         gameStarted = false;
+        stopAllAmbientSounds();
     }
     
     function finishGame(byBreak) {
@@ -1412,6 +1484,7 @@
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         if (breathInterval) clearInterval(breathInterval);
         if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+        stopAllAmbientSounds();
         
         let ending;
         if (byBreak) {
@@ -1459,7 +1532,6 @@
     
     function updateUI() {
         if (!gameStarted) return;
-        // Защита от деления на ноль
         const totalMissions = STAGES[game.stage].missions;
         const percent = totalMissions > 0 ? (game.completedInStage / totalMissions) * 100 : 0;
         els.phaseFill.style.width = percent + '%';
@@ -1509,6 +1581,7 @@
     
     function resetGame() {
         if (confirm("Сбросить эксперимент?")) {
+            stopAllAmbientSounds();
             localStorage.removeItem('mindGameFinal');
             location.reload();
         }
@@ -1517,7 +1590,7 @@
     function saveGame() {
         if (!gameStarted) return;
         const save = {
-            version: 10, // повысил версию из-за изменений в структуре
+            version: 10,
             stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
             stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
             stageStartBalance: game.stageStartBalance, lies: game.lies,
@@ -1549,8 +1622,19 @@
     function toggleSound() {
         soundMuted = !soundMuted;
         const btn = document.getElementById('soundToggleBtn');
-        if (soundMuted) btn.innerHTML = '<i class="fas fa-volume-mute"></i> ЗВУК ВЫКЛ';
-        else btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
+        if (soundMuted) {
+            btn.innerHTML = '<i class="fas fa-volume-mute"></i> ЗВУК ВЫКЛ';
+            stopAllAmbientSounds();
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+        } else {
+            btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
+            if (gameStarted && audioCtx && audioCtx.state === 'running') {
+                startAmbientRain();
+                startAtmosphericHum();
+                updateHeartbeat();
+            }
+        }
     }
     
     function startGame(balanceStr) {
@@ -1589,9 +1673,13 @@
         
         addRainOverlay();
         startThunderInterval();
-        updateHeartbeat();
         updateBloodOverlay();
         startCameraBreathing();
+        
+        if (!soundMuted && audioCtx && audioCtx.state === 'running') {
+            startAmbientRain();
+            startAtmosphericHum();
+        }
         
         fakeCounterInterval = setInterval(() => {
             if (gameStarted && game.stress > 40 && Math.random() < 0.4) {
@@ -1637,9 +1725,14 @@
             }
             addRainOverlay();
             startThunderInterval();
-            updateHeartbeat();
             updateBloodOverlay();
             startCameraBreathing();
+            
+            if (!soundMuted && audioCtx && audioCtx.state === 'running') {
+                startAmbientRain();
+                startAtmosphericHum();
+            }
+            
             fakeCounterInterval = setInterval(() => {
                 if (gameStarted && game.stress > 40 && Math.random() < 0.4) {
                     const oldBalanceSpan = els.balanceStat;
@@ -1681,9 +1774,17 @@
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 audioCtx.resume();
             }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            if (gameStarted && !soundMuted) {
+                if (audioCtx && audioCtx.state === 'running') {
+                    startAmbientRain();
+                    startAtmosphericHum();
+                }
+            }
         });
         
-        // Секретная команда для чата (можно ввести в консоли: window.chatHelp())
         window.chatHelp = function() { window._chatHelpCalled = true; giveHint(); };
     }
     init();
