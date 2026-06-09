@@ -42,7 +42,7 @@
             height: 100%;
             pointer-events: none;
             z-index: 1;
-            opacity: 0.55;
+            opacity: 0.65;
         }
         .container {
             position: relative;
@@ -375,7 +375,6 @@
     let audioCtx = null;
     let soundMuted = false;
     let rainSoundNode = null;
-    let ambientHumNode = null;
     let gameStarted = false;
     let currentContractIndex = 0;          
     let fear = 15;
@@ -468,7 +467,7 @@
         stepsContainer: document.getElementById('stepsContainer')
     };
 
-    // ========== АТМОСФЕРНЫЕ ЗВУКИ И АНИМАЦИИ ==========
+    // ========== АТМОСФЕРНЫЕ ЗВУКИ (только дождь и гром) ==========
     function startAmbientRain() {
         if (!audioCtx || soundMuted || rainSoundNode) return;
         try {
@@ -486,10 +485,10 @@
             rainSoundNode.loop = true;
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'bandpass';
-            filter.frequency.value = 800;
-            filter.Q.value = 0.6;
+            filter.frequency.value = 1200;
+            filter.Q.value = 0.7;
             const gain = audioCtx.createGain();
-            gain.gain.value = 0.05;
+            gain.gain.value = 0.12; // увеличил громкость дождя
             rainSoundNode.connect(filter);
             filter.connect(gain);
             gain.connect(audioCtx.destination);
@@ -497,33 +496,8 @@
         } catch(e) { console.log(e); }
     }
 
-    function startAtmosphericHum() {
-        if (!audioCtx || soundMuted || ambientHumNode) return;
-        try {
-            const osc1 = audioCtx.createOscillator();
-            const osc2 = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            const lp = audioCtx.createBiquadFilter();
-            osc1.type = 'sine';
-            osc1.frequency.value = 45;
-            osc2.type = 'sawtooth';
-            osc2.frequency.value = 45.6;
-            lp.type = 'lowpass';
-            lp.frequency.value = 60;
-            gain.gain.value = 0.08;
-            osc1.connect(lp);
-            osc2.connect(lp);
-            lp.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc1.start();
-            osc2.start();
-            ambientHumNode = { osc1, osc2, gain };
-        } catch(e) { console.log(e); }
-    }
-
     function stopAllAmbient() {
         if (rainSoundNode) { try { rainSoundNode.stop(); } catch(e){} rainSoundNode = null; }
-        if (ambientHumNode) { try { ambientHumNode.osc1.stop(); ambientHumNode.osc2.stop(); } catch(e){} ambientHumNode = null; }
     }
 
     function playBeep(freq, type, duration, vol=0.08) {
@@ -555,7 +529,7 @@
         flash.style.opacity = 0.9;
         document.body.appendChild(flash);
         setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 200); }, 100);
-        // Звук
+        // Звук грома
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
@@ -576,7 +550,7 @@
                 lp.frequency.setValueAtTime(100 + fear * 2, now);
                 lp.frequency.exponentialRampToValueAtTime(30, now + duration);
                 const gain = audioCtx.createGain();
-                const maxVol = 0.3 + fear / 200;
+                const maxVol = 0.35 + fear / 180;
                 gain.gain.setValueAtTime(0.001, now);
                 gain.gain.linearRampToValueAtTime(maxVol, now + 0.1);
                 let t = 0.2;
@@ -617,7 +591,7 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         raindrops = [];
-        for (let i = 0; i < 120; i++) {
+        for (let i = 0; i < 140; i++) {
             raindrops.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
@@ -631,8 +605,8 @@
     function drawRain() {
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = fear > 70 ? 'rgba(255, 50, 50, 0.3)' : 'rgba(0, 255, 0, 0.2)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = fear > 70 ? 'rgba(255, 50, 50, 0.35)' : 'rgba(0, 255, 0, 0.25)';
+        ctx.lineWidth = 1.8;
         for (let d of raindrops) {
             ctx.beginPath();
             ctx.moveTo(d.x, d.y);
@@ -919,7 +893,6 @@
         els.gameScreen.style.display = 'grid';
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         startAmbientRain();
-        startAtmosphericHum();
         loadContract();
         setInterval(() => {
             if (gameStarted && fear > 40 && Math.random() < 0.3) triggerThunder();
@@ -935,7 +908,7 @@
             else btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
         }
         if (soundMuted) stopAllAmbient();
-        else if (gameStarted) { startAmbientRain(); startAtmosphericHum(); }
+        else if (gameStarted) { startAmbientRain(); }
     };
 
     function init() {
@@ -967,10 +940,8 @@
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            // Принудительно запускаем звуки, если игра уже идёт
             if (gameStarted && !soundMuted) {
                 startAmbientRain();
-                startAtmosphericHum();
             }
         });
     }
