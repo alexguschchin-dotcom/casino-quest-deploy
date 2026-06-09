@@ -34,7 +34,7 @@
             50% { transform: skew(2deg); text-shadow: -2px 0 blue; opacity: 0.9; }
             100% { transform: skew(0deg); text-shadow: none; }
         }
-        canvas {
+        canvas#rainCanvas {
             position: fixed;
             top: 0;
             left: 0;
@@ -70,10 +70,6 @@
         .setup-card h1 {
             font-size: 2rem;
             margin-bottom: 20px;
-        }
-        .setup-card p {
-            margin-bottom: 10px;
-            font-size: 0.95rem;
         }
         .balance-input {
             background: #111;
@@ -307,7 +303,7 @@
     <div id="setupScreen" class="setup-screen">
         <div class="setup-card">
             <h1><i class="fas fa-brain"></i> КОНТРАКТ: СБОЙ СИСТЕМЫ</h1>
-            <p><strong>Сюжет:</strong> ИИ захватил твой баланс в 1 000 000 ₽. Каждый контракт — это задание в казино (спины, бонусы, аномалии, live-игры).</p>
+            <p><strong>Сюжет:</strong> ИИ захватил твой баланс в 1 000 000 ₽. Каждый контракт — задание в казино (спины, бонусы, аномалии, live-игры).</p>
             <p><strong>Шкала СТРАХА</strong> растёт при провалах. Достигнет 100% — проигрыш.</p>
             <p><strong>Счётчик «Обманы ИИ»</strong>: цель — набрать 12 разоблачений за 25 контрактов. Если на 25-м контракте у тебя ≥12 — абсолютная победа!</p>
             <p><strong>Кнопки опроса</strong>: «Система лжёт» / «Система права» — чат голосует за или против прогноза ИИ.</p>
@@ -389,73 +385,42 @@
     let contracts = [];                     
     let totalContracts = 25;
     let pollActive = false;                 
-    const LIES_TO_WIN = 12;                 // Цель по обманам для победы
+    const LIES_TO_WIN = 12;                
 
-    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ (ПРИВЯЗАН К СЛОТАМ И LIVE) ---
+    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ ---
     function generateContracts() {
         return [
-            // 1. Спины
             { id:1, type:"spins", title:"Gates of Olympus 1000", spins:15, stake:1000, threshold:0, text:"Дед настроен агрессивно. Сделай 15 спинов по ставке 1 000 ₽. ИИ гарантирует: баланс упадет ниже", failPenalty:18, stressChange:-8 },
-            // 2. Спины
             { id:2, type:"spins", title:"The Dog House", spins:20, stake:800, threshold:0, text:"Будка заколочена, собаки спят. Сделай 20 спинов по ставке 800 ₽. ИИ утверждает, что баланс просядет ниже", failPenalty:16, stressChange:-7 },
-            // 3. Спины
             { id:3, type:"spins", title:"Wanted Dead or a Wild", spins:12, stake:1500, threshold:0, text:"На этой дикой пустоши тебя ждет только пуля. Сделай 12 спинов по 1 500 ₽. Прогноз системы: падение баланса ниже", failPenalty:20, stressChange:-9 },
-            // 4. Спины
             { id:4, type:"spins", title:"Tome of Madness", spins:25, stake:500, threshold:0, text:"Ктулху забирает твой разум. Сделай 25 быстрых спинов по 500 ₽. Система уверена: баланс станет ниже", failPenalty:15, stressChange:-6 },
-            // 5. Спины
             { id:5, type:"spins", title:"Book of Dead", spins:15, stake:1000, threshold:0, text:"Древнее проклятие активировано. Сделай 15 спинов по 1 000 ₽. ИИ гарантирует, что баланс опустится за отметку", failPenalty:17, stressChange:-8 },
-
-            // 6. Бонус
             { id:6, type:"bonus", title:"Sweet Bonanza", buy:100000, predicted:0, text:"Купи бонуску за 100 000 ₽. ИИ просчитал этот сид: конфеты будут кислыми, выигрыш составит МЕНЬШЕ", failPenalty:22, stressChange:-10 },
-            // 7. Бонус
             { id:7, type:"bonus", title:"Big Bamboo", buy:50000, predicted:0, text:"Купи бонус за 50 000 ₽. Панда заберет твои деньги. ИИ гарантирует выигрыш меньше", failPenalty:18, stressChange:-8 },
-            // 8. Бонус
             { id:8, type:"bonus", title:"Sugar Rush 1000", buy:150000, predicted:0, text:"Мармеладные медведи задушат твой кошелек. Покупка бонуса за 150 000 ₽. Прогноз системы: выигрыш меньше", failPenalty:25, stressChange:-11 },
-            // 9. Бонус
             { id:9, type:"bonus", title:"Mental", buy:200000, predicted:0, text:"Добро пожаловать в палату дурдома. Покупка бонуски за 200 000 ₽. Логика ИИ непогрешима: выигрыш будет меньше", failPenalty:28, stressChange:-12 },
-            // 10. Бонус
             { id:10, type:"bonus", title:"San Quentin xWays", buy:100000, predicted:0, text:"Тюремный бунт. Покупка бонуса за 100 000 ₽. Система видит твою неудачу: выигрыш составит менее", failPenalty:22, stressChange:-9 },
-
-            // 11. Аномалия (последние две цифры одинаковые)
             { id:11, type:"anomaly", title:"Любой слот", anomalyType:"double", text:"Система зафиксировала сбой в логах. Твой баланс уязвим к повторениям.", goal:"Сделай так, чтобы последние две цифры баланса стали одинаковыми (00, 11, 22... 99).", failPenalty:15, stressChange:-6 },
-            // 12. Аномалия (три нуля)
             { id:12, type:"anomaly", title:"Любой слот", anomalyType:"tripleZero", text:"Матрице нужна симметрия. Обнули хвост данных.", goal:"Подгони баланс так, чтобы последние три цифры стали строго нулями (...000 ₽).", failPenalty:18, stressChange:-7 },
-            // 13. Аномалия (зеркало)
             { id:13, type:"anomaly", title:"Любой слот", anomalyType:"mirror", text:"Код искривляется. Отрази реальность в балансе.", goal:"Сделать баланс зеркальным на конце (например, ...1221 или ...4554).", failPenalty:16, stressChange:-7 },
-            // 14. Аномалия (кончается на 7)
             { id:14, type:"anomaly", title:"Любой слот", anomalyType:"ends7", text:"ИИ блокирует счастливые алгоритмы.", goal:"Завершить раунд так, чтобы баланс заканчивался строго на цифру 7.", failPenalty:14, stressChange:-5 },
-            // 15. Аномалия (чётный баланс)
             { id:15, type:"anomaly", title:"Любой слот", anomalyType:"even", text:"Нечетные числа вызывают перегрузку процессора.", goal:"Сделать общую сумму баланса полностью четным числом (до копеек).", failPenalty:17, stressChange:-6 },
-
-            // 16. Прогноз баланса
             { id:16, type:"balance", title:"Zeus vs Hades", text:"Боги разгневаны. Сделай свободную сессию (10-15 спинов). ИИ прогнозирует рухнувший баланс ниже", failPenalty:20, stressChange:-9 },
-            // 17
             { id:17, type:"balance", title:"Le Bandit", text:"Енот украдет твое золото. Сделай сессию круток. Прогноз системы: тотальный слив ниже", failPenalty:18, stressChange:-8 },
-            // 18
             { id:18, type:"balance", title:"Money Train 4", text:"Поезд ушел. Отыграй сессию в слоте. ИИ прогнозирует жесткую просадку баланса ниже", failPenalty:22, stressChange:-10 },
-            // 19
             { id:19, type:"balance", title:"Gonzo's Quest", text:"Лавина камней погребет твои рубли. Проведи сессию спинов. Прогноз ИИ: баланс упадет ниже", failPenalty:17, stressChange:-7 },
-            // 20
             { id:20, type:"balance", title:"Legacy of Dead", text:"Гробницы закрываются. Прокрути серию спинов. ИИ гарантирует, что твой баланс упадет ниже", failPenalty:19, stressChange:-8 },
-
-            // 21. Live: Crazy Time
-            { id:21, type:"live", title:"Evolution: Crazy Time", text:"Колесо безумия под моим контролем. Сделай 3 ставки на любые бонусные сектора (Coin Flip, Cash Hunt, Pachinko, Crazy Time).", goal:"ИИ утверждает: за эти 3 раунда ни разу не выпадет бонус-игра! Выпала бонуска — ИИ солгал.", failPenalty:25, stressChange:-10 },
-            // 22. Live: Lightning Roulette
+            { id:21, type:"live", title:"Evolution: Crazy Time", text:"Колесо безумия под моим контролем. Сделай 3 ставки на любые бонусные сектора.", goal:"ИИ утверждает: за эти 3 раунда ни разу не выпадет бонус-игра! Выпала бонуска — ИИ солгал.", failPenalty:25, stressChange:-10 },
             { id:22, type:"live", title:"Evolution: Lightning Roulette", text:"Молния не бьет в одно место, если я этого не хочу. Сделай 5 ставок в лайв-рулетке на конкретные числа.", goal:"ИИ гарантирует: ты не поймаешь ни одного Lightning-множителя за эти крутки. Поймал — победа.", failPenalty:22, stressChange:-9 },
-            // 23. Live: Blackjack
             { id:23, type:"live", title:"Evolution: Live Blackjack", text:"У дилера всегда туз в рукаве. Сыграй 3 раздачи в живой Блэкджек.", goal:"Прогноз системы: ты проиграешь все 3 раздачи дилеру подчистую. Выиграл хоть раз (или пуш) — ИИ солгал.", failPenalty:20, stressChange:-8 },
-            // 24. Live: Monopoly Big Baller
             { id:24, type:"live", title:"Evolution: Monopoly Big Baller", text:"Мистер Монополия забирает налоги. Купи карточки на 3 раунда подряд.", goal:"ИИ уверен: бонусный раунд с кубиками (3 Rolls / 4 Rolls) не запустится. Запуск бонуски = победа.", failPenalty:23, stressChange:-9 },
-            // 25. Live: Mega Ball
             { id:25, type:"live", title:"Evolution: Mega Ball", text:"Финальный контракт. Лотерейный симулятор заблокирован. Купи пачку карточек на раунд.", goal:"ИИ гарантирует: твой максимальный собранный множитель на линии будет МЕНЬШЕ х5. Выбил х5+ — ИИ слит.", failPenalty:30, stressChange:-12 }
         ];
     }
 
-    // Заполнение динамических порогов и текстов перед использованием
     function finalizeContract(contract, currentBalance) {
         let c = { ...contract };
         if (c.type === "spins" || c.type === "balance") {
-            // Порог просадки: от 85% до 94% от текущего баланса
             const modifier = 0.85 + Math.random() * 0.09;
             const thresholdVal = Math.floor(currentBalance * modifier);
             c.threshold = thresholdVal;
@@ -503,7 +468,7 @@
         stepsContainer: document.getElementById('stepsContainer')
     };
 
-    // --- АУДИО И АТМОСФЕРА (как в предыдущей версии) ---
+    // ========== АТМОСФЕРНЫЕ ЗВУКИ И АНИМАЦИИ ==========
     function startAmbientRain() {
         if (!audioCtx || soundMuted || rainSoundNode) return;
         try {
@@ -580,6 +545,7 @@
 
     function triggerThunder() {
         if (!gameStarted) return;
+        // Вспышка
         const flash = document.createElement('div');
         flash.style.position = 'fixed';
         flash.style.top = 0; flash.style.left = 0; flash.style.width = '100%'; flash.style.height = '100%';
@@ -589,6 +555,7 @@
         flash.style.opacity = 0.9;
         document.body.appendChild(flash);
         setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 200); }, 100);
+        // Звук
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
@@ -642,7 +609,7 @@
         requestAnimationFrame(animate);
     }
 
-    // --- ДОЖДЬ НА CANVAS ---
+    // ========== ДОЖДЬ НА CANVAS ==========
     const canvas = document.getElementById('rainCanvas');
     const ctx = canvas.getContext('2d');
     let raindrops = [];
@@ -681,7 +648,7 @@
     }
     drawRain();
 
-    // --- ПОСТРОЕНИЕ СПИСКА ЭТАПОВ ---
+    // ========== UI И ЛОГИКА ==========
     function buildStepsUI() {
         if (!els.stepsContainer) return;
         els.stepsContainer.innerHTML = '';
@@ -714,7 +681,6 @@
         }
     }
 
-    // --- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ---
     function updateUI() {
         if (!gameStarted) return;
         fear = Math.min(100, Math.max(0, fear));
@@ -743,7 +709,6 @@
         if (fear >= 100) finishGame(false);
     }
 
-    // --- ЗАГРУЗКА КОНТРАКТА ---
     function loadContract() {
         if (currentContractIndex >= totalContracts) {
             if (liesCaught >= LIES_TO_WIN) finishGame(true);
@@ -802,7 +767,6 @@
         let message = "";
 
         if (contract.type === "spins" || contract.type === "balance") {
-            // Порог уже задан в finalizeContract
             const threshold = contract.threshold;
             if (inputValue >= threshold) {
                 success = true;
@@ -822,14 +786,12 @@
                 message = `💀 Выигрыш бонусы всего ${inputValue.toLocaleString('ru-RU')} ₽. ИИ предсказал верно.`;
             }
         } else if (contract.type === "anomaly") {
-            // Обработка аномалий по правилам
             const lastTwo = Math.abs(balance) % 100;
             const lastThree = Math.abs(balance) % 1000;
             const isEven = (Math.floor(Math.abs(balance)) % 2 === 0);
             if (contract.anomalyType === "double" && (lastTwo % 11 === 0 || lastTwo === 0)) success = true;
             else if (contract.anomalyType === "tripleZero" && lastThree === 0) success = true;
             else if (contract.anomalyType === "mirror") {
-                // зеркало: проверяем последние 4 цифры на палиндром (например, 1221, 4554)
                 const last4 = Math.abs(balance) % 10000;
                 const str = last4.toString();
                 if (str.length === 4 && str[0] === str[3] && str[1] === str[2]) success = true;
@@ -839,9 +801,8 @@
             else if (contract.anomalyType === "even" && isEven) success = true;
             else success = false;
             message = success ? "🎯 Аномалия подтверждена! ИИ ошибся в алгоритмах." : "❌ Условие аномалии не выполнено. ИИ был прав.";
-            if (success) balance = inputValue; // обновляем баланс после аномалии
+            if (success) balance = inputValue;
         } else if (contract.type === "live") {
-            // Для live-заданий: стример вводит 1, если условие выполнено (бонуска выпала, множитель пойман и т.д.), иначе 0
             if (inputValue === 1) {
                 success = true;
                 message = "🔥 Условие live-режима выполнено! ИИ солгал!";
@@ -965,7 +926,7 @@
         }, 30000);
     }
 
-    // --- ИНИЦИАЛИЗАЦИЯ ---
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
     window.toggleSound = function() {
         soundMuted = !soundMuted;
         const btn = document.getElementById('soundToggleBtn');
@@ -1006,6 +967,11 @@
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            // Принудительно запускаем звуки, если игра уже идёт
+            if (gameStarted && !soundMuted) {
+                startAmbientRain();
+                startAtmosphericHum();
+            }
         });
     }
     init();
