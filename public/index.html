@@ -17,7 +17,7 @@
             color: #0f0;
             min-height: 100vh;
             overflow-x: hidden;
-            transition: background 0.2s;
+            transition: background 0.3s ease;
         }
         body.glitch-bg {
             animation: bgPulseRed 0.15s infinite alternate;
@@ -42,7 +42,22 @@
             height: 100%;
             pointer-events: none;
             z-index: 1;
-            opacity: 0.6;
+            opacity: 0.55;
+        }
+        .blood-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9997;
+            background: radial-gradient(circle at 20% 20%, rgba(139,0,0,0) 70%, rgba(139,0,0,0.4) 90%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .blood-overlay.active {
+            opacity: 1;
         }
         .container {
             position: relative;
@@ -66,6 +81,10 @@
             text-align: center;
             max-width: 550px;
             width: 90%;
+        }
+        .setup-card h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
         }
         .balance-input {
             background: #111;
@@ -294,6 +313,7 @@
 </head>
 <body>
 <canvas id="rainCanvas"></canvas>
+<div class="blood-overlay" id="bloodOverlay"></div>
 <div class="container">
     <div class="status-bar" id="statusBar"></div>
     <div id="setupScreen" class="setup-screen">
@@ -371,6 +391,7 @@
     let audioCtx = null;
     let soundMuted = false;
     let rainSoundNode = null;
+    let ambientHumNode = null;
     let gameStarted = false;
     let currentContractIndex = 0;          
     let fear = 15;
@@ -463,162 +484,372 @@
         stepsContainer: document.getElementById('stepsContainer')
     };
 
-    // ========== АТМОСФЕРНЫЕ ЗВУКИ (ОРИГИНАЛЬНЫЙ ДОЖДЬ) ==========
+    // ========== ЭТАЛОННЫЕ ЗВУКИ И ВИЗУАЛ (из когнитивного сбоя) ==========
     function startAmbientRain() {
         if (!audioCtx || soundMuted || rainSoundNode) return;
         try {
-            const bufferSize = audioCtx.sampleRate * 2;   // как в оригинале
+            const now = audioCtx.currentTime;
+            const bufferSize = audioCtx.sampleRate * 2;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
-            let last = 0;
-            for (let i = 0; i < bufferSize; i++) {
-                const white = Math.random() * 2 - 1;
-                data[i] = (last + 0.02 * white) / 1.02;
-                last = data[i];
-            }
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            
             rainSoundNode = audioCtx.createBufferSource();
             rainSoundNode.buffer = buffer;
             rainSoundNode.loop = true;
+            
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'bandpass';
-            filter.frequency.value = 1000;   // частота, как в первых версиях
+            filter.frequency.value = 1000;
             filter.Q.value = 0.7;
-            const gain = audioCtx.createGain();
-            gain.gain.value = 0.09;           // громкость, приятный шум
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.04;
+            
             rainSoundNode.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioCtx.destination);
-            rainSoundNode.start(0);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            rainSoundNode.start(now);
         } catch(e) { console.log(e); }
     }
-
-    function stopAllAmbient() {
-        if (rainSoundNode) { try { rainSoundNode.stop(); } catch(e){} rainSoundNode = null; }
+    
+    function startAtmosphericHum() {
+        if (!audioCtx || soundMuted || ambientHumNode) return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc1.type = 'sine';   osc1.frequency.value = 50;
+            osc2.type = 'sawtooth'; osc2.frequency.value = 50.5;
+            const lowpass = audioCtx.createBiquadFilter();
+            lowpass.type = 'lowpass';
+            lowpass.frequency.value = 70;
+            gainNode.gain.value = 0.07;
+            osc1.connect(lowpass);
+            osc2.connect(lowpass);
+            lowpass.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc1.start(now);
+            osc2.start(now);
+            ambientHumNode = { osc1, osc2, gainNode };
+        } catch(e) { console.log(e); }
     }
-
-    function playBeep(freq, type, duration, vol=0.08) {
-        if (soundMuted || !audioCtx || audioCtx.state !== 'running') return;
+    
+    function stopAllAmbientSounds() {
+        if (rainSoundNode) {
+            try { rainSoundNode.stop(); } catch(e){}
+            rainSoundNode = null;
+        }
+        if (ambientHumNode) {
+            try { ambientHumNode.osc1.stop(); ambientHumNode.osc2.stop(); } catch(e){}
+            ambientHumNode = null;
+        }
+    }
+    
+    function playBeep(freq, duration, type='sine', volume=0.1) {
+        if (soundMuted) return;
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (audioCtx.state !== 'running') return;
         try {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(vol, now);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start(now);
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.start();
             osc.stop(now + duration);
-        } catch(e){}
+        } catch(e) {}
     }
-
+    function soundSuccess() { playBeep(880, 0.25, 'sine', 0.12); }
+    function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
+    function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
+    
     function triggerThunder() {
         if (!gameStarted) return;
-        // Вспышка
+        
+        // Визуальная вспышка
         const flash = document.createElement('div');
         flash.style.position = 'fixed';
         flash.style.top = 0; flash.style.left = 0; flash.style.width = '100%'; flash.style.height = '100%';
-        flash.style.backgroundColor = 'white';
-        flash.style.zIndex = 10001;
-        flash.style.pointerEvents = 'none';
-        flash.style.opacity = 0.9;
+        flash.style.backgroundColor = 'white'; flash.style.zIndex = 10001; flash.style.pointerEvents = 'none';
+        flash.style.opacity = 0;
         document.body.appendChild(flash);
-        setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 200); }, 100);
-        // Звук грома (оставляем как был)
+        flash.style.transition = 'opacity 0.05s';
+        flash.style.opacity = 0.9;
+        setTimeout(() => {
+            flash.style.opacity = 0;
+            setTimeout(() => flash.remove(), 200);
+        }, 100);
+        
+        const darken = document.createElement('div');
+        darken.style.position = 'fixed';
+        darken.style.top = 0; darken.style.left = 0; darken.style.width = '100%'; darken.style.height = '100%';
+        darken.style.backgroundColor = 'black'; darken.style.zIndex = 10000; darken.style.pointerEvents = 'none';
+        darken.style.opacity = 0;
+        document.body.appendChild(darken);
+        darken.style.transition = 'opacity 0.1s';
+        darken.style.opacity = 0.95;
+        setTimeout(() => {
+            darken.style.opacity = 0;
+            setTimeout(() => darken.remove(), 500);
+        }, 1500);
+        
+        // Звук грома
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
-                const duration = 2.5 + fear / 50;
+                const duration = 3.0 + (fear / 50.0);
                 const bufferSize = audioCtx.sampleRate * duration;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
-                let last = 0;
+                let lastOut = 0.0;
                 for (let i = 0; i < bufferSize; i++) {
                     const white = Math.random() * 2 - 1;
-                    data[i] = (last + 0.02 * white) / 1.02;
-                    last = data[i];
+                    data[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = data[i];
+                    data[i] *= 4.0;
                 }
-                const noise = audioCtx.createBufferSource();
-                noise.buffer = buffer;
-                const lp = audioCtx.createBiquadFilter();
-                lp.type = 'lowpass';
-                lp.frequency.setValueAtTime(100 + fear * 2, now);
-                lp.frequency.exponentialRampToValueAtTime(30, now + duration);
-                const gain = audioCtx.createGain();
-                const maxVol = 0.35 + fear / 180;
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(maxVol, now + 0.1);
-                let t = 0.2;
-                while (t < duration - 0.5) {
-                    gain.gain.linearRampToValueAtTime(maxVol * (0.2 + Math.random() * 0.7), now + t);
-                    t += 0.15 + Math.random() * 0.2;
+                const noiseSource = audioCtx.createBufferSource();
+                noiseSource.buffer = buffer;
+                const lpFilter = audioCtx.createBiquadFilter();
+                lpFilter.type = 'lowpass';
+                const baseFreq = 120 + (fear * 2);
+                lpFilter.frequency.setValueAtTime(baseFreq, now);
+                lpFilter.frequency.exponentialRampToValueAtTime(30, now + duration);
+                const thunderGain = audioCtx.createGain();
+                const maxVolume = 0.3 + (fear / 200);
+                thunderGain.gain.setValueAtTime(0.001, now);
+                thunderGain.gain.linearRampToValueAtTime(maxVolume, now + 0.05);
+                let timeOffset = 0.15;
+                while (timeOffset < duration - 0.4) {
+                    const randomRumble = maxVolume * (0.2 + Math.random() * 0.6);
+                    const step = 0.08 + Math.random() * 0.18;
+                    thunderGain.gain.linearRampToValueAtTime(randomRumble, now + timeOffset);
+                    timeOffset += step;
                 }
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-                noise.connect(lp);
-                lp.connect(gain);
-                gain.connect(audioCtx.destination);
-                noise.start(now);
-                noise.stop(now + duration);
-            } catch(e) { console.log(e); }
+                thunderGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                noiseSource.connect(lpFilter);
+                lpFilter.connect(thunderGain);
+                thunderGain.connect(audioCtx.destination);
+                noiseSource.start(now);
+                noiseSource.stop(now + duration);
+                
+                if (fear > 30) {
+                    const subOsc = audioCtx.createOscillator();
+                    const subGain = audioCtx.createGain();
+                    subOsc.type = 'triangle';
+                    subOsc.frequency.setValueAtTime(40, now);
+                    subOsc.frequency.linearRampToValueAtTime(20, now + 1.0);
+                    const subVolume = 0.15 + (fear / 250);
+                    subGain.gain.setValueAtTime(subVolume, now);
+                    subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
+                    subOsc.connect(subGain);
+                    subGain.connect(audioCtx.destination);
+                    subOsc.start(now);
+                    subOsc.stop(now + 1.1);
+                }
+            } catch(e) { console.log("Thunder audio error:", e); }
         }
-        shakeScreen(500 + fear * 5, 6 + fear/10);
+        
+        // Тряска экрана
+        const shakeDuration = 500 + (fear * 6);
+        const shakeIntensity = 6 + Math.round(fear / 8);
+        shakeScreen(shakeDuration, shakeIntensity);
     }
-
-    function shakeScreen(ms, intensity) {
-        const body = document.body;
-        const start = performance.now();
-        function animate(t) {
-            if (t - start < ms) {
-                body.style.transform = `translate(${Math.random()*intensity - intensity/2}px, ${Math.random()*intensity - intensity/2}px)`;
-                requestAnimationFrame(animate);
+    
+    function startThunderInterval() {
+        if (window.thunderInterval) clearInterval(window.thunderInterval);
+        window.thunderInterval = setInterval(() => {
+            if (!gameStarted) return;
+            const delay = Math.random() * 30000;
+            setTimeout(() => {
+                if (gameStarted) triggerThunder();
+            }, delay);
+        }, 90000);
+        setTimeout(() => { if (gameStarted) triggerThunder(); }, 10000);
+    }
+    
+    function shakeScreen(duration, intensity) {
+        const container = document.querySelector('.container');
+        if (!container) return;
+        container.style.transition = 'transform 0.05s cubic-bezier(0.2,1.2,0.8,1)';
+        let start = null;
+        function step(timestamp) {
+            if (!start) start = timestamp;
+            const elapsed = timestamp - start;
+            if (elapsed < duration) {
+                const x = (Math.random() - 0.5) * intensity;
+                const y = (Math.random() - 0.5) * intensity;
+                container.style.transform = `translate(${x}px, ${y}px)`;
+                requestAnimationFrame(step);
             } else {
-                body.style.transform = '';
+                container.style.transform = '';
+                container.style.transition = '';
             }
         }
-        requestAnimationFrame(animate);
+        requestAnimationFrame(step);
     }
-
-    // ========== ДОЖДЬ НА CANVAS (усиленный) ==========
-    const canvas = document.getElementById('rainCanvas');
-    const ctx = canvas.getContext('2d');
-    let raindrops = [];
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        raindrops = [];
-        for (let i = 0; i < 160; i++) {
-            raindrops.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                len: 10 + Math.random() * 25,
-                speed: 12 + Math.random() * 18
-            });
+    
+    function pixelateTemporarily() {
+        const container = document.querySelector('.container');
+        if (container) {
+            container.classList.add('pixelated');
+            setTimeout(() => container.classList.remove('pixelated'), 300);
         }
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    function drawRain() {
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = fear > 70 ? 'rgba(255, 80, 80, 0.4)' : 'rgba(0, 255, 0, 0.3)';
-        ctx.lineWidth = 1.8;
-        for (let d of raindrops) {
-            ctx.beginPath();
-            ctx.moveTo(d.x, d.y);
-            ctx.lineTo(d.x + 2, d.y + d.len);
-            ctx.stroke();
-            d.y += d.speed;
-            if (d.y > canvas.height) {
-                d.y = -d.len;
-                d.x = Math.random() * canvas.width;
+    
+    function updateBloodOverlay() {
+        const blood = document.getElementById('bloodOverlay');
+        if (!blood) return;
+        if (fear > 80) blood.classList.add('active');
+        else blood.classList.remove('active');
+    }
+    
+    function updateHeartbeat() {
+        if (!gameStarted) return;
+        if (fear > 60) {
+            if (!window.heartbeatInterval) {
+                const interval = Math.max(350, 1000 - Math.floor(fear / 2) * 8);
+                window.heartbeatInterval = setInterval(() => {
+                    if (fear > 60 && !soundMuted && audioCtx && audioCtx.state === 'running') {
+                        try {
+                            const now = audioCtx.currentTime;
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.type = 'sine';
+                            osc.frequency.value = 60;
+                            gain.gain.setValueAtTime(0.08, now);
+                            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                            osc.start();
+                            osc.stop(now + 0.25);
+                        } catch(e) {}
+                    }
+                }, interval);
+            } else {
+                clearInterval(window.heartbeatInterval);
+                const newInterval = Math.max(350, 1000 - Math.floor(fear / 2) * 8);
+                window.heartbeatInterval = setInterval(() => {
+                    if (fear > 60 && !soundMuted && audioCtx && audioCtx.state === 'running') {
+                        try {
+                            const now = audioCtx.currentTime;
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.type = 'sine';
+                            osc.frequency.value = 60;
+                            gain.gain.setValueAtTime(0.08, now);
+                            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                            osc.start();
+                            osc.stop(now + 0.25);
+                        } catch(e) {}
+                    }
+                }, newInterval);
+            }
+        } else {
+            if (window.heartbeatInterval) clearInterval(window.heartbeatInterval);
+            window.heartbeatInterval = null;
+        }
+    }
+    
+    function addRainOverlay() {
+        const canvas = document.getElementById('rainCanvas');
+        if (!canvas) return;
+        let ctx = canvas.getContext('2d');
+        let width, height;
+        let raindrops = [];
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            raindrops = [];
+            for (let i = 0; i < 400; i++) {
+                raindrops.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    length: 12 + Math.random() * 20,
+                    speed: 8 + Math.random() * 12,
+                    opacity: 0.4 + Math.random() * 0.6
+                });
             }
         }
-        requestAnimationFrame(drawRain);
+        function drawRain() {
+            if (!gameStarted || !ctx) return;
+            ctx.clearRect(0, 0, width, height);
+            ctx.strokeStyle = '#cdf';
+            ctx.lineWidth = 2;
+            for (let r of raindrops) {
+                ctx.beginPath();
+                ctx.moveTo(r.x, r.y);
+                ctx.lineTo(r.x - 3, r.y + r.length);
+                ctx.strokeStyle = `rgba(200, 220, 255, ${r.opacity * 0.8})`;
+                ctx.stroke();
+                r.y += r.speed;
+                if (r.y > height) {
+                    r.y = -r.length;
+                    r.x = Math.random() * width;
+                }
+            }
+            requestAnimationFrame(drawRain);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+        drawRain();
     }
-    drawRain();
+    
+    function startCameraBreathing() {
+        if (window.breathInterval) clearInterval(window.breathInterval);
+        let scale = 1;
+        let direction = 1;
+        window.breathInterval = setInterval(() => {
+            if (!gameStarted) return;
+            const container = document.querySelector('.container');
+            if (container) {
+                scale += direction * 0.0008;
+                if (scale >= 1.008) direction = -1;
+                if (scale <= 0.992) direction = 1;
+                container.style.transition = 'transform 0.5s ease-in-out';
+                container.style.transform = `scale(${scale})`;
+            }
+        }, 80);
+    }
+    
+    let shadowTimeout = null;
+    function showScaryShadow() {
+        if (!gameStarted || fear < 70) return;
+        if (shadowTimeout) return;
+        const shadowDiv = document.createElement('div');
+        shadowDiv.style.position = 'fixed';
+        shadowDiv.style.bottom = '10%';
+        shadowDiv.style.right = '5%';
+        shadowDiv.style.width = '150px';
+        shadowDiv.style.height = '250px';
+        shadowDiv.style.background = 'radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.8), transparent)';
+        shadowDiv.style.borderRadius = '50%';
+        shadowDiv.style.filter = 'blur(10px)';
+        shadowDiv.style.zIndex = 9996;
+        shadowDiv.style.pointerEvents = 'none';
+        shadowDiv.style.opacity = 0;
+        shadowDiv.style.transition = 'opacity 0.2s';
+        document.body.appendChild(shadowDiv);
+        setTimeout(() => shadowDiv.style.opacity = 0.7, 10);
+        setTimeout(() => {
+            shadowDiv.style.opacity = 0;
+            setTimeout(() => shadowDiv.remove(), 300);
+        }, 800);
+        shadowTimeout = setTimeout(() => { shadowTimeout = null; }, 3000);
+    }
 
-    // ========== UI И ЛОГИКА (без изменений) ==========
+    // ========== ИГРОВАЯ ЛОГИКА (без изменений, рабочая) ==========
     function buildStepsUI() {
         if (!els.stepsContainer) return;
         els.stepsContainer.innerHTML = '';
@@ -677,6 +908,9 @@
         }
         updateStepsHighlight();
         if (fear >= 100) finishGame(false);
+        updateBloodOverlay();
+        updateHeartbeat();
+        if (fear > 70 && Math.random() < 0.2 && !eventActive && !game.currentQuestionMode) showScaryShadow();
     }
 
     function loadContract() {
@@ -717,7 +951,7 @@
             els.pollNoBtn.className = 'btn btn-poll selected-no';
             queueSystemMessage("Чат считает: СИСТЕМА ПРАВА. Докажите обратное!");
         }
-        playBeep(300, 'sine', 0.08);
+        playBeep(300, 0.08, 'sine', 0.12);
     };
 
     function submitResult() {
@@ -790,7 +1024,7 @@
             queueSystemMessage("Критическая ошибка! Мои прогнозы разрушены. Ты везучий черт...");
         } else {
             fear += contract.failPenalty;
-            playBeep(220, 'sawtooth', 0.5, 0.1);
+            playBeep(440, 0.5, 'sawtooth', 0.12);
             showInfo("🚨 КОНТРАКТ ПРОВАЛЕН", `${message}\nСтрах вырос на +${contract.failPenalty}%. Обманов ИИ: ${liesCaught}/${LIES_TO_WIN}`);
             queueSystemMessage("Я же говорил. Твои действия предсказуемы. Износ системы растёт.");
         }
@@ -804,7 +1038,13 @@
     function queueSystemMessage(msg) {
         const comment = els.systemComment;
         comment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
-        playBeep(100, 'sine', 0.1, 0.04);
+        playBeep(100, 0.12, 'sine', 0.07);
+        if (window.msgTimeout) clearTimeout(window.msgTimeout);
+        window.msgTimeout = setTimeout(() => {
+            if (comment.innerHTML.includes(msg)) {
+                comment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
+            }
+        }, 4500);
     }
 
     function showInfo(title, desc) {
@@ -815,28 +1055,28 @@
 
     window.closeInfoModal = function() {
         els.infoModal.classList.add('hidden');
-        playBeep(200, 'sine', 0.05);
+        playBeep(200, 0.05, 'sine', 0.08);
     };
 
     function finishGame(win) {
         gameStarted = false;
-        stopAllAmbient();
+        stopAllAmbientSounds();
         if (win) {
             els.finalTitle.innerHTML = "🔓 СИСТЕМА ВЗЛОМАНА!";
             els.finalDesc.innerHTML = `Победа! Ты успешно прошёл все 25 контрактов и разоблачил ИИ ${liesCaught} раз (нужно было ${LIES_TO_WIN}). Баланс ${balance.toLocaleString('ru-RU')} ₽ освобождён. Чат празднует!`;
-            playBeep(880, 'sine', 0.6, 0.2);
+            playBeep(880, 0.6, 'sine', 0.2);
             triggerThunder();
         } else {
             els.finalTitle.innerHTML = "💀 СИСТЕМА УТИЛИЗИРОВАЛА СТРИМ";
             els.finalDesc.innerHTML = `Страх достиг 100%. Ты не смог удержать баланс и разоблачить ИИ (всего ${liesCaught} из ${LIES_TO_WIN} обманов). Твой миллион заморожен. Попробуй снова.`;
-            playBeep(220, 'sawtooth', 1.2, 0.3);
+            playBeep(220, 1.2, 'sawtooth', 0.3);
         }
         els.finalModal.classList.remove('hidden');
     }
 
     function resetGame() {
         gameStarted = false;
-        stopAllAmbient();
+        stopAllAmbientSounds();
         contracts = generateContracts();
         currentContractIndex = 0;
         fear = 15;
@@ -888,11 +1128,14 @@
         els.setupScreen.style.display = 'none';
         els.gameScreen.style.display = 'grid';
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        startAmbientRain();   // запускаем дождь
+        startAmbientRain();
+        startAtmosphericHum();
+        startThunderInterval();
+        updateBloodOverlay();
+        updateHeartbeat();
+        startCameraBreathing();
+        addRainOverlay();
         loadContract();
-        setInterval(() => {
-            if (gameStarted && fear > 40 && Math.random() < 0.3) triggerThunder();
-        }, 30000);
     }
 
     // ========== ИНИЦИАЛИЗАЦИЯ ==========
@@ -903,8 +1146,11 @@
             if (soundMuted) btn.innerHTML = '<i class="fas fa-volume-mute"></i> ЗВУК ВЫКЛ';
             else btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
         }
-        if (soundMuted) stopAllAmbient();
-        else if (gameStarted) { startAmbientRain(); }
+        if (soundMuted) stopAllAmbientSounds();
+        else if (gameStarted && audioCtx && audioCtx.state === 'running') {
+            startAmbientRain();
+            startAtmosphericHum();
+        }
     };
 
     function init() {
@@ -936,8 +1182,9 @@
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            if (gameStarted && !soundMuted) {
+            if (gameStarted && !soundMuted && audioCtx && audioCtx.state === 'running') {
                 startAmbientRain();
+                startAtmosphericHum();
             }
         });
     }
