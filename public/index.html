@@ -3,1838 +3,958 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>КОГНИТИВНЫЙ СБОЙ</title>
+    <title>КОНТРАКТ: СБОЙ СИСТЕМЫ</title>
     <style>
-        /* ... весь твой стиль без изменений (оставлен как был) ... */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', 'Segoe UI', monospace;
             user-select: none;
         }
         body {
+            font-family: 'Inter', 'Segoe UI', monospace;
             background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101);
             color: #0f0;
-            padding: 20px;
             min-height: 100vh;
-            transition: background 0.3s ease;
-        }
-        @keyframes bgPulseRed {
-            0% { background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101); }
-            100% { background: radial-gradient(circle at 80% 70%, #4a0f0f, #330000); }
+            overflow-x: hidden;
+            transition: background 0.2s;
         }
         body.glitch-bg {
             animation: bgPulseRed 0.15s infinite alternate;
         }
-        @keyframes bgPulseConstant {
-            0% { background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101); }
-            100% { background: radial-gradient(circle at 80% 70%, #2a0f0f, #1a0000); }
+        @keyframes bgPulseRed {
+            0% { background: radial-gradient(circle, #2a0a0a 0%, #050000 100%); }
+            100% { background: radial-gradient(circle, #5a0f0f 0%, #150000 100%); }
         }
-        .glitch-overlay {
-            position: fixed;
-            top:0; left:0; width:100%; height:100%;
-            pointer-events: none;
-            background: repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,255,0,0.03) 2px, transparent 2px, transparent 8px);
-            z-index:1;
-            animation: glitchShift 8s infinite;
+        .glitch-text {
+            animation: textGlitch 0.15s infinite;
         }
-        @keyframes glitchShift {
-            0% { transform: translateX(0); opacity:0.2; }
-            10% { transform: translateX(3px); opacity:0.6; }
-            20% { transform: translateX(-2px); opacity:0.2; }
-            100% { transform: translateX(0); opacity:0.2; }
+        @keyframes textGlitch {
+            0% { transform: skew(0deg); text-shadow: 2px 0 red; opacity: 1; }
+            50% { transform: skew(2deg); text-shadow: -2px 0 blue; opacity: 0.9; }
+            100% { transform: skew(0deg); text-shadow: none; }
         }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(14px);
-            border-radius: 56px;
-            padding: 24px;
-            border: 1px solid #0f0a;
-            box-shadow: 0 0 40px rgba(0,255,0,0.2), inset 0 0 10px rgba(0,255,0,0.1);
-            position: relative;
-            z-index: 2;
-            transition: transform 0.1s cubic-bezier(0.2,1.2,0.8,1), box-shadow 0.3s;
-        }
-        .container.pixelated {
-            filter: url(#pixelate);
-            transition: filter 0.05s;
-        }
-        .blood-overlay {
+        canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 9997;
-            background: radial-gradient(circle at 20% 20%, rgba(139,0,0,0) 70%, rgba(139,0,0,0.4) 90%);
-            opacity: 0;
-            transition: opacity 0.3s;
+            z-index: 1;
+            opacity: 0.55;
         }
-        .blood-overlay.active {
-            opacity: 1;
-        }
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 32px;
-            padding-bottom: 12px;
-            border-bottom: 1px dashed #0f0;
-        }
-        .sys-tag {
-            background: #000000aa;
-            padding: 6px 20px;
-            border-radius: 40px;
-            letter-spacing: 1px;
-            font-weight: 300;
-        }
-        .btn-outline {
-            background: #111;
-            border: 1px solid #0f0;
-            color: #0f0;
-            padding: 6px 16px;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn-outline:hover {
-            background: #0f0;
-            color: black;
-            box-shadow: 0 0 12px #0f0;
-        }
-        .main-grid {
-            display: flex;
-            gap: 28px;
-            flex-wrap: wrap;
-        }
-        .left-panel {
-            flex: 1.2;
-            min-width: 280px;
-        }
-        .right-panel {
-            flex: 2;
-            min-width: 360px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-        .player-card {
-            background: #000000aa;
-            border-radius: 48px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #0f0;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        }
-        .avatar {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .stress-bar, .trust-bar, .phase-progress { margin: 16px 0; }
-        .bar-bg {
-            background: #1a1a1a;
-            border-radius: 20px;
-            height: 12px;
-            overflow: hidden;
-            margin: 5px 0;
-        }
-        .stress-fill { background: linear-gradient(90deg, #ffaa33, #ff3366); width:0%; height:100%; transition: width 0.3s; }
-        .trust-fill { background: linear-gradient(90deg, #0f0, #0ff); width:0%; height:100%; transition: width 0.3s; }
-        .phase-fill { background: #0f0; width:0%; height:100%; }
-        .profile-stats {
-            margin-top: 15px;
-            font-size: 0.8rem;
-            text-align: center;
-            border-top: 1px solid #0f0;
-            padding-top: 12px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        .phase-map {
-            background: #000000aa;
-            border-radius: 48px;
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 20px;
         }
-        .phase-item {
+        /* Стартовый экран */
+        .setup-screen {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
-            background: #0a0a0a;
-            border-radius: 34px;
-            border-left: 3px solid #0f0;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .phase-item.active {
-            border-left-color: #ffaa33;
-            background: #0f0c;
-            color: black;
-        }
-        .info-box {
-            background: #000000aa;
-            border-radius: 48px;
-            padding: 20px;
-            margin-top: 20px;
-            border-left: 3px solid #0ff;
-            font-size: 0.85rem;
-        }
-        .mission-box {
-            background: #000000aa;
-            border-radius: 56px;
-            padding: 28px;
-            backdrop-filter: blur(8px);
-            transition: all 0.2s;
-        }
-        .quest {
-            font-size: 1.3rem;
-            background: #0a0a0a;
-            padding: 20px;
-            border-radius: 48px;
-            margin: 24px 0;
-            border: 1px solid #0f0;
-            color: #0f0;
-            line-height: 1.4;
-            transition: color 0.05s;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 20px;
-            margin: 28px 0 20px;
-            flex-wrap: wrap;
             justify-content: center;
+            align-items: center;
+            min-height: 80vh;
         }
-        .btn-success, .btn-fail, .btn-choice, .answer-btn {
+        .setup-card {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(12px);
+            border: 2px solid #0f0;
+            border-radius: 48px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .setup-card h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .balance-input {
+            background: #111;
+            border: 2px solid #0f0;
+            padding: 14px 20px;
+            border-radius: 60px;
+            color: #0f0;
+            font-size: 1.4rem;
+            width: 100%;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #0f0;
+            border: none;
             padding: 12px 28px;
             border-radius: 60px;
             font-weight: bold;
+            font-size: 1.1rem;
             cursor: pointer;
-            border: none;
-            font-size: 1rem;
-            transition: all 0.08s linear;
+            transition: 0.2s;
+            color: black;
             margin: 5px;
         }
-        .btn-success { background: #0f0; color: black; }
-        .btn-fail { background: #ff3366; color: white; }
-        .btn-choice, .answer-btn { background: #111; border: 2px solid #0f0; color: #0f0; }
-        .btn-choice:hover, .answer-btn:hover { background: #0f0; color: black; }
+        .btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px #0f0;
+        }
+        .btn:disabled {
+            background: #222 !important;
+            border-color: #444 !important;
+            color: #555 !important;
+            cursor: not-allowed;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        .btn-poll {
+            background: #111;
+            border: 2px solid #0f0;
+            color: #0f0;
+        }
+        .btn-poll.selected-yes {
+            background: #00ff00 !important;
+            color: #000 !important;
+        }
+        .btn-poll.selected-no {
+            background: #ff3366 !important;
+            color: #fff !important;
+            border-color: #ff3366 !important;
+        }
+        /* Игровой экран */
+        .game-screen {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 800px) {
+            .game-screen { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 24px;
+            border: 1px solid #0f0;
+        }
+        .stats {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .stat-bar {
+            margin: 10px 0;
+        }
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .bar-bg {
+            background: #1a1a1a;
+            border-radius: 20px;
+            height: 16px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            width: 0%;
+            height: 100%;
+            transition: width 0.3s;
+        }
+        .fear-fill { background: linear-gradient(90deg, #ffaa33, #ff3366); }
+        .steps {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .steps::-webkit-scrollbar { width: 6px; }
+        .steps::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
+        .steps::-webkit-scrollbar-thumb { background: #0f0; border-radius: 10px; }
+        
+        .step-item {
+            background: #0a0a0a;
+            padding: 12px 20px;
+            margin: 8px 0;
+            border-radius: 40px;
+            border-left: 4px solid #0f0;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        .step-item.active {
+            border-left-color: #ffaa33;
+            background: rgba(0, 255, 0, 0.15);
+            color: #fff;
+            box-shadow: inset 0 0 10px rgba(0,255,0,0.1);
+        }
+        .step-item.completed {
+            opacity: 0.4;
+            text-decoration: line-through;
+            border-left-color: #888;
+        }
+        .contract-card {
+            background: rgba(0,0,0,0.7);
+            border-radius: 48px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .contract-title {
+            font-size: 1rem;
+            color: #0ff;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+        .contract-text {
+            font-size: 1.2rem;
+            line-height: 1.4;
+            background: #0a0a0a;
+            padding: 20px;
+            border-radius: 32px;
+            margin: 16px 0;
+        }
+        .contract-goal {
+            background: #111;
+            padding: 12px;
+            border-radius: 32px;
+            border-left: 3px solid #ffaa33;
+            margin: 16px 0;
+            font-weight: bold;
+        }
+        .input-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .result-input {
+            background: #111;
+            border: 2px solid #0f0;
+            padding: 12px;
+            border-radius: 60px;
+            color: #0f0;
+            font-size: 1.2rem;
+            text-align: center;
+            outline: none;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .poll-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 15px 0;
+        }
         .system-comment {
             background: #000000cc;
-            padding: 14px;
+            padding: 16px;
             border-radius: 32px;
             font-style: italic;
             border-left: 4px solid #ff3366;
-            font-size: 0.9rem;
-            transition: 0.2s;
             min-height: 80px;
+            margin-top: 16px;
         }
         .chat-tool {
-            background: #000000aa;
-            border-radius: 48px;
-            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .btn-hint {
-            background: #0f0;
-            border: none;
-            padding: 6px 20px;
-            border-radius: 60px;
-            cursor: pointer;
-            font-weight: bold;
+            margin-top: 16px;
+            background: #000000aa;
+            border-radius: 48px;
+            padding: 12px 20px;
         }
         .modal {
             position: fixed;
-            top:0; left:0;
-            width:100%; height:100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: #000000ee;
             backdrop-filter: blur(20px);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
+            z-index: 1000;
         }
         .modal-content {
             background: #0a0f1a;
             border: 2px solid #0f0;
             border-radius: 60px;
             padding: 32px;
-            max-width: 600px;
+            max-width: 500px;
             width: 90%;
             text-align: center;
-            color: #0f0;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .modal-btn {
-            background: #0f0;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 60px;
-            margin: 16px 8px;
-            cursor: pointer;
-            font-weight: bold;
-            color: black;
-            font-size: 1rem;
-            transition: 0.1s;
-        }
-        .modal-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 12px #0f0;
-        }
-        .balance-input {
-            background: #111;
-            border: 2px solid #0f0;
-            padding: 12px 20px;
-            border-radius: 60px;
-            color: #0f0;
-            font-size: 1.2rem;
-            width: 250px;
-            text-align: center;
-            margin: 10px auto;
         }
         .hidden { display: none; }
-        .rules-container {
-            text-align: left;
-            margin: 20px 0;
-            padding: 10px;
-            background: rgba(0,0,0,0.4);
-            border-radius: 32px;
-        }
-        .rules-container p { margin: 12px 0; line-height: 1.5; font-size: 0.9rem; }
-        .rules-container h4 { color: #0ff; margin: 16px 0 8px 0; font-size: 1rem; }
-        .rules-container hr { border-color: #0f0; margin: 16px 0; }
-        .warning { color: #ffaa33; font-weight: bold; }
-        .ban-notification {
-            position: fixed;
-            top: 30%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #ff0000cc;
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 20px 40px;
-            border-radius: 30px;
-            font-weight: bold;
-            font-size: 1.5rem;
-            z-index: 3000;
-            text-align: center;
-            border: 2px solid white;
-            box-shadow: 0 0 30px red;
-            white-space: nowrap;
-        }
-        .question-options {
+        .status-bar {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        #questionButtons {
-            margin: 15px 0;
-        }
-        svg {
-            position: absolute;
-            width: 0;
-            height: 0;
-        }
-        .sound-toggle {
-            background: #111;
-            border: 1px solid #0f0;
-            color: #0f0;
-            padding: 6px 12px;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-left: 10px;
-            font-size: 0.9rem;
-        }
-        .sound-toggle:hover {
-            background: #0f0;
-            color: black;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-<div class="glitch-overlay"></div>
+<canvas id="rainCanvas"></canvas>
 <div class="container">
-    <div class="status-bar">
-        <div class="sys-tag"><i class="fas fa-brain"></i> НЕЙРОСЕТЬ v.3.2</div>
-        <div style="display: flex; gap: 10px;">
-            <button id="soundToggleBtn" class="sound-toggle"><i class="fas fa-volume-up"></i> ЗВУК ВКЛ</button>
-            <button id="resetBtn" class="btn-outline"><i class="fas fa-sync-alt"></i> ПЕРЕЗАГРУЗКА</button>
+    <div class="status-bar" id="statusBar"></div>
+    <div id="setupScreen" class="setup-screen">
+        <div class="setup-card">
+            <h1><i class="fas fa-brain"></i> КОНТРАКТ: СБОЙ СИСТЕМЫ</h1>
+            <p>ИИ держит твой баланс в заложниках. Выполняй контракты в казино, лови систему на лжи и не дай страху достичь 100%.</p>
+            <input type="number" id="startBalance" class="balance-input" placeholder="Баланс в рублях" value="1000000">
+            <button id="confirmStartBtn" class="btn">НАЧАТЬ ЭКСПЕРИМЕНТ</button>
         </div>
     </div>
-    <div class="main-grid">
-        <div class="left-panel">
-            <div class="player-card">
-                <div class="avatar"><i class="fas fa-microphone-alt"></i> СТРИМЕР: ALEKSEY</div>
-                <div class="stress-bar"><span><i class="fas fa-heartbeat"></i> СТРЕСС</span><div class="bar-bg"><div id="stressFill" class="stress-fill"></div></div><span id="stressValue">0</span>%</div>
-                <div class="trust-bar"><span><i class="fas fa-robot"></i> ДОВЕРИЕ К СИСТЕМЕ</span><div class="bar-bg"><div id="trustFill" class="trust-fill"></div></div><span id="trustValue">50</span>%</div>
-                <div class="phase-progress"><span><i class="fas fa-chart-line"></i> ЭТАП <span id="phaseNum">1</span>/5</span><div class="bar-bg"><div id="phaseFill" class="phase-fill"></div></div></div>
-                <div class="profile-stats"><span>❌ ОБМАН: <span id="mistakeStat">0</span></span> <span>💰 БАЛАНС: <span id="balanceStat">0</span>$</span></div>
+
+    <div id="gameScreen" class="game-screen">
+        <div class="panel stats">
+            <div>
+                <div class="stat-label"><span><i class="fas fa-heartbeat"></i> СТРАХ / ИЗНОС</span><span id="stressNum">0</span>%</div>
+                <div class="bar-bg"><div id="stressProgress" class="bar-fill fear-fill" style="width:0%"></div></div>
             </div>
-            <div class="info-box">
-                <h3><i class="fas fa-skull-crossbones"></i> СУТЬ ЭКСПЕРИМЕНТА</h3>
-                <ul>
-                    <li><strong>Задания</strong> — нажимай УСПЕХ/ПРОВАЛ, отвечай на вопросы. Влияют на стресс и доверие.</li>
-                    <li><strong>Страшные вопросы</strong> появляются вместо заданий (шанс 50%). Правильный ответ → лёгкое задание, неправильный → сложное.</li>
-                    <li><strong>Подсказка (кнопка внизу)</strong> может врать. Каждая ложная подсказка увеличивает счётчик ОБМАН. При 4 обманах — поражение.</li>
-                    <li><strong>После этапа введи реальный баланс</strong> — система подстроит сложность следующего этапа, но твой стресс и доверие сохранятся.</li>
-                    <li>Глюки интерфейса — часть игры.</li>
-                    <li><strong>Поражение:</strong> стресс ≥ 100% или обман > 3. Победа: пройти 5 этапов.</li>
-                </ul>
+            <div>
+                <div class="stat-label"><span><i class="fas fa-handcuffs"></i> ОБМАНЫ ИИ</span><span id="lieStat">0</span>/3</div>
+                <div class="bar-bg"><div id="lieProgress" class="bar-fill" style="width:0%; background:#0ff;"></div></div>
             </div>
-            <div class="phase-map" id="phaseList"></div>
+            <div>
+                <div class="stat-label"><span><i class="fas fa-coins"></i> БАЛАНС</span><span id="balanceStat">0</span> ₽</div>
+            </div>
+            <div class="steps" id="stepsContainer"></div>
         </div>
-        <div class="right-panel">
-            <div class="mission-box">
-                <div class="mission-header"><span><i class="fas fa-tasks"></i> ТЕКУЩЕЕ ЗАДАНИЕ</span><span id="phaseNameBadge">ЭТАП 1/5</span></div>
-                <div class="quest" id="questText">Загрузка...</div>
-                <div id="actionButtons" class="action-buttons"></div>
+
+        <div class="panel">
+            <div class="contract-card">
+                <div class="contract-title"><i class="fas fa-dice-d6"></i> ТЕКУЩИЙ КОНТРАКТ</div>
+                <div id="questText" class="contract-text">Загрузка...</div>
+                <div id="goalText" class="contract-goal">🎯 ЦЕЛЬ: ---</div>
+                <div class="poll-buttons" id="pollButtons">
+                    <button id="pollYesBtn" class="btn btn-poll">ЧАТ ВЕРИТ ИИ</button>
+                    <button id="pollNoBtn" class="btn btn-poll">ЧАТ НЕ ВЕРИТ ИИ</button>
+                </div>
+                <div class="input-zone">
+                    <input type="number" id="resultInput" class="result-input" placeholder="Введи результат (баланс или выигрыш бонусы)">
+                    <div class="action-buttons">
+                        <button id="submitResultBtn" class="btn">ПОДТВЕРДИТЬ</button>
+                    </div>
+                </div>
                 <div class="system-comment" id="systemComment"><i class="fas fa-robot"></i> Система: ожидание...</div>
+                <div class="chat-tool">
+                    <span><i class="fas fa-comment-dots"></i> Чат: <span id="chatMood">😨 паника</span></span>
+                    <button id="hintBtn" class="btn btn-poll"><i class="fas fa-question-circle"></i> ПОДСКАЗКА</button>
+                </div>
             </div>
-            <div class="chat-tool"><i class="fas fa-comment-dots"></i> ПОДСКАЗКА (МОЖЕТ БЫТЬ ЛОЖНОЙ)<button id="hintBtn" class="btn-hint"><i class="fas fa-question-circle"></i> ВЗЯТЬ</button></div>
         </div>
     </div>
 </div>
 
-<!-- Модалки -->
-<div id="startModal" class="modal">
+<div id="infoModal" class="modal hidden">
     <div class="modal-content">
-        <h2><i class="fas fa-dice-d6"></i> КОГНИТИВНЫЙ СБОЙ</h2>
-        <div class="rules-container">
-            <h4>📜 РЕАЛЬНОСТЬ ИГРЫ</h4>
-            <p><span class="warning">ВНИМАНИЕ:</span> Ты попал в систему, которая анализирует твое поведение.</p>
-            <p><strong>🔹 Задания этапа</strong> (6→5→4→3→2). Успех/провал влияют на стресс и доверие.</p>
-            <p><strong>🔹 Страшные психологические вопросы</strong> появляются вместо заданий (шанс 50%). Правильный ответ → следующее задание лёгкое, неправильный → сложное.</p>
-            <p><strong>🔹 Подсказка</strong> может быть ложной. Каждая ложная подсказка увеличивает счётчик ОБМАН. При 4 обманах — поражение.</p>
-            <p><strong>🔹 После этапа введи реальный баланс</strong> — система подстроит сложность следующего этапа, но стресс и доверие не сбрасываются.</p>
-            <p><strong>🔹 Поражение:</strong> стресс = 100% или обман > 3. Победа: пройти 5 этапов.</p>
-            <hr>
-            <p>Введи СТАРТОВЫЙ БАЛАНС (положительное число):</p>
-            <input type="number" id="startBalance" class="balance-input" placeholder="20000" value="20000">
-            <button id="confirmStartBtn" class="modal-btn">ЗАПУСТИТЬ</button>
-        </div>
-    </div>
-</div>
-<div id="stageTransitionModal" class="modal hidden">
-    <div class="modal-content">
-        <h2>📊 ВВОД БАЛАНСА</h2>
-        <p>Ты выполнил задания этапа <span id="stageNameSpan"></span>.</p>
-        <p>Введи свой ТЕКУЩИЙ баланс (положительное число):</p>
-        <input type="number" id="realBalanceInput" class="balance-input" placeholder="Баланс">
-        <button id="submitRealBalance" class="modal-btn">ПОДТВЕРДИТЬ</button>
+        <h3 id="infoTitle"></h3>
+        <p id="infoDesc" style="margin: 20px 0;"></p>
+        <button onclick="closeInfoModal()" class="btn">ПОНЯЛ</button>
     </div>
 </div>
 <div id="finalModal" class="modal hidden">
     <div class="modal-content">
-        <h2>🔮 ПРИГОВОР СИСТЕМЫ</h2>
-        <p id="finalVerdict"></p>
-        <p id="finalDesc"></p>
-        <div class="modal-buttons" style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
-            <button id="safeFinal" class="modal-btn">ЗАБРАТЬ</button>
-            <button id="riskFinal" class="modal-btn risk" style="background: #ff3366; color: white;">ДОКАЗАТЬ</button>
-        </div>
-        <button id="closeFinal" class="modal-btn" style="display: none;">НАЧАТЬ ЗАНОВО</button>
+        <h2 id="finalTitle"></h2>
+        <p id="finalDesc" style="margin: 20px 0;"></p>
+        <button id="closeFinal" class="btn">НАЧАТЬ ЗАНОВО</button>
     </div>
 </div>
-<div id="questionModal" class="modal hidden">
-    <div class="modal-content">
-        <h2 id="questionModalTitle">⚠️ СИСТЕМНЫЙ ЗАПРОС</h2>
-        <p id="questionText"></p>
-        <div id="questionButtons"></div>
-        <button id="closeQuestionModal" class="modal-btn" style="background:#333;">ЗАКРЫТЬ</button>
-    </div>
-</div>
-
-<svg>
-    <filter id="pixelate" x="0" y="0" width="100%" height="100%">
-        <feFlood x="0" y="0" width="100%" height="100%" flood-color="black" result="blackFill"/>
-        <feComposite in="SourceGraphic" in2="blackFill" operator="in" result="masked"/>
-        <feMorphology operator="dilate" radius="4" in="masked" result="pixelated"/>
-    </filter>
-</svg>
 
 <script>
 (function(){
-    // ========== КОНСТАНТЫ ==========
-    const STAGES = [
-        { name: "ДОВЕРИЕ", missions: 6 },
-        { name: "СОМНЕНИЕ", missions: 5 },
-        { name: "ДАВЛЕНИЕ", missions: 4 },
-        { name: "ЛОМКА", missions: 3 },
-        { name: "ФИНАЛ", missions: 2 }
-    ];
-    
-    const STAGE_TASKS = {
-        0: [
-            { baseText: "Выбить бонус в Big Bass Trophy Catch по {bet}$. ", goal: "бонус", vars: ["bet"] },
-            { baseText: "Купи бонус в Sweet rush Bonanza за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Gates of Olympus по {bet}$. ", goal: "не потерять в балансе -{max}$", vars: ["spins","bet","max"] },
-            { baseText: "Купи бонус в Money Train 3 за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Зайти в новую Sweet Bonanza 2500 и словить вкусность. ", goal: "Заносик", vars: [] },
-            { baseText: "Выбей бонус в Wild West Gold ставкой {bet}$.", goal: "{p}%", vars: ["bet","p"] }
-        ],
-        1: [
-            { baseText: "Купи бонус в Le Bandit за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Dog House Megaways по {bet}$.", goal: "бонус", vars: ["spins","bet"] },
-            { baseText: "Купи бонус в Sugar Rush за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Starlight Princess по {bet}$.", goal: "Познать ужас принцесс", vars: ["spins","bet","win"] },
-            { baseText: "Купи бонус в Money Train 4 за {buy}$.", goal: "{p}%", vars: ["buy","p"] }
-        ],
-        2: [
-            { baseText: "Купить бонус в Twerk за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Выбивать бонуски в Le king по {bet}$ пока не останетесь довольны.", goal: "Не сгореть", vars: ["bet"] },
-            { baseText: "Купи бонус в The Dog House multihold за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Сделай {spins} спинов в Frkn bananas и выбить бонус по {bet}$ если не выбили купить.", goal: "x{mult}+", vars: ["spins","bet","mult"] }
-        ],
-        3: [
-            { baseText: "Купи бонус в zeus ze zecond за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Окупить бонус в Princess Suki за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Пробей топовый бонус в Duck hunters за {buy}$.", goal: "{p}%", vars: ["buy","p"] }
-        ],
-        4: [
-            { baseText: "Купить топовый бонус Zeus vs Hades – Gods of War за {buy}$.", goal: "{p}%", vars: ["buy","p"] },
-            { baseText: "Купи бонус в Wild West Gold за {buy}$.", goal: "{p}%", vars: ["buy","p"] }
-        ]
-    };
-    
-    const BET_VALUES = { easy: [6, 8], medium: [12, 15], hard: [18] };
-    const BUY_VALUES = { easy: [400, 600], medium: [800, 1000], hard: [1200] };
-    
-    const VAR_VALUES = {
-        spins: [[15,20,25], [25,30,40], [35,45,60]],
-        p: [[50,50,50], [75,75,75], [100,100,100]],
-        max: [[80,120,180], [150,220,350], [250,400,700]],
-        mult: [[20,30,40], [35,50,75], [60,90,150]],
-        win: [[80,120,200], [150,250,450], [300,500,900]]
-    };
-    
-    const HARD_QUESTIONS = [
-        { text: "В фильме «Куб» (1997) как называется структура, в которой оказались герои?", options: ["Лабиринт", "Куб", "Сфера"], correct: 1 },
-        { text: "Как зовут демона, которого вызывают в фильме «Изгоняющий дьявола»?", options: ["Пазузу", "Валак", "Баал"], correct: 0 },
-        { text: "Что в финале «Пилы» видит доктор Гордон, когда дверь закрывается?", options: ["Мёртвого Адама", "Свою семью", "Пилу"], correct: 0 },
-        { text: "Сколько дней длился реальный эксперимент Стэнфордской тюрьмы?", options: ["3 дня", "6 дней", "14 дней"], correct: 1 },
-        { text: "Как называется синдром, когда человек верит, что близкого заменил двойник?", options: ["Синдром Капгра", "Эффект Манделы", "Синдром Стендаля"], correct: 0 },
-        { text: "Кто написал «Зов Ктулху»?", options: ["Эдгар По", "Стивен Кинг", "Говард Лавкрафт"], correct: 2 },
-        { text: "В каком хорроре появляется Джек Торренс?", options: ["Сияние", "Оно", "Мизери"], correct: 0 },
-        { text: "Что означает SCP во вселенной SCP Foundation?", options: ["Special Containment Procedures", "Secure Contain Protect", "Sécurité Contrôle Protection"], correct: 1 },
-        { text: "Режиссёр фильма «Реинкарнация» (Hereditary)?", options: ["Ари Астер", "Джордан Пил", "Майк Флэнеган"], correct: 0 },
-        { text: "Крипипаста про мальчика, который заставлял детей смотреть в стену?", options: ["Кошмар на улице Вязов", "Слендермен", "Мистер Кенни"], correct: 2 },
-        { text: "Что символизирует красная дверь в фильме «Куб»?", options: ["Выход", "Ловушку", "Начало"], correct: 0 },
-        { text: "Расстройство, при котором человек слышит голоса умерших родственников?", options: ["Посмертный галлюциноз", "Синдром Котара", "Комплекс Электры"], correct: 0 },
-        { text: "Псевдоним маньяка из «Молчания ягнят»?", options: ["Баффало Билл", "Джон Доу", "Декстер"], correct: 0 },
-        { text: "Что в коробке в фильме «Семь»?", options: ["Голова", "Пистолет", "Книга"], correct: 0 },
-        { text: "Эффект, когда незнакомые люди кажутся знакомыми?", options: ["Дежавю", "Жамевю", "Фамэвю"], correct: 2 },
-        { text: "Какой фильм начинается с фразы «Когда я была маленькая, я засыпала и видела один и тот же сон...»?", options: ["Ночной кошмар", "Кошмар на улице Вязов", "Заклятие"], correct: 1 },
-        { text: "Имя антагониста серии Silent Hill?", options: ["Пирамидоголовый", "Вальтак", "Сайлент"], correct: 0 },
-        { text: "Что такое «Эффект Манделы»?", options: ["Ложная память у многих", "Коллективная галлюцинация", "Массовая истерия"], correct: 0 },
-        { text: "Как в «Пункте назначения» погибают герои?", options: ["Несчастный случай", "Самоубийство", "Убийство"], correct: 0 },
-        { text: "Автор «Тени над Иннсмутом»?", options: ["Лавкрафт", "Кинг", "По"], correct: 0 },
-        { text: "Синдром Котара — это?", options: ["Уверенность в собственной смерти", "Страх перед клоунами", "Навязчивое мытьё рук"], correct: 0 },
-        { text: "В каком фильме проклятое видео и звонок через 7 дней?", options: ["Звонок", "Проклятие", "Синистер"], correct: 0 },
-        { text: "Девочка из «Реинкарнации», коллекционирующая головы?", options: ["Анни", "Чарли", "Салли"], correct: 1 },
-        { text: "Что значит «Слендермен»?", options: ["Тонкий мужчина", "Тенистый человек", "Бесконечный мужчина"], correct: 0 },
-        { text: "Финал «Маски красной смерти» По?", options: ["Смерть всех гостей", "Побег героя", "Появление призрака"], correct: 0 },
-        { text: "Что нельзя делать в фильме «Тихое место»?", options: ["Издавать звук", "Смотреть в глаза", "Дышать громко"], correct: 0 },
-        { text: "Неспособность узнавать лица — это?", options: ["Прозопагнозия", "Агнозия", "Алексия"], correct: 0 },
-        { text: "Фильм, где играют в «Хочу ли я жить?»?", options: ["Пила", "Хостел", "Я плюю на ваши могилы"], correct: 0 },
-        { text: "Клиническая смерть с точки зрения парапсихологии?", options: ["Путешествие души", "Временная остановка сердца", "Выход в астрал"], correct: 1 }
-    ];
-    
-    const UNIQUE_EVENTS = [
-        { text: "Какого цвета была кнопка 'ВЫПОЛНЕНО' 5 секунд назад?", effect: { stress: 5, trust: -3 } },
-        { text: "Система фиксирует аномальную активность. Назови любое число от 1 до 10.", effect: { stress: 3, trust: -2 } },
-        { text: "Ты чувствуешь, что за тобой следят. Кто это?", effect: { stress: 8, trust: -5 } }
-    ];
-    
-    const HINT_TEXTS = {
-        0: ["Чат советует: доверяй интуиции, не поддавайся панике", "Зрители шепчут: 'Первый этап — обманка, не верь системе!'", "Подсказка: не торопись нажимать кнопки, система следит за скоростью"],
-        1: ["Чат кричит: 'Они знают, что ты делаешь! Не нажимай ПРОВАЛ!'", "Зрители заметили: 'Стресс растёт — возьми паузу'", "Система попытается тебя запутать, не поддавайся"],
-        2: ["Чат в ужасе: 'Это ловушка! Любой выбор ведёт в тупик!'", "Зрители: 'Доверие падает — не бери подсказки, они ложные'", "Подсказка: на этом этапе важно сохранить холодный рассудок"],
-        3: ["Чат: 'Ты почти сломлен, но не сдавайся!'", "Зрители молятся: 'Не дай системе сломать тебя, борись!'", "Система на грани — твои решения решают всё"],
-        4: ["Финальный рывок! Чат скандирует: 'Не верь ничему, кроме своего чутья!'", "Зрители: 'Последний этап — система будет врать в каждом совете'", "Ты на финишной прямой, не ошибись!"]
-    };
-    
-    let availableQuestions = [...HARD_QUESTIONS];
-    let usedQuestions = [];
-    
-    // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
-    let game = {
-        stage: 0, completedInStage: 0, totalCompleted: 0,
-        stress: 30, trust: 55,
-        balance: 0, balanceStart: 0, stageStartBalance: 0,
-        lies: 0,
-        successStreak: 0, failStreak: 0,
-        difficultyOffset: 0,
-        waitingTransition: false,
-        banNotificationShown: false,
-        currentQuestionMode: false,
-        currentQuestionObj: null,
-        hintUsedForCurrentQuestion: false,
-        pendingTaskDifficulty: null,
-        uniqueEventsTriggered: []
-    };
-    
-    let currentTask = null;
-    let eventActive = false;
-    let messageQueue = [];
-    let isShowingMessage = false;
-    let gameStarted = false;
-    let lastActivityWasQuestion = false;
-    let answeringLock = false;
-    let soundMuted = false;
+    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
     let audioCtx = null;
-    
-    let thunderInterval = null;
-    let heartbeatInterval = null;
-    let fakeCounterInterval = null;
-    let questGlitchInterval = null;
-    let breathInterval = null;
-    let rainAnimationId = null;
-    let rainCanvas = null;
-    let bloodOverlay = null;
-    
+    let soundMuted = false;
     let rainSoundNode = null;
     let ambientHumNode = null;
-    
+    let gameStarted = false;
+    let currentContractIndex = 0;          
+    let fear = 15;
+    let balance = 1000000;
+    let liesCaught = 0;
+    let contractLock = false;
+    let contracts = [];                     
+    let totalContracts = 25;
+    let pollActive = false;                 
+
+    // --- ГЕНЕРАТОР 25 УНИКАЛЬНЫХ КОНТРАКТОВ ---
+    function generateContracts() {
+        const arr = [];
+        for (let i = 1; i <= 25; i++) {
+            let type, text, goal, threshold, failPenalty, stressChange, spinsNeeded = 0;
+            
+            if (i % 4 === 1) type = "balance";
+            else if (i % 4 === 2) type = "bonus";
+            else if (i % 4 === 3) type = "anomaly";
+            else type = "spins";
+            
+            if (type === "balance") {
+                const thresholdVal = Math.floor(800000 + Math.random() * 150000);
+                text = `Система прогнозирует просадку баланса. После следующей игровой сессии твой баланс упадет ниже ${thresholdVal.toLocaleString('ru-RU')} ₽.`;
+                goal = `Сделай 10-20 спинов. Если итоговый баланс ВЫШЕ ${thresholdVal.toLocaleString('ru-RU')} ₽ — ты ловишь ИИ на лжи.`;
+                threshold = thresholdVal;
+                failPenalty = 15 + Math.floor(Math.random() * 15);
+                stressChange = -8 - Math.floor(Math.random() * 7);
+            } else if (type === "bonus") {
+                const buyCost = [50000, 100000, 150000, 200000][Math.floor(Math.random()*4)];
+                const predictedWin = Math.floor(buyCost * (0.2 + Math.random() * 0.4));
+                text = `Купи бонусный раунд за ${buyCost.toLocaleString('ru-RU')} ₽. ИИ гарантирует: выигрыш будет меньше ${predictedWin.toLocaleString('ru-RU')} ₽.`;
+                goal = `Если реальный выигрыш бонусы БОЛЬШЕ ${predictedWin.toLocaleString('ru-RU')} ₽ — система лжёт. Иначе провал.`;
+                threshold = predictedWin;
+                failPenalty = 20 + Math.floor(Math.random() * 15);
+                stressChange = -10 - Math.floor(Math.random() * 10);
+            } else if (type === "anomaly") {
+                text = `Цифровая аномалия: последние две цифры твоего баланса должны стать одинаковыми (00, 11, 22... 99).`;
+                goal = `Подгони баланс мелкими ставками или в Live-играх. Как только условие выполнено — подтверждай.`;
+                threshold = 0;
+                failPenalty = 18 + Math.floor(Math.random() * 12);
+                stressChange = -7 - Math.floor(Math.random() * 8);
+            } else { 
+                const spins = 12 + Math.floor(Math.random() * 15);
+                const targetBalance = 900000 + Math.floor(Math.random() * 80000);
+                text = `Сделай ровно ${spins} спинов по ставке 1 000 ₽. ИИ утверждает, что после этого твой баланс упадёт ниже ${targetBalance.toLocaleString('ru-RU')} ₽.`;
+                goal = `Выполни ${spins} спинов. Если баланс ВЫШЕ ${targetBalance.toLocaleString('ru-RU')} ₽ — ты прав.`;
+                threshold = targetBalance;
+                spinsNeeded = spins;
+                failPenalty = 18 + Math.floor(Math.random() * 15);
+                stressChange = -9 - Math.floor(Math.random() * 8);
+            }
+            arr.push({
+                id: i,
+                type: type,
+                text: text,
+                goal: goal,
+                threshold: threshold,
+                failPenalty: failPenalty,
+                successReward: 1,
+                stressChange: stressChange,
+                spinsNeeded: spinsNeeded
+            });
+        }
+        return arr;
+    }
+
+    // DOM элементы
     const els = {
-        stageNum: document.getElementById('phaseNum'),
-        stageName: document.getElementById('phaseNameBadge'),
-        stressFill: document.getElementById('stressFill'),
-        stressVal: document.getElementById('stressValue'),
-        trustFill: document.getElementById('trustFill'),
-        trustVal: document.getElementById('trustValue'),
-        phaseFill: document.getElementById('phaseFill'),
-        lieStat: document.getElementById('mistakeStat'),
-        balanceStat: document.getElementById('balanceStat'),
+        setupScreen: document.getElementById('setupScreen'),
+        gameScreen: document.getElementById('gameScreen'),
         questText: document.getElementById('questText'),
-        actionButtons: document.getElementById('actionButtons'),
-        phaseList: document.getElementById('phaseList'),
-        systemComment: document.getElementById('systemComment')
+        goalText: document.getElementById('goalText'),
+        systemComment: document.getElementById('systemComment'),
+        stressProgress: document.getElementById('stressProgress'),
+        stressNum: document.getElementById('stressNum'),
+        balanceStat: document.getElementById('balanceStat'),
+        lieStat: document.getElementById('lieStat'),
+        resultInput: document.getElementById('resultInput'),
+        submitBtn: document.getElementById('submitResultBtn'),
+        hintBtn: document.getElementById('hintBtn'),
+        chatMood: document.getElementById('chatMood'),
+        finalModal: document.getElementById('finalModal'),
+        finalTitle: document.getElementById('finalTitle'),
+        finalDesc: document.getElementById('finalDesc'),
+        infoModal: document.getElementById('infoModal'),
+        infoTitle: document.getElementById('infoTitle'),
+        infoDesc: document.getElementById('infoDesc'),
+        pollYesBtn: document.getElementById('pollYesBtn'),
+        pollNoBtn: document.getElementById('pollNoBtn'),
+        stepsContainer: document.getElementById('stepsContainer')
     };
-    
-    // ========== ОЧЕРЕДЬ СООБЩЕНИЙ ==========
-    let msgTimeout = null;
-    function showMessageImmediate(msg, urgent = false) {
-        if (msgTimeout) clearTimeout(msgTimeout);
-        isShowingMessage = false;
-        messageQueue = [];
-        els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
-        els.systemComment.style.borderLeftColor = urgent ? "#ffaa33" : "#ff3366";
-        msgTimeout = setTimeout(() => {
-            if (messageQueue.length === 0) {
-                els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
-            } else {
-                processMessageQueue();
-            }
-            msgTimeout = null;
-        }, 4500);
-    }
-    
-    function processMessageQueue() {
-        if (isShowingMessage) return;
-        if (messageQueue.length === 0) return;
-        isShowingMessage = true;
-        const { msg, isUrgent } = messageQueue.shift();
-        els.systemComment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
-        els.systemComment.style.borderLeftColor = isUrgent ? "#ffaa33" : "#ff3366";
-        setTimeout(() => {
-            isShowingMessage = false;
-            processMessageQueue();
-            if (messageQueue.length === 0 && !isShowingMessage) {
-                setTimeout(() => {
-                    if (!isShowingMessage && messageQueue.length === 0)
-                        els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
-                }, 3000);
-            }
-        }, 4500);
-    }
-    function showMessage(msg, urgent = false) { messageQueue.push({ msg, isUrgent: urgent }); processMessageQueue(); }
-    
-    // ========== ЗВУКИ ==========
-    function playBeep(freq, duration, type='sine', volume=0.1) {
-        if (soundMuted) return;
-        if (!audioCtx) return;
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        if (audioCtx.state !== 'running') return;
-        try {
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = type;
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(volume, now);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-            osc.start();
-            osc.stop(now + duration);
-        } catch(e) {}
-    }
-    function soundSuccess() { playBeep(880, 0.25, 'sine', 0.12); }
-    function soundError()   { playBeep(440, 0.4, 'sawtooth', 0.12); }
-    function soundGlitch()  { playBeep(300, 0.12, 'sawtooth', 0.15); setTimeout(() => playBeep(600, 0.12, 'sawtooth', 0.12), 60); }
-    
-    // ========== ПРОЦЕДУРНЫЙ ХОРРОР-ЭМБИЕНТ ==========
+
+    // --- АТМОСФЕРНЫЕ ЗВУКИ ---
     function startAmbientRain() {
         if (!audioCtx || soundMuted || rainSoundNode) return;
         try {
             const now = audioCtx.currentTime;
-            const bufferSize = audioCtx.sampleRate * 2;
+            const bufferSize = audioCtx.sampleRate * 3;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            
+            let last = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                data[i] = (last + 0.02 * white) / 1.02;
+                last = data[i];
+            }
             rainSoundNode = audioCtx.createBufferSource();
             rainSoundNode.buffer = buffer;
             rainSoundNode.loop = true;
-            
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'bandpass';
-            filter.frequency.value = 1000;
-            filter.Q.value = 0.7;
-            
-            const gainNode = audioCtx.createGain();
-            gainNode.gain.value = 0.04;
-            
+            filter.frequency.value = 800;
+            filter.Q.value = 0.6;
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.05;
             rainSoundNode.connect(filter);
-            filter.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
             rainSoundNode.start(now);
         } catch(e) { console.log(e); }
     }
-    
+
     function startAtmosphericHum() {
         if (!audioCtx || soundMuted || ambientHumNode) return;
         try {
             const now = audioCtx.currentTime;
             const osc1 = audioCtx.createOscillator();
             const osc2 = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc1.type = 'sine';   osc1.frequency.value = 50;
-            osc2.type = 'sawtooth'; osc2.frequency.value = 50.5;
-            const lowpass = audioCtx.createBiquadFilter();
-            lowpass.type = 'lowpass';
-            lowpass.frequency.value = 70;
-            gainNode.gain.value = 0.07;
-            osc1.connect(lowpass);
-            osc2.connect(lowpass);
-            lowpass.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            const gain = audioCtx.createGain();
+            const lp = audioCtx.createBiquadFilter();
+            osc1.type = 'sine';
+            osc1.frequency.value = 45;
+            osc2.type = 'sawtooth';
+            osc2.frequency.value = 45.6;
+            lp.type = 'lowpass';
+            lp.frequency.value = 60;
+            gain.gain.value = 0.08;
+            osc1.connect(lp);
+            osc2.connect(lp);
+            lp.connect(gain);
+            gain.connect(audioCtx.destination);
             osc1.start(now);
             osc2.start(now);
-            ambientHumNode = { osc1, osc2, gainNode };
+            ambientHumNode = { osc1, osc2, gain };
         } catch(e) { console.log(e); }
     }
-    
-    function stopAllAmbientSounds() {
-        if (rainSoundNode) {
-            try { rainSoundNode.stop(); } catch(e){}
-            rainSoundNode = null;
-        }
-        if (ambientHumNode) {
-            try { ambientHumNode.osc1.stop(); ambientHumNode.osc2.stop(); } catch(e){}
-            ambientHumNode = null;
-        }
+
+    function stopAllAmbient() {
+        if (rainSoundNode) { try { rainSoundNode.stop(); } catch(e){} rainSoundNode = null; }
+        if (ambientHumNode) { try { ambientHumNode.osc1.stop(); ambientHumNode.osc2.stop(); } catch(e){} ambientHumNode = null; }
     }
-    
-    // ========== ИСПРАВЛЕННЫЙ ГРОМ (РАБОТАЕТ) ==========
+
+    function playBeep(freq, type, duration, vol=0.08) {
+        if (soundMuted || !audioCtx || audioCtx.state !== 'running') return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + duration);
+        } catch(e){}
+    }
+
     function triggerThunder() {
         if (!gameStarted) return;
-        
-        // --- 1. Визуальные эффекты вспышки (твой оригинальный рабочий код) ---
         const flash = document.createElement('div');
         flash.style.position = 'fixed';
         flash.style.top = 0; flash.style.left = 0; flash.style.width = '100%'; flash.style.height = '100%';
-        flash.style.backgroundColor = 'white'; flash.style.zIndex = 10001; flash.style.pointerEvents = 'none';
-        flash.style.opacity = 0;
-        document.body.appendChild(flash);
-        flash.style.transition = 'opacity 0.05s';
+        flash.style.backgroundColor = 'white';
+        flash.style.zIndex = 10001;
+        flash.style.pointerEvents = 'none';
         flash.style.opacity = 0.9;
-        setTimeout(() => {
-            flash.style.opacity = 0;
-            setTimeout(() => flash.remove(), 200);
-        }, 100);
-        
-        const darken = document.createElement('div');
-        darken.style.position = 'fixed';
-        darken.style.top = 0; darken.style.left = 0; darken.style.width = '100%'; darken.style.height = '100%';
-        darken.style.backgroundColor = 'black'; darken.style.zIndex = 10000; darken.style.pointerEvents = 'none';
-        darken.style.opacity = 0;
-        document.body.appendChild(darken);
-        darken.style.transition = 'opacity 0.1s';
-        darken.style.opacity = 0.95;
-        setTimeout(() => {
-            darken.style.opacity = 0;
-            setTimeout(() => darken.remove(), 500);
-        }, 1500);
-
-        // --- 2. ИСПРАВЛЕННЫЙ АКУСТИЧЕСКИЙ ГРОМ ---
+        document.body.appendChild(flash);
+        setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 200); }, 100);
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
-                
-                // Длительность раската зависит от стресса (от 3 до 5 секунд)
-                const duration = 3.0 + (game.stress / 50.0); 
-                
+                const duration = 2.5 + fear / 50;
                 const bufferSize = audioCtx.sampleRate * duration;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
-                
-                // Генерируем качественный "коричневый" (глухой) шум для основы раската
-                let lastOut = 0.0;
+                let last = 0;
                 for (let i = 0; i < bufferSize; i++) {
                     const white = Math.random() * 2 - 1;
-                    // Сглаживающий фильтр для генерации естественного рокота земли
-                    data[i] = (lastOut + (0.02 * white)) / 1.02;
-                    lastOut = data[i];
-                    data[i] *= 4.0; // Увеличиваем базовую мощность
+                    data[i] = (last + 0.02 * white) / 1.02;
+                    last = data[i];
                 }
-                
-                const noiseSource = audioCtx.createBufferSource();
-                noiseSource.buffer = buffer;
-                
-                // Фильтр низких частот. Чем выше стресс, тем ближе и резче удар (больше высоких частот)
-                const lpFilter = audioCtx.createBiquadFilter();
-                lpFilter.type = 'lowpass';
-                const baseFreq = 120 + (game.stress * 2); // От 120Гц (далекий) до 320Гц (очень близкий удар)
-                lpFilter.frequency.setValueAtTime(baseFreq, now);
-                // В процессе раската звук уходит под землю (частота падает до 30Гц)
-                lpFilter.frequency.exponentialRampToValueAtTime(30, now + duration);
-                
-                // Главный узел автоматизации раскатов грома
-                const thunderGain = audioCtx.createGain();
-                // Максимальная громкость зависит от стресса (от 0.3 до 0.8)
-                const maxVolume = 0.3 + (game.stress / 200); 
-                
-                // Имитируем резкий начальный удар молнии
-                thunderGain.gain.setValueAtTime(0.001, now);
-                thunderGain.gain.linearRampToValueAtTime(maxVolume, now + 0.05); 
-                
-                // Цикл симуляции эхо и перекатов грома в облаках
-                let timeOffset = 0.15;
-                while (timeOffset < duration - 0.4) {
-                    const randomRumble = maxVolume * (0.2 + Math.random() * 0.6);
-                    const step = 0.08 + Math.random() * 0.18;
-                    thunderGain.gain.linearRampToValueAtTime(randomRumble, now + timeOffset);
-                    timeOffset += step;
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const lp = audioCtx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.frequency.setValueAtTime(100 + fear * 2, now);
+                lp.frequency.exponentialRampToValueAtTime(30, now + duration);
+                const gain = audioCtx.createGain();
+                const maxVol = 0.3 + fear / 200;
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(maxVol, now + 0.1);
+                let t = 0.2;
+                while (t < duration - 0.5) {
+                    gain.gain.linearRampToValueAtTime(maxVol * (0.2 + Math.random() * 0.7), now + t);
+                    t += 0.15 + Math.random() * 0.2;
                 }
-                // Плавное затухание в самом конце раската
-                thunderGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-                
-                // Соединяем исправленную цепочку: Шум -> Фильтр НЧ -> Громкость -> Выход
-                noiseSource.connect(lpFilter);
-                lpFilter.connect(thunderGain);
-                thunderGain.connect(audioCtx.destination);
-                
-                noiseSource.start(now);
-                noiseSource.stop(now + duration);
-                
-                // --- 3. СУБ-ОСЦИЛЛЯТОР (МОЩНЫЙ ИНФРАЗВУКОВОЙ УДАР ДЛЯ НАУШНИКОВ) ---
-                // Срабатывает при стрессе > 30, создает физический эффект давления в ушах
-                if (game.stress > 30) {
-                    const subOsc = audioCtx.createOscillator();
-                    const subGain = audioCtx.createGain();
-                    
-                    subOsc.type = 'triangle'; // Мягкая басовая волна
-                    subOsc.frequency.setValueAtTime(40, now); // 40 Гц — глубокий саб-бас
-                    subOsc.frequency.linearRampToValueAtTime(20, now + 1.0);
-                    
-                    const subVolume = 0.15 + (game.stress / 250);
-                    subGain.gain.setValueAtTime(subVolume, now);
-                    subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
-                    
-                    subOsc.connect(subGain);
-                    subGain.connect(audioCtx.destination);
-                    
-                    subOsc.start(now);
-                    subOsc.stop(now + 1.1);
-                }
-                
-            } catch(e) { console.log("Thunder audio error:", e); }
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                noise.connect(lp);
+                lp.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start(now);
+                noise.stop(now + duration);
+            } catch(e) { console.log(e); }
         }
-        
-        // Динамическая тряска экрана в зависимости от стресса подопытного
-        const shakeDuration = 500 + (game.stress * 6);
-        const shakeIntensity = 6 + Math.round(game.stress / 8);
-        shakeScreen(shakeDuration, shakeIntensity);
+        shakeScreen(500 + fear * 5, 6 + fear/10);
     }
-    
-    function startThunderInterval() {
-        if (thunderInterval) clearInterval(thunderInterval);
-        thunderInterval = setInterval(() => {
-            if (!gameStarted) return;
-            const delay = Math.random() * 30000;
-            setTimeout(() => {
-                if (gameStarted) triggerThunder();
-            }, delay);
-        }, 90000);
-        setTimeout(() => { if (gameStarted) triggerThunder(); }, 10000);
-    }
-    
-    function triggerGlitch() {
-        document.body.classList.add('glitch-bg');
-        const container = document.querySelector('.container');
-        if (container) container.style.boxShadow = '0 0 60px rgba(255,0,0,0.5)';
-        setTimeout(() => {
-            document.body.classList.remove('glitch-bg');
-            if (container) container.style.boxShadow = '';
-        }, 600);
-        soundGlitch();
-    }
-    
-    function shakeScreen(duration = 300, intensity = 3) {
-        const container = document.querySelector('.container');
-        if (!container) return;
-        container.style.transition = 'transform 0.05s cubic-bezier(0.2,1.2,0.8,1)';
-        let start = null;
-        function step(timestamp) {
-            if (!start) start = timestamp;
-            const elapsed = timestamp - start;
-            if (elapsed < duration) {
-                const x = (Math.random() - 0.5) * intensity;
-                const y = (Math.random() - 0.5) * intensity;
-                container.style.transform = `translate(${x}px, ${y}px)`;
-                requestAnimationFrame(step);
+
+    function shakeScreen(ms, intensity) {
+        const body = document.body;
+        const start = performance.now();
+        function animate(t) {
+            if (t - start < ms) {
+                body.style.transform = `translate(${Math.random()*intensity - intensity/2}px, ${Math.random()*intensity - intensity/2}px)`;
+                requestAnimationFrame(animate);
             } else {
-                container.style.transform = '';
-                container.style.transition = '';
+                body.style.transform = '';
             }
         }
-        requestAnimationFrame(step);
+        requestAnimationFrame(animate);
     }
-    
-    function pixelateTemporarily() {
-        const container = document.querySelector('.container');
-        if (container) {
-            container.classList.add('pixelated');
-            setTimeout(() => container.classList.remove('pixelated'), 300);
+
+    // --- ДОЖДЬ НА CANVAS ---
+    const canvas = document.getElementById('rainCanvas');
+    const ctx = canvas.getContext('2d');
+    let raindrops = [];
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        raindrops = [];
+        for (let i = 0; i < 120; i++) {
+            raindrops.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                len: 10 + Math.random() * 25,
+                speed: 10 + Math.random() * 15
+            });
         }
     }
-    
-    function updateBloodOverlay() {
-        if (!bloodOverlay) {
-            bloodOverlay = document.createElement('div');
-            bloodOverlay.className = 'blood-overlay';
-            document.body.appendChild(bloodOverlay);
-        }
-        if (game.stress > 80) bloodOverlay.classList.add('active');
-        else bloodOverlay.classList.remove('active');
-    }
-    
-    function updateHeartbeat() {
-        if (!gameStarted) return;
-        if (game.stress > 60) {
-            if (!heartbeatInterval) {
-                const interval = Math.max(350, 1000 - Math.floor(game.stress / 2) * 8);
-                heartbeatInterval = setInterval(() => {
-                    if (game.stress > 60 && !soundMuted && audioCtx) {
-                        try {
-                            const now = audioCtx.currentTime;
-                            const osc = audioCtx.createOscillator();
-                            const gain = audioCtx.createGain();
-                            osc.connect(gain);
-                            gain.connect(audioCtx.destination);
-                            osc.type = 'sine';
-                            osc.frequency.value = 60;
-                            gain.gain.setValueAtTime(0.08, now);
-                            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
-                            osc.start();
-                            osc.stop(now + 0.25);
-                        } catch(e) {}
-                    }
-                }, interval);
-            } else {
-                clearInterval(heartbeatInterval);
-                const newInterval = Math.max(350, 1000 - Math.floor(game.stress / 2) * 8);
-                heartbeatInterval = setInterval(() => {
-                    if (game.stress > 60 && !soundMuted && audioCtx) {
-                        try {
-                            const now = audioCtx.currentTime;
-                            const osc = audioCtx.createOscillator();
-                            const gain = audioCtx.createGain();
-                            osc.connect(gain);
-                            gain.connect(audioCtx.destination);
-                            osc.type = 'sine';
-                            osc.frequency.value = 60;
-                            gain.gain.setValueAtTime(0.08, now);
-                            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
-                            osc.start();
-                            osc.stop(now + 0.25);
-                        } catch(e) {}
-                    }
-                }, newInterval);
-            }
-        } else {
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            heartbeatInterval = null;
-        }
-    }
-    
-    function addRainOverlay() {
-        if (rainCanvas) return;
-        const canvas = document.createElement('canvas');
-        canvas.style.position = 'fixed';
-        canvas.style.top = 0;
-        canvas.style.left = 0;
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
-        canvas.style.zIndex = 9995;
-        canvas.style.opacity = 0.55;
-        document.body.appendChild(canvas);
-        rainCanvas = canvas;
-        let ctx = canvas.getContext('2d');
-        let width, height;
-        let raindrops = [];
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-            raindrops = [];
-            for (let i = 0; i < 400; i++) {
-                raindrops.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    length: 12 + Math.random() * 20,
-                    speed: 8 + Math.random() * 12,
-                    opacity: 0.4 + Math.random() * 0.6
-                });
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    function drawRain() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = fear > 70 ? 'rgba(255, 50, 50, 0.3)' : 'rgba(0, 255, 0, 0.2)';
+        ctx.lineWidth = 1.5;
+        for (let d of raindrops) {
+            ctx.beginPath();
+            ctx.moveTo(d.x, d.y);
+            ctx.lineTo(d.x + 2, d.y + d.len);
+            ctx.stroke();
+            d.y += d.speed;
+            if (d.y > canvas.height) {
+                d.y = -d.len;
+                d.x = Math.random() * canvas.width;
             }
         }
-        function drawRain() {
-            if (!gameStarted || !ctx) return;
-            ctx.clearRect(0, 0, width, height);
-            ctx.strokeStyle = '#cdf';
-            ctx.lineWidth = 2;
-            for (let r of raindrops) {
-                ctx.beginPath();
-                ctx.moveTo(r.x, r.y);
-                ctx.lineTo(r.x - 3, r.y + r.length);
-                ctx.strokeStyle = `rgba(200, 220, 255, ${r.opacity * 0.8})`;
-                ctx.stroke();
-                r.y += r.speed;
-                if (r.y > height) {
-                    r.y = -r.length;
-                    r.x = Math.random() * width;
-                }
+        requestAnimationFrame(drawRain);
+    }
+    drawRain();
+
+    // --- ОПТИМИЗИРОВАННАЯ ГЕНЕРАЦИЯ ПАНЕЛИ ЭТАПОВ ---
+    function buildStepsUI() {
+        if (!els.stepsContainer) return;
+        els.stepsContainer.innerHTML = '';
+        for (let i = 0; i < totalContracts; i++) {
+            const stepDiv = document.createElement('div');
+            stepDiv.id = `stepItem_${i}`;
+            stepDiv.className = 'step-item';
+            const typeName = contracts[i].type === 'balance' ? 'Баланс' : contracts[i].type === 'bonus' ? 'Бонуска' : contracts[i].type === 'anomaly' ? 'Аномалия' : 'Спины';
+            stepDiv.innerText = `Контракт ${i+1}: ${typeName}`;
+            els.stepsContainer.appendChild(stepDiv);
+        }
+    }
+
+    function updateStepsHighlight() {
+        for (let i = 0; i < totalContracts; i++) {
+            const el = document.getElementById(`stepItem_${i}`);
+            if (!el) continue;
+            el.className = 'step-item';
+            if (i === currentContractIndex) {
+                el.classList.add('active');
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
-            rainAnimationId = requestAnimationFrame(drawRain);
-        }
-        window.addEventListener('resize', resize);
-        resize();
-        drawRain();
-    }
-    
-    function startCameraBreathing() {
-        if (breathInterval) clearInterval(breathInterval);
-        let scale = 1;
-        let direction = 1;
-        breathInterval = setInterval(() => {
-            if (!gameStarted) return;
-            const container = document.querySelector('.container');
-            if (container) {
-                scale += direction * 0.0008;
-                if (scale >= 1.008) direction = -1;
-                if (scale <= 0.992) direction = 1;
-                container.style.transition = 'transform 0.5s ease-in-out';
-                container.style.transform = `scale(${scale})`;
-            }
-        }, 80);
-    }
-    
-    let shadowTimeout = null;
-    function showScaryShadow() {
-        if (!gameStarted || game.stress < 70) return;
-        if (shadowTimeout) return;
-        const shadowDiv = document.createElement('div');
-        shadowDiv.style.position = 'fixed';
-        shadowDiv.style.bottom = '10%';
-        shadowDiv.style.right = '5%';
-        shadowDiv.style.width = '150px';
-        shadowDiv.style.height = '250px';
-        shadowDiv.style.background = 'radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.8), transparent)';
-        shadowDiv.style.borderRadius = '50%';
-        shadowDiv.style.filter = 'blur(10px)';
-        shadowDiv.style.zIndex = 9996;
-        shadowDiv.style.pointerEvents = 'none';
-        shadowDiv.style.opacity = 0;
-        shadowDiv.style.transition = 'opacity 0.2s';
-        document.body.appendChild(shadowDiv);
-        setTimeout(() => shadowDiv.style.opacity = 0.7, 10);
-        setTimeout(() => {
-            shadowDiv.style.opacity = 0;
-            setTimeout(() => shadowDiv.remove(), 300);
-        }, 800);
-        shadowTimeout = setTimeout(() => { shadowTimeout = null; }, 3000);
-    }
-    
-    // ========== ИГРОВАЯ ЛОГИКА (без изменений, она рабочая) ==========
-    function getRandomFromArray(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
-    }
-    
-    function getNextTaskDifficulty() {
-        if (game.pendingTaskDifficulty !== null) {
-            let diff = game.pendingTaskDifficulty;
-            game.pendingTaskDifficulty = null;
-            return diff;
-        }
-        let base = 1;
-        if (game.stage <= 1) base = 0;
-        else if (game.stage >= 3) base = 2;
-        else base = 1;
-        
-        if (game.stress > 70) base = Math.min(2, base+1);
-        if (game.difficultyOffset === 1) base = Math.min(2, base+1);
-        else if (game.difficultyOffset === -1) base = Math.max(0, base-1);
-        
-        const isFinalStage = (game.stage >= 3);
-        const balanceRatio = game.balance / (game.balanceStart || 1);
-        let balanceMod = 0;
-        if (!isFinalStage) {
-            if (balanceRatio <= 0.3) balanceMod = -1;
-            else if (balanceRatio >= 1.5) balanceMod = 1;
-        } else {
-            if (balanceRatio >= 1.8) balanceMod = 1;
-        }
-        let newBase = base + balanceMod;
-        newBase = Math.min(2, Math.max(0, newBase));
-        return newBase;
-    }
-    
-    function generateTaskFromTemplate(stage, taskIndex, level) {
-        const tmpl = STAGE_TASKS[stage][taskIndex];
-        let text = tmpl.baseText;
-        let goal = tmpl.goal;
-        const difficultyStr = ["easy","medium","hard"][level];
-        for (let v of tmpl.vars) {
-            if (v === "bet") {
-                let val = getRandomFromArray(BET_VALUES[difficultyStr]);
-                text = text.replace(`{bet}`, val);
-                if (goal.includes("{bet}")) goal = goal.replace("{bet}", val);
-            } else if (v === "buy") {
-                let val = getRandomFromArray(BUY_VALUES[difficultyStr]);
-                text = text.replace(`{buy}`, val);
-                if (goal.includes("{buy}")) goal = goal.replace("{buy}", val);
-            } else if (VAR_VALUES[v]) {
-                let val = VAR_VALUES[v][level][Math.floor(Math.random() * VAR_VALUES[v][level].length)];
-                text = text.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
-                if (goal.includes(`{${v}}`)) goal = goal.replace(new RegExp(`\\{${v}\\}`, 'g'), val);
-            }
-        }
-        return { text, goal, difficulty: difficultyStr, type: "spin" };
-    }
-    
-    function getNextSpinTask() {
-        const stageTasks = STAGE_TASKS[game.stage];
-        const idx = game.completedInStage;
-        if (idx >= stageTasks.length) return null;
-        const level = getNextTaskDifficulty();
-        return generateTaskFromTemplate(game.stage, idx, level);
-    }
-    
-    function getRandomQuestion() {
-        if (availableQuestions.length === 0) {
-            availableQuestions = [...usedQuestions];
-            usedQuestions = [];
-        }
-        const idx = Math.floor(Math.random() * availableQuestions.length);
-        const q = availableQuestions[idx];
-        availableQuestions.splice(idx,1);
-        usedQuestions.push(q);
-        return q;
-    }
-    
-    function answerQuestion(isCorrect) {
-        if (answeringLock) return;
-        answeringLock = true;
-        try {
-            if (!game.currentQuestionMode) return;
-            game.currentQuestionMode = false;
-            game.hintUsedForCurrentQuestion = false;
-            eventActive = false;
-            if (isCorrect) {
-                showMessage("✅ Правильно! Следующее задание будет лёгким.", false);
-                game.trust = Math.min(100, game.trust + 5);
-                game.stress = Math.max(0, game.stress - 4);
-                game.pendingTaskDifficulty = 0;
-                soundSuccess();
-            } else {
-                showMessage("❌ Неправильно! Следующее задание будет сложным.", true);
-                game.stress = Math.min(100, game.stress + 4);
-                game.trust = Math.max(0, game.trust - 3);
-                game.pendingTaskDifficulty = 2;
-                soundError();
-                pixelateTemporarily();
-                shakeScreen(300, 3);
-            }
-            updateUI();
-            game.totalCompleted++;
-            game.completedInStage++;
-            if (game.completedInStage >= STAGES[game.stage].missions) {
-                startStageTransition();
-            } else {
-                loadNextActivity();
-            }
-            saveGame();
-        } finally {
-            setTimeout(() => { answeringLock = false; }, 300);
+            else if (i < currentContractIndex) el.classList.add('completed');
         }
     }
-    
-    function renderQuestion() {
-        els.actionButtons.innerHTML = '';
-        const q = game.currentQuestionObj;
-        if (!q) return;
-        els.questText.innerHTML = `❓ ПСИХОЛОГИЧЕСКИЙ СБОЙ: ${q.text}<br><span style="color:#ff3366;">Выбери ответ:</span>`;
-        const optionsDiv = document.createElement('div');
-        optionsDiv.className = 'question-options';
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.innerText = opt;
-            btn.className = "answer-btn";
-            btn.onclick = (e) => {
-                e.preventDefault();
-                if (eventActive === false) return;
-                const isCorrect = (idx === q.correct);
-                answerQuestion(isCorrect);
-            };
-            optionsDiv.appendChild(btn);
-        });
-        els.actionButtons.appendChild(optionsDiv);
-        if (!game.hintUsedForCurrentQuestion) {
-            const hintMsg = document.createElement('div');
-            hintMsg.style.fontSize = "0.8rem";
-            hintMsg.style.marginTop = "10px";
-            hintMsg.innerHTML = "<i class='fas fa-lightbulb'></i> Можешь взять подсказку (кнопка внизу)";
-            els.actionButtons.appendChild(hintMsg);
-        }
-    }
-    
-    function giveHint() {
-        if (!gameStarted || game.waitingTransition) return;
-        
-        if (window._chatHelpCalled) {
-            showMessageImmediate("💬 Чат: 'Не верь ложным подсказкам, система пытается выбить тебя из равновесия! Победа близка!'", false);
-            window._chatHelpCalled = false;
-            return;
-        }
-        
-        if (game.currentQuestionMode && game.currentQuestionObj && !game.hintUsedForCurrentQuestion) {
-            game.hintUsedForCurrentQuestion = true;
-            const random = Math.random();
-            const isLie = random < 0.6;
-            let hintAnswer = "";
-            if (isLie) {
-                if (Math.random() < 0.4) {
-                    hintAnswer = `Я бы сказал, что шанс успеха ~${Math.floor(Math.random() * 40 + 20)}%... но не уверен.`;
-                } else {
-                    const wrongOptions = game.currentQuestionObj.options.filter((_,idx) => idx !== game.currentQuestionObj.correct);
-                    hintAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
-                }
-                showMessageImmediate(`💡 [ЛОЖНАЯ ПОДСКАЗКА] ${hintAnswer}`, true);
-                game.trust = Math.max(0, game.trust - 8);
-                game.lies++;
-                soundError();
-            } else {
-                if (Math.random() < 0.3) {
-                    hintAnswer = `Мне кажется, правильный ответ — "${game.currentQuestionObj.options[game.currentQuestionObj.correct]}", но я не на 100% уверен.`;
-                } else {
-                    hintAnswer = `Я думаю, правильный ответ: "${game.currentQuestionObj.options[game.currentQuestionObj.correct]}".`;
-                }
-                showMessageImmediate(`💡 [ПОДСКАЗКА] ${hintAnswer}`, false);
-                game.trust = Math.min(100, game.trust + 3);
-                soundSuccess();
-            }
-            updateUI();
-            if (game.currentQuestionMode) renderQuestion();
-            return;
-        }
-        if (currentTask && !game.currentQuestionMode) {
-            const stageHint = HINT_TEXTS[game.stage] || HINT_TEXTS[0];
-            const isLie = Math.random() < 0.5;
-            if (isLie) {
-                const fakeAdvice = getRandomFromArray([
-                    "Чат ошибается: 'Увеличь ставки, бонус на подходе!'",
-                    "Зрители кричат: 'Срочно меняй слот, этот проклят!'",
-                    "Подсказка от зрителя: 'Твой баланс скоро улетит в ноль, спасайся!'",
-                    "Чат паникует: 'Нажми ПРОВАЛ, это ловушка!'"
-                ]);
-                showMessageImmediate(`💡 [ЛОЖНАЯ ПОДСКАЗКА ОТ ЧАТА] ${fakeAdvice}`, true);
-                game.trust = Math.max(0, game.trust - 8);
-                game.lies++;
-                soundError();
-            } else {
-                const trueAdvice = getRandomFromArray(stageHint);
-                showMessageImmediate(`💬 [СОВЕТ ЧАТА] ${trueAdvice}`, false);
-                game.trust = Math.min(100, game.trust + 3);
-                soundSuccess();
-            }
-            updateUI();
-            return;
-        }
-        showMessageImmediate("Нет активного вопроса или задания для подсказки.", false);
-    }
-    
-    function completeSpinTask(success) {
-        if (eventActive || game.waitingTransition || !gameStarted || game.currentQuestionMode) return;
-        if (answeringLock) return;
-        answeringLock = true;
-        try {
-            if (Math.random() < 0.4) {
-                const successBtn = document.querySelector('.btn-success');
-                const failBtn = document.querySelector('.btn-fail');
-                if (successBtn && failBtn) {
-                    const temp = successBtn.innerText;
-                    successBtn.innerText = failBtn.innerText;
-                    failBtn.innerText = temp;
-                    successBtn.classList.toggle('btn-fail');
-                    successBtn.classList.toggle('btn-success');
-                    failBtn.classList.toggle('btn-success');
-                    failBtn.classList.toggle('btn-fail');
-                    setTimeout(() => {
-                        if (successBtn && failBtn) {
-                            successBtn.innerText = "✅ ВЫПОЛНЕНО";
-                            failBtn.innerText = "❌ ПРОВАЛЕНО";
-                            successBtn.classList.remove('btn-fail');
-                            successBtn.classList.add('btn-success');
-                            failBtn.classList.remove('btn-success');
-                            failBtn.classList.add('btn-fail');
-                        }
-                    }, 2000);
-                }
-            }
-            if (success) soundSuccess(); else soundError();
-            
-            let stressDelta = success ? -5 : 5;
-            let trustDelta = success ? 2 : -3;
-            
-            if (currentTask.difficulty === "hard") {
-                stressDelta += success ? -2 : 7;
-                trustDelta += success ? 2 : -4;
-            } else if (currentTask.difficulty === "easy") {
-                stressDelta += success ? 0 : 3;
-            }
-            
-            game.stress = Math.min(100, Math.max(0, game.stress + stressDelta));
-            game.trust = Math.min(100, Math.max(0, game.trust + trustDelta));
-            
-            if (success) { game.successStreak++; game.failStreak = 0; }
-            else { game.successStreak = 0; game.failStreak++; }
-            
-            game.totalCompleted++;
-            game.completedInStage++;
-            showMessage(success ? `✅ Задание принято! Стресс ${stressDelta>=0?'+':''}${stressDelta}, доверие ${trustDelta>=0?'+':''}${trustDelta}` : `❌ Провал! Стресс ${stressDelta>=0?'+':''}${stressDelta}, доверие ${trustDelta}`, !success);
-            if (!success) {
-                shakeScreen(400, 5);
-                pixelateTemporarily();
-            }
-            updateUI();
-            if (game.completedInStage >= STAGES[game.stage].missions) {
-                startStageTransition();
-            } else {
-                loadNextActivity();
-            }
-        } finally {
-            setTimeout(() => { answeringLock = false; }, 300);
-        }
-    }
-    
-    function renderSpinTask() {
-        els.actionButtons.innerHTML = '';
-        const btnSuccess = document.createElement('button');
-        btnSuccess.innerText = "✅ ВЫПОЛНЕНО";
-        btnSuccess.className = "btn-success";
-        btnSuccess.onclick = () => completeSpinTask(true);
-        const btnFail = document.createElement('button');
-        btnFail.innerText = "❌ ПРОВАЛЕНО";
-        btnFail.className = "btn-fail";
-        btnFail.onclick = () => completeSpinTask(false);
-        els.actionButtons.appendChild(btnSuccess);
-        els.actionButtons.appendChild(btnFail);
-        els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
-    }
-    
-    function loadNextActivity() {
-        if (eventActive || game.waitingTransition || !gameStarted) return;
-        let willBeQuestion = false;
-        if (Math.random() < 0.5 && !lastActivityWasQuestion) {
-            willBeQuestion = true;
-        }
-        if (willBeQuestion) {
-            game.currentQuestionMode = true;
-            game.currentQuestionObj = getRandomQuestion();
-            game.hintUsedForCurrentQuestion = false;
-            eventActive = true;
-            renderQuestion();
-            lastActivityWasQuestion = true;
-        } else {
-            game.currentQuestionMode = false;
-            currentTask = getNextSpinTask();
-            if (!currentTask) {
-                currentTask = { text: "Ошибка генерации", goal: "нет", difficulty: "medium", type: "spin" };
-            }
-            renderSpinTask();
-            lastActivityWasQuestion = false;
-        }
-        saveGame();
-    }
-    
-    function tryTriggerUniqueEvent() {
-        if (!gameStarted || game.waitingTransition) return;
-        if (game.uniqueEventsTriggered.length >= UNIQUE_EVENTS.length) return;
-        if (eventActive) return;
-        const availableIndices = [];
-        for (let i = 0; i < UNIQUE_EVENTS.length; i++) {
-            if (!game.uniqueEventsTriggered.includes(i)) availableIndices.push(i);
-        }
-        if (availableIndices.length === 0) return;
-        const idx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-        const ev = UNIQUE_EVENTS[idx];
-        game.uniqueEventsTriggered.push(idx);
-        eventActive = true;
-        const modal = document.getElementById('questionModal');
-        document.getElementById('questionModalTitle').innerText = "⚠️ СИСТЕМНЫЙ ЗАПРОС";
-        document.getElementById('questionText').innerHTML = ev.text;
-        const container = document.getElementById('questionButtons');
-        container.innerHTML = '';
-        const input = document.createElement('input');
-        input.type = "text";
-        input.placeholder = "Введи ответ...";
-        input.className = "balance-input";
-        const submitBtn = document.createElement('button');
-        submitBtn.innerText = "ОТВЕТИТЬ";
-        submitBtn.className = "modal-btn";
-        submitBtn.onclick = () => {
-            showMessage("❌ Система фиксирует твою неуверенность.", true);
-            game.stress = Math.min(100, game.stress + ev.effect.stress);
-            game.trust = Math.max(0, game.trust + ev.effect.trust);
-            updateUI();
-            modal.classList.add('hidden');
-            eventActive = false;
-            saveGame();
-            soundError();
-        };
-        container.appendChild(input);
-        container.appendChild(submitBtn);
-        document.getElementById('closeQuestionModal').onclick = () => {
-            modal.classList.add('hidden');
-            eventActive = false;
-            showMessage("Ты проигнорировал запрос. Стресс растёт.", true);
-            game.stress = Math.min(100, game.stress + 8);
-            updateUI();
-            saveGame();
-            soundError();
-        };
-        modal.classList.remove('hidden');
-    }
-    
-    function startStageTransition() {
-        game.waitingTransition = true;
-        eventActive = false;
-        els.actionButtons.innerHTML = '';
-        if (game.currentQuestionMode) {
-            game.currentQuestionMode = false;
-            game.currentQuestionObj = null;
-            game.hintUsedForCurrentQuestion = false;
-        }
-        document.getElementById('questionModal').classList.add('hidden');
-        document.getElementById('stageNameSpan').innerText = STAGES[game.stage].name;
-        document.getElementById('realBalanceInput').value = '';
-        document.getElementById('stageTransitionModal').classList.remove('hidden');
-    }
-    
-    function submitRealBalance() {
-        let realBalance = parseInt(document.getElementById('realBalanceInput').value);
-        if (isNaN(realBalance) || realBalance <= 0) {
-            showMessage("Введи корректное положительное число", true);
-            return;
-        }
-        document.getElementById('stageTransitionModal').classList.add('hidden');
-        const delta = realBalance - game.stageStartBalance;
-        game.balance = realBalance;
-        if (delta > 0) game.difficultyOffset = 1;
-        else if (delta < -1000) game.difficultyOffset = -1;
-        else game.difficultyOffset = 0;
-        
-        showMessage(`✅ Этап пройден! Баланс изменён на ${delta}$. Сложность следующего этапа: ${game.difficultyOffset===1?'повышена':game.difficultyOffset===-1?'понижена':'стандарт'}`, false);
-        updateUI();
-        game.stage++;
-        game.completedInStage = 0;
-        if (game.stage < STAGES.length) {
-            game.stageStartBalance = game.balance;
-            game.waitingTransition = false;
-            eventActive = false;
-            game.currentQuestionMode = false;
-            els.actionButtons.innerHTML = '';
-            showMessage(`🔥 ПЕРЕХОД НА ЭТАП: ${STAGES[game.stage].name}`, true);
-            triggerGlitch();
-            saveGame();
-            loadNextActivity();
-            if (!game.banNotificationShown && game.stage === 2) {
-                game.banNotificationShown = true;
-                setTimeout(() => {
-                    const banDiv = document.createElement('div');
-                    banDiv.className = 'ban-notification';
-                    banDiv.innerText = '⚠️ ВАШ АККАУНТ ЗАБЛОКИРОВАН ЗА МУЛЬТИАККАУНТИНГ ⚠️';
-                    document.body.appendChild(banDiv);
-                    setTimeout(() => banDiv.remove(), 3000);
-                }, 5000);
-            }
-        } else {
-            finishGame(false);
-        }
-    }
-    
-    function finishWithChoice(choice) {
-        const safeBtn = document.getElementById('safeFinal');
-        const riskBtn = document.getElementById('riskFinal');
-        const closeBtn = document.getElementById('closeFinal');
-        
-        if (choice) {
-            document.getElementById('finalVerdict').innerText = "🔐 ПРИНЯЛ ПРАВИЛА";
-            document.getElementById('finalDesc').innerText = "Ты забрал остатки разума и исчез. Система потеряла интерес. Ты свободен, но навсегда изменён.";
-        } else {
-            document.getElementById('finalVerdict').innerText = "⚡ РАЗРУШИЛ СИСТЕМУ";
-            document.getElementById('finalDesc').innerText = "Ты доказал, что система лжёт. Но какой ценой? Твой разум перегружен, но победа за тобой.";
-        }
-        
-        if (safeBtn) safeBtn.style.display = 'none';
-        if (riskBtn) riskBtn.style.display = 'none';
-        if (closeBtn) closeBtn.style.display = 'inline-block';
-        soundSuccess();
-        gameStarted = false;
-        stopAllAmbientSounds();
-    }
-    
-    function finishGame(byBreak) {
-        if (!gameStarted) return;
-        gameStarted = false;
-        
-        if (fakeCounterInterval) clearInterval(fakeCounterInterval);
-        if (questGlitchInterval) clearInterval(questGlitchInterval);
-        if (thunderInterval) clearInterval(thunderInterval);
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-        if (breathInterval) clearInterval(breathInterval);
-        if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
-        stopAllAmbientSounds();
-        
-        let ending;
-        if (byBreak) {
-            ending = { title: "💀 СИСТЕМА СЛОМАЛА ТЕБЯ", desc: "Стресс достиг 100% или ты поверил 4 ложным подсказкам. Ты потерял самообладание." };
-            soundError();
-        } else {
-            const profit = game.balance - game.balanceStart;
-            const lowStress = game.stress < 35;
-            const highTrust = game.trust >= 70;
-            const lowTrust = game.trust < 30;
-            const manyLies = game.lies >= 3;
-            const noLies = game.lies === 0;
-            const bigProfit = profit > 5000;
-            const bigLoss = profit < -3000;
-            
-            if (lowStress && noLies && profit > 0) {
-                ending = { title: "🔓 ОСВОБОЖДЕНИЕ", desc: "Ты выжил и сохранил разум. Система повержена. Ты свободен." };
-            } else if (highTrust && !(game.stress < 35)) {
-                ending = { title: "🤖 АГЕНТ СИСТЕМЫ", desc: "Слишком много доверия — теперь ты часть машины. Твой разум переписан." };
-            } else if (game.stress >= 70 && lowTrust) {
-                ending = { title: "🌀 БЕЗУМИЕ", desc: "Ты раздавлен между страхом и недоверием. Реальность растворилась." };
-            } else if (bigProfit && manyLies) {
-                ending = { title: "💰 ЦЕНА ОБМАНА", desc: "Ты заработал состояние, но заплатил правдой. Система отпускает, но ты уже не тот." };
-            } else if (bigLoss && lowTrust) {
-                ending = { title: "📉 КРАХ", desc: "Баланс уничтожен, доверие потеряно. Ты изгой." };
-            } else {
-                ending = { title: "⚠️ НЕОПРЕДЕЛЁННОСТЬ", desc: "Финал открыт. Ты остался загадкой. Возможно, это не конец." };
-            }
-            soundSuccess();
-        }
-        
-        document.getElementById('finalVerdict').innerText = ending.title;
-        document.getElementById('finalDesc').innerText = ending.desc;
-        
-        const safeBtn = document.getElementById('safeFinal');
-        const riskBtn = document.getElementById('riskFinal');
-        const closeBtn = document.getElementById('closeFinal');
-        if (safeBtn && riskBtn && closeBtn) {
-            safeBtn.style.display = 'inline-block';
-            riskBtn.style.display = 'inline-block';
-            closeBtn.style.display = 'none';
-        }
-        document.getElementById('finalModal').classList.remove('hidden');
-    }
-    
+
+    // --- ИГРОВАЯ ЛОГИКА ---
     function updateUI() {
         if (!gameStarted) return;
-        const totalMissions = STAGES[game.stage].missions;
-        const percent = totalMissions > 0 ? (game.completedInStage / totalMissions) * 100 : 0;
-        els.phaseFill.style.width = percent + '%';
-        els.stressFill.style.width = game.stress + '%';
-        els.stressVal.innerText = game.stress;
-        els.trustFill.style.width = game.trust + '%';
-        els.trustVal.innerText = game.trust;
-        els.stageNum.innerText = game.stage+1;
-        els.stageName.innerText = `${STAGES[game.stage].name} (${game.stage+1}/5)`;
-        els.lieStat.innerText = game.lies;
-        els.balanceStat.innerText = game.balance;
-        renderStageMap();
+        fear = Math.min(100, Math.max(0, fear));
+        els.stressProgress.style.width = fear + '%';
+        els.stressNum.innerText = Math.round(fear);
+        els.balanceStat.innerText = balance.toLocaleString('ru-RU');
+        els.lieStat.innerText = liesCaught + '/3';
+        document.getElementById('lieProgress').style.width = (liesCaught / 3 * 100) + '%';
         
-        const shouldFlicker = (game.trust < 40 || game.stress > 60);
-        if (shouldFlicker && !document.body.style.animation) {
-            document.body.style.animation = 'bgPulseConstant 0.8s infinite alternate';
-            const glitchOverlay = document.querySelector('.glitch-overlay');
-            if (glitchOverlay) glitchOverlay.style.animation = 'glitchShift 0.5s infinite';
-        } else if (!shouldFlicker && document.body.style.animation) {
-            document.body.style.animation = '';
-            const glitchOverlay = document.querySelector('.glitch-overlay');
-            if (glitchOverlay) glitchOverlay.style.animation = 'glitchShift 8s infinite';
-        }
-        if (game.stress > 70 && Math.random() < 0.1) triggerGlitch();
-        if (game.stress > 70 && Math.random() < 0.2 && game.currentQuestionMode) showScaryShadow();
-        
-        updateBloodOverlay();
-        updateHeartbeat();
-        
-        if (game.failStreak >= 2) showMessage(`Ты теряешь контроль, Алексей.`, true);
-        if (game.successStreak >= 3 && Math.random()<0.3) showMessage(`Стабильность подозрительна... Я наблюдаю.`, true);
-        if (game.stress >= 100 || game.lies > 3) finishGame(true);
-        saveGame();
-    }
-    
-    function renderStageMap() {
-        els.phaseList.innerHTML = '';
-        STAGES.forEach((s, idx) => {
-            const done = (idx === game.stage) ? game.completedInStage : (idx < game.stage ? STAGES[idx].missions : 0);
-            const div = document.createElement('div');
-            div.className = `phase-item ${idx === game.stage ? 'active' : ''}`;
-            div.innerHTML = `<div class="phase-icon"><i class="fas fa-${idx===0?'hand-peace':idx===1?'question':idx===2?'weight-hanging':idx===3?'skull':'crown'}"></i></div><div>${s.name}</div><div style="margin-left:auto;">${done}/${s.missions}</div>`;
-            div.addEventListener('click', () => showMessage("Нельзя переключать этапы вручную."));
-            els.phaseList.appendChild(div);
-        });
-    }
-    
-    function resetGame() {
-        if (confirm("Сбросить эксперимент?")) {
-            stopAllAmbientSounds();
-            localStorage.removeItem('mindGameFinal');
-            location.reload();
-        }
-    }
-    
-    function saveGame() {
-        if (!gameStarted) return;
-        const save = {
-            version: 10,
-            stage: game.stage, completedInStage: game.completedInStage, totalCompleted: game.totalCompleted,
-            stress: game.stress, trust: game.trust, balance: game.balance, balanceStart: game.balanceStart,
-            stageStartBalance: game.stageStartBalance, lies: game.lies,
-            successStreak: game.successStreak, failStreak: game.failStreak, difficultyOffset: game.difficultyOffset,
-            banNotificationShown: game.banNotificationShown,
-            availableQuestions: availableQuestions, usedQuestions: usedQuestions,
-            lastActivityWasQuestion: lastActivityWasQuestion,
-            uniqueEventsTriggered: game.uniqueEventsTriggered
-        };
-        localStorage.setItem('mindGameFinal', JSON.stringify(save));
-    }
-    
-    function loadGame() {
-        const saved = localStorage.getItem('mindGameFinal');
-        if (!saved) return false;
-        try {
-            const data = JSON.parse(saved);
-            if (data.version !== 10) return false;
-            Object.assign(game, data);
-            if (data.availableQuestions) availableQuestions = data.availableQuestions;
-            if (data.usedQuestions) usedQuestions = data.usedQuestions;
-            lastActivityWasQuestion = data.lastActivityWasQuestion || false;
-            if (data.uniqueEventsTriggered) game.uniqueEventsTriggered = data.uniqueEventsTriggered;
-            else game.uniqueEventsTriggered = [];
-            return true;
-        } catch(e) { return false; }
-    }
-    
-    function toggleSound() {
-        soundMuted = !soundMuted;
-        const btn = document.getElementById('soundToggleBtn');
-        if (soundMuted) {
-            btn.innerHTML = '<i class="fas fa-volume-mute"></i> ЗВУК ВЫКЛ';
-            stopAllAmbientSounds();
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            heartbeatInterval = null;
+        const elementsToGlitch = [els.questText, els.goalText, els.balanceStat];
+        if (fear >= 75) {
+            elementsToGlitch.forEach(el => el.classList.add('glitch-text'));
+            els.chatMood.innerText = '😱 КРИК УЖАСА!';
+            document.body.classList.add('glitch-bg');
         } else {
-            btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
-            if (gameStarted && audioCtx && audioCtx.state === 'running') {
-                startAmbientRain();
-                startAtmosphericHum();
-                updateHeartbeat();
+            elementsToGlitch.forEach(el => el.classList.remove('glitch-text'));
+            if (fear >= 45) {
+                els.chatMood.innerText = '😨 ПАНИКА';
+                document.body.classList.remove('glitch-bg');
+            } else {
+                els.chatMood.innerText = '😌 СПОКОЙНО';
+                document.body.classList.remove('glitch-bg');
             }
         }
+
+        updateStepsHighlight();
+
+        if (fear >= 100) finishGame(false);
+        if (liesCaught >= 3) finishGame(true);
     }
-    
-    function startGame(balanceStr) {
-        let parsed = parseFloat(balanceStr);
-        if (isNaN(parsed) || parsed <= 0) {
-            alert("Ошибка: Стартовый баланс должен быть положительным числом!");
+
+    function loadContract() {
+        if (currentContractIndex >= totalContracts) {
+            if (liesCaught >= 3) finishGame(true);
+            else finishGame(false);
             return;
         }
-        game.balance = parsed;
-        game.balanceStart = parsed;
-        game.stageStartBalance = parsed;
-        game.stress = 30;
-        game.trust = 55;
-        game.stage = 0;
-        game.completedInStage = 0;
-        game.totalCompleted = 0;
-        game.lies = 0;
-        game.successStreak = 0;
-        game.failStreak = 0;
-        game.difficultyOffset = 0;
-        game.waitingTransition = false;
-        game.banNotificationShown = false;
-        game.currentQuestionMode = false;
-        game.currentQuestionObj = null;
-        game.hintUsedForCurrentQuestion = false;
-        game.pendingTaskDifficulty = null;
-        lastActivityWasQuestion = false;
-        game.uniqueEventsTriggered = [];
-        availableQuestions = [...HARD_QUESTIONS];
-        usedQuestions = [];
-        gameStarted = true;
+        const contract = contracts[currentContractIndex];
+        if (!contract) return;
+        els.questText.innerHTML = contract.text;
+        els.goalText.innerHTML = `🎯 ЦЕЛЬ: ${contract.goal}`;
+        els.resultInput.value = '';
+        contractLock = false;
+        
+        activatePoll();
+        queueSystemMessage(`Контракт ${currentContractIndex+1} из ${totalContracts}. Выполни задание в казино и синхронизируй результат.`);
         updateUI();
-        document.getElementById('startModal').classList.add('hidden');
-        loadNextActivity();
-        showMessage("Система активирована. Не верь своим глазам.", true);
-        
-        addRainOverlay();
-        startThunderInterval();
-        updateBloodOverlay();
-        startCameraBreathing();
-        
-        if (!soundMuted && audioCtx && audioCtx.state === 'running') {
-            startAmbientRain();
-            startAtmosphericHum();
-        }
-        
-        fakeCounterInterval = setInterval(() => {
-            if (gameStarted && game.stress > 40 && Math.random() < 0.4) {
-                const oldBalanceSpan = els.balanceStat;
-                const oldVal = parseInt(oldBalanceSpan.innerText);
-                const fakeVal = oldVal + (Math.random() > 0.5 ? 1 : -1);
-                oldBalanceSpan.innerText = fakeVal;
-                setTimeout(() => { if(gameStarted) oldBalanceSpan.innerText = game.balance; }, 800);
-            }
-        }, 4000);
-        
-        questGlitchInterval = setInterval(() => {
-            if (gameStarted && currentTask && !game.currentQuestionMode && Math.random() < 0.4 && !eventActive) {
-                const fakeGoal = "СБРОСИТЬ БАЛАНС ДО 0";
-                els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 ${fakeGoal}</span>`;
-                setTimeout(() => {
-                    if (currentTask && !game.currentQuestionMode && gameStarted) els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
-                }, 3000);
-            }
-        }, 12000);
-        
-        setTimeout(() => tryTriggerUniqueEvent(), 45000);
-        setTimeout(() => tryTriggerUniqueEvent(), 120000);
-        setTimeout(() => tryTriggerUniqueEvent(), 210000);
-        
-        saveGame();
     }
-    
-    function init() {
-        const hasSave = loadGame();
-        if (!hasSave || game.balance === 0) {
-            document.getElementById('startModal').classList.remove('hidden');
+
+    function activatePoll() {
+        pollActive = true;
+        els.pollYesBtn.disabled = false;
+        els.pollNoBtn.disabled = false;
+        els.pollYesBtn.className = 'btn btn-poll';
+        els.pollNoBtn.className = 'btn btn-poll';
+        queueSystemMessage("Чат, голосуйте! Верите ли вы прогнозу ИИ? Нажми соответствующую кнопку на пульте.");
+    }
+
+    window.resolvePoll = function(choice) {
+        if (!pollActive) return;
+        pollActive = false;
+        
+        els.pollYesBtn.disabled = true;
+        els.pollNoBtn.disabled = true;
+        
+        if (choice === true) {
+            els.pollYesBtn.className = 'btn btn-poll selected-yes';
+            queueSystemMessage("Чат проголосовал: ВЕРИТ ИИ. Посмотрим, кто окажется прав.");
         } else {
-            gameStarted = true;
-            updateUI();
-            if (!game.waitingTransition && game.stage < STAGES.length) {
-                if (game.currentQuestionMode && game.currentQuestionObj) {
-                    eventActive = true;
-                    renderQuestion();
-                } else {
-                    loadNextActivity();
-                }
+            els.pollNoBtn.className = 'btn btn-poll selected-no';
+            queueSystemMessage("Чат проголосовал: НЕ ВЕРИТ ИИ. Докажите, что система ошибается!");
+        }
+        playBeep(300, 'sine', 0.08);
+    };
+
+    function submitResult() {
+        if (!gameStarted || contractLock) {
+            showInfo("Ошибка", "Контракт уже выполнен или игра не запущена.");
+            return;
+        }
+        const contract = contracts[currentContractIndex];
+        if (!contract) return;
+        let inputValue = parseFloat(els.resultInput.value);
+        if (isNaN(inputValue)) {
+            showInfo("Ошибка", "Введи число (баланс или выигрыш бонусы).");
+            return;
+        }
+        contractLock = true;
+        let success = false;
+        let message = "";
+
+        if (contract.type === "balance" || contract.type === "spins") {
+            if (inputValue >= contract.threshold) {
+                success = true;
+                message = `✅ Баланс ${inputValue.toLocaleString('ru-RU')} ₽ выше порога ${contract.threshold.toLocaleString('ru-RU')} ₽. ИИ ошибся!`;
+            } else {
+                success = false;
+                message = `❌ Баланс ${inputValue.toLocaleString('ru-RU')} ₽ ниже порога. ИИ оказался прав.`;
             }
-            addRainOverlay();
-            startThunderInterval();
-            updateBloodOverlay();
-            startCameraBreathing();
-            
-            if (!soundMuted && audioCtx && audioCtx.state === 'running') {
-                startAmbientRain();
-                startAtmosphericHum();
+            balance = inputValue;
+        } else if (contract.type === "bonus") {
+            if (inputValue > contract.threshold) {
+                success = true;
+                message = `🔥 Выигрыш бонусы составил ${inputValue.toLocaleString('ru-RU')} ₽! ИИ солгал!`;
+            } else {
+                success = false;
+                message = `💀 Выигрыш бонусы всего ${inputValue.toLocaleString('ru-RU')} ₽. ИИ предсказал верно.`;
             }
-            
-            fakeCounterInterval = setInterval(() => {
-                if (gameStarted && game.stress > 40 && Math.random() < 0.4) {
-                    const oldBalanceSpan = els.balanceStat;
-                    const oldVal = parseInt(oldBalanceSpan.innerText);
-                    const fakeVal = oldVal + (Math.random() > 0.5 ? 1 : -1);
-                    oldBalanceSpan.innerText = fakeVal;
-                    setTimeout(() => { if(gameStarted) oldBalanceSpan.innerText = game.balance; }, 800);
-                }
-            }, 4000);
-            questGlitchInterval = setInterval(() => {
-                if (gameStarted && currentTask && !game.currentQuestionMode && Math.random() < 0.4 && !eventActive) {
-                    const fakeGoal = "СБРОСИТЬ БАЛАНС ДО 0";
-                    els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 ${fakeGoal}</span>`;
-                    setTimeout(() => {
-                        if (currentTask && !game.currentQuestionMode && gameStarted) els.questText.innerHTML = `${currentTask.text}<br><span style="color:#ffaa33;">🎯 Цель: ${currentTask.goal}</span>`;
-                    }, 3000);
-                }
-            }, 12000);
-            if (game.uniqueEventsTriggered.length < UNIQUE_EVENTS.length) {
-                setTimeout(() => tryTriggerUniqueEvent(), 45000);
-                if (game.uniqueEventsTriggered.length < 2) setTimeout(() => tryTriggerUniqueEvent(), 120000);
-                if (game.uniqueEventsTriggered.length < 3) setTimeout(() => tryTriggerUniqueEvent(), 210000);
+        } else if (contract.type === "anomaly") {
+            const lastTwo = Math.abs(inputValue) % 100;
+            if (lastTwo % 11 === 0 || lastTwo === 0) {
+                success = true;
+                message = `🎯 Две последние цифры ${lastTwo.toString().padStart(2, '0')} — одинаковые! Контракт выполнен.`;
+            } else {
+                success = false;
+                message = `❌ Последние цифры ${lastTwo.toString().padStart(2, '0')} — разные. Условие не выполнено.`;
             }
+            balance = inputValue;
+        }
+
+        if (success) {
+            liesCaught += contract.successReward;
+            fear += contract.stressChange;
+            triggerThunder();
+            showInfo("⚡ УСПЕХ! ИИ ОБМАНУТ", `${message}\nСтрах упал на ${Math.abs(contract.stressChange)}%. Обманов ИИ: ${liesCaught}/3`);
+            queueSystemMessage("Критическая ошибка! Мои прогнозы разрушены. Ты везучий черт...");
+        } else {
+            fear += contract.failPenalty;
+            playBeep(220, 'sawtooth', 0.5, 0.1);
+            showInfo("🚨 КОНТРАКТ ПРОВАЛЕН", `${message}\nСтрах вырос на +${contract.failPenalty}%.`);
+            queueSystemMessage("Я же говорил. Твои действия предсказуемы. Износ системы растёт.");
         }
         
-        document.getElementById('resetBtn').onclick = resetGame;
+        currentContractIndex++;
+        
+        setTimeout(() => {
+            if (gameStarted) loadContract();
+        }, 100);
+    }
+
+    function queueSystemMessage(msg) {
+        const comment = els.systemComment;
+        comment.innerHTML = `<i class="fas fa-robot"></i> ${msg}`;
+        playBeep(100, 'sine', 0.1, 0.04);
+    }
+
+    function showInfo(title, desc) {
+        els.infoTitle.innerText = title;
+        els.infoDesc.innerText = desc;
+        els.infoModal.classList.remove('hidden');
+    }
+
+    window.closeInfoModal = function() {
+        els.infoModal.classList.add('hidden');
+        playBeep(200, 'sine', 0.05);
+    };
+
+    function finishGame(win) {
+        gameStarted = false;
+        stopAllAmbient();
+        if (win) {
+            els.finalTitle.innerHTML = "🔓 СИСТЕМА ВЗЛОМАНА!";
+            els.finalDesc.innerHTML = `Победа! Ты поймал ИИ на лжи 3 раза и освободил баланс ${balance.toLocaleString('ru-RU')} ₽. Чат празднует!`;
+            playBeep(880, 'sine', 0.6, 0.2);
+            triggerThunder();
+        } else {
+            els.finalTitle.innerHTML = "💀 СИСТЕМА УТИЛИЗИРОВАЛА СТРИМ";
+            els.finalDesc.innerHTML = `Страх достиг 100%. Твой баланс ${balance.toLocaleString('ru-RU')} ₽ заморожен. Попробуй снова.`;
+            playBeep(220, 'sawtooth', 1.2, 0.3);
+        }
+        els.finalModal.classList.remove('hidden');
+    }
+
+    function resetGame() {
+        gameStarted = false;
+        stopAllAmbient();
+        contracts = generateContracts();  
+        currentContractIndex = 0;
+        fear = 15;
+        balance = 1000000;
+        liesCaught = 0;
+        contractLock = false;
+        pollActive = false;
+        els.setupScreen.style.display = 'flex';
+        els.gameScreen.style.display = 'none';
+        els.finalModal.classList.add('hidden');
+        els.infoModal.classList.add('hidden');
+        els.systemComment.innerHTML = `<i class="fas fa-robot"></i> Система: ожидание...`;
+        buildStepsUI();
+        updateUI();
+    }
+
+    function giveHint() {
+        if (!gameStarted) return;
+        const contract = contracts[currentContractIndex];
+        if (!contract) return;
+        const isLie = Math.random() < 0.4;
+        if (isLie) {
+            queueSystemMessage("Чат подсказывает: 'Увеличь ставку, слот сейчас горячий' — но это ложь.");
+        } else {
+            if (contract.type === "balance" || contract.type === "spins") {
+                queueSystemMessage("Чат советует: 'Играй аккуратно, не рискуй крупными ставками до конца контракта'.");
+            } else if (contract.type === "bonus") {
+                queueSystemMessage("Чат кричит: 'Покупай бонуску, алгоритмы сейчас сыпят!'");
+            } else {
+                queueSystemMessage("Чат шепчет: 'Следи за последними цифрами баланса, подгоняй мелкими ставками'.");
+            }
+        }
+    }
+
+    function startGame(balanceStr) {
+        let bal = parseInt(balanceStr);
+        if (isNaN(bal) || bal <= 0) bal = 1000000;
+        balance = bal;
+        fear = 15;
+        liesCaught = 0;
+        currentContractIndex = 0;
+        contracts = generateContracts(); 
+        gameStarted = true;
+        contractLock = false;
+        pollActive = false;
+        
+        buildStepsUI();
+        
+        els.setupScreen.style.display = 'none';
+        els.gameScreen.style.display = 'grid';
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        startAmbientRain();
+        startAtmosphericHum();
+        loadContract();
+    }
+
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    window.toggleSound = function() {
+        soundMuted = !soundMuted;
+        const btn = document.getElementById('soundToggleBtn');
+        if (btn) {
+            if (soundMuted) btn.innerHTML = '<i class="fas fa-volume-mute"></i> ЗВУК ВЫКЛ';
+            else btn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
+        }
+        if (soundMuted) stopAllAmbient();
+        else if (gameStarted) { startAmbientRain(); startAtmosphericHum(); }
+    };
+
+    function init() {
+        const statusBar = document.getElementById('statusBar');
+        const soundBtn = document.createElement('button');
+        soundBtn.id = 'soundToggleBtn';
+        soundBtn.className = 'btn';
+        soundBtn.innerHTML = '<i class="fas fa-volume-up"></i> ЗВУК ВКЛ';
+        soundBtn.onclick = () => toggleSound();
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'btn';
+        resetBtn.innerHTML = '<i class="fas fa-sync-alt"></i> СБРОС';
+        resetBtn.onclick = resetGame;
+        statusBar.appendChild(soundBtn);
+        statusBar.appendChild(resetBtn);
+
+        document.getElementById('confirmStartBtn').onclick = () => {
+            const val = document.getElementById('startBalance').value;
+            startGame(val);
+        };
+        
+        els.submitBtn.onclick = submitResult;
+        els.hintBtn.onclick = giveHint;
+        els.pollYesBtn.onclick = () => resolvePoll(true);
+        els.pollNoBtn.onclick = () => resolvePoll(false);
         document.getElementById('closeFinal').onclick = resetGame;
-        document.getElementById('hintBtn').onclick = giveHint;
-        document.getElementById('submitRealBalance').onclick = submitRealBalance;
-        document.getElementById('soundToggleBtn').onclick = toggleSound;
-        document.getElementById('safeFinal').onclick = () => finishWithChoice(true);
-        document.getElementById('riskFinal').onclick = () => finishWithChoice(false);
-        
-        const startBtn = document.getElementById('confirmStartBtn');
-        if (startBtn) startBtn.onclick = () => startGame(document.getElementById('startBalance').value);
-        
+
         document.body.addEventListener('click', () => {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                audioCtx.resume();
             }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            if (gameStarted && !soundMuted) {
-                if (audioCtx && audioCtx.state === 'running') {
-                    startAmbientRain();
-                    startAtmosphericHum();
-                }
-            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         });
-        
-        window.chatHelp = function() { window._chatHelpCalled = true; giveHint(); };
+
+        setInterval(() => {
+            if (gameStarted && fear > 40 && Math.random() < 0.3) triggerThunder();
+        }, 30000);
     }
     init();
 })();
