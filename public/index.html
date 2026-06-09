@@ -65,12 +65,16 @@
             border-radius: 48px;
             padding: 40px;
             text-align: center;
-            max-width: 500px;
+            max-width: 550px;
             width: 90%;
         }
         .setup-card h1 {
             font-size: 2rem;
             margin-bottom: 20px;
+        }
+        .setup-card p {
+            margin-bottom: 10px;
+            font-size: 0.95rem;
         }
         .balance-input {
             background: #111;
@@ -306,7 +310,11 @@
     <div id="setupScreen" class="setup-screen">
         <div class="setup-card">
             <h1><i class="fas fa-brain"></i> КОНТРАКТ: СБОЙ СИСТЕМЫ</h1>
-            <p>ИИ держит твой баланс в заложниках. Выполняй контракты в казино, лови систему на лжи и не дай страху достичь 100%.</p>
+            <p><strong>Сюжет:</strong> ИИ захватил твой баланс в 1 000 000 ₽. Каждый контракт — это задание в казино (спины, бонусы, аномалии).</p>
+            <p><strong>Шкала СТРАХА</strong> растёт при провалах. Достигнет 100% — проигрыш.</p>
+            <p><strong>Счётчик «Обманы ИИ»</strong>: цель — набрать 12 разоблачений за 25 контрактов. Если на 25-м контракте у тебя ≥12 — абсолютная победа!</p>
+            <p><strong>Кнопки опроса</strong>: «Система лжёт» / «Система права» — чат голосует за или против прогноза ИИ.</p>
+            <p><strong>Подсказка</strong> может врать. Интерфейс глючит при высоком страхе.</p>
             <input type="number" id="startBalance" class="balance-input" placeholder="Баланс в рублях" value="1000000">
             <button id="confirmStartBtn" class="btn">НАЧАТЬ ЭКСПЕРИМЕНТ</button>
         </div>
@@ -319,7 +327,7 @@
                 <div class="bar-bg"><div id="stressProgress" class="bar-fill fear-fill" style="width:0%"></div></div>
             </div>
             <div>
-                <div class="stat-label"><span><i class="fas fa-handcuffs"></i> ОБМАНЫ ИИ</span><span id="lieStat">0</span>/3</div>
+                <div class="stat-label"><span><i class="fas fa-handcuffs"></i> ОБМАНЫ ИИ</span><span id="lieStat">0</span>/12</div>
                 <div class="bar-bg"><div id="lieProgress" class="bar-fill" style="width:0%; background:#0ff;"></div></div>
             </div>
             <div>
@@ -334,8 +342,8 @@
                 <div id="questText" class="contract-text">Загрузка...</div>
                 <div id="goalText" class="contract-goal">🎯 ЦЕЛЬ: ---</div>
                 <div class="poll-buttons" id="pollButtons">
-                    <button id="pollYesBtn" class="btn btn-poll">Система врёт</button>
-                    <button id="pollNoBtn" class="btn btn-poll">Система права</button>
+                    <button id="pollYesBtn" class="btn btn-poll">СИСТЕМА ЛЖЁТ</button>
+                    <button id="pollNoBtn" class="btn btn-poll">СИСТЕМА ПРАВА</button>
                 </div>
                 <div class="input-zone">
                     <input type="number" id="resultInput" class="result-input" placeholder="Введи результат (баланс или выигрыш бонусы)">
@@ -384,6 +392,7 @@
     let contracts = [];                     
     let totalContracts = 25;
     let pollActive = false;                 
+    const LIES_TO_WIN = 12;                 // Цель по обманам для победы
 
     // --- ГЕНЕРАТОР 25 УНИКАЛЬНЫХ КОНТРАКТОВ ---
     function generateContracts() {
@@ -682,8 +691,8 @@
         els.stressProgress.style.width = fear + '%';
         els.stressNum.innerText = Math.round(fear);
         els.balanceStat.innerText = balance.toLocaleString('ru-RU');
-        els.lieStat.innerText = liesCaught + '/3';
-        document.getElementById('lieProgress').style.width = (liesCaught / 3 * 100) + '%';
+        els.lieStat.innerText = liesCaught + '/' + LIES_TO_WIN;
+        document.getElementById('lieProgress').style.width = (liesCaught / LIES_TO_WIN * 100) + '%';
         
         const elementsToGlitch = [els.questText, els.goalText, els.balanceStat];
         if (fear >= 75) {
@@ -704,12 +713,13 @@
         updateStepsHighlight();
 
         if (fear >= 100) finishGame(false);
-        if (liesCaught >= 3) finishGame(true);
+        // НЕТ ДОСРОЧНОЙ ПОБЕДЫ — только после всех контрактов
     }
 
     function loadContract() {
         if (currentContractIndex >= totalContracts) {
-            if (liesCaught >= 3) finishGame(true);
+            // Все 25 контрактов пройдены — проверяем количество обманов
+            if (liesCaught >= LIES_TO_WIN) finishGame(true);
             else finishGame(false);
             return;
         }
@@ -721,7 +731,7 @@
         contractLock = false;
         
         activatePoll();
-        queueSystemMessage(`Контракт ${currentContractIndex+1} из ${totalContracts}. Выполни задание в казино и синхронизируй результат.`);
+        queueSystemMessage(`Контракт ${currentContractIndex+1} из ${totalContracts}. Выполни задание в казино и синхронизируй результат. Обманов ИИ: ${liesCaught}/${LIES_TO_WIN}`);
         updateUI();
     }
 
@@ -731,7 +741,7 @@
         els.pollNoBtn.disabled = false;
         els.pollYesBtn.className = 'btn btn-poll';
         els.pollNoBtn.className = 'btn btn-poll';
-        queueSystemMessage("Чат, голосуйте! Верите ли вы прогнозу ИИ? Нажми соответствующую кнопку на пульте.");
+        queueSystemMessage("Чат, голосуйте! Система лжёт или права? Нажми соответствующую кнопку на пульте.");
     }
 
     window.resolvePoll = function(choice) {
@@ -743,10 +753,10 @@
         
         if (choice === true) {
             els.pollYesBtn.className = 'btn btn-poll selected-yes';
-            queueSystemMessage("Чат проголосовал: ВЕРИТ ИИ. Посмотрим, кто окажется прав.");
+            queueSystemMessage("Чат считает: СИСТЕМА ЛЖЁТ. Посмотрим, кто окажется прав.");
         } else {
             els.pollNoBtn.className = 'btn btn-poll selected-no';
-            queueSystemMessage("Чат проголосовал: НЕ ВЕРИТ ИИ. Докажите, что система ошибается!");
+            queueSystemMessage("Чат считает: СИСТЕМА ПРАВА. Докажите обратное!");
         }
         playBeep(300, 'sine', 0.08);
     };
@@ -798,14 +808,15 @@
 
         if (success) {
             liesCaught += contract.successReward;
+            if (liesCaught > LIES_TO_WIN) liesCaught = LIES_TO_WIN;
             fear += contract.stressChange;
             triggerThunder();
-            showInfo("⚡ УСПЕХ! ИИ ОБМАНУТ", `${message}\nСтрах упал на ${Math.abs(contract.stressChange)}%. Обманов ИИ: ${liesCaught}/3`);
+            showInfo("⚡ УСПЕХ! ИИ ОБМАНУТ", `${message}\nСтрах упал на ${Math.abs(contract.stressChange)}%. Обманов ИИ: ${liesCaught}/${LIES_TO_WIN}`);
             queueSystemMessage("Критическая ошибка! Мои прогнозы разрушены. Ты везучий черт...");
         } else {
             fear += contract.failPenalty;
             playBeep(220, 'sawtooth', 0.5, 0.1);
-            showInfo("🚨 КОНТРАКТ ПРОВАЛЕН", `${message}\nСтрах вырос на +${contract.failPenalty}%.`);
+            showInfo("🚨 КОНТРАКТ ПРОВАЛЕН", `${message}\nСтрах вырос на +${contract.failPenalty}%. Обманов ИИ: ${liesCaught}/${LIES_TO_WIN}`);
             queueSystemMessage("Я же говорил. Твои действия предсказуемы. Износ системы растёт.");
         }
         
@@ -838,12 +849,12 @@
         stopAllAmbient();
         if (win) {
             els.finalTitle.innerHTML = "🔓 СИСТЕМА ВЗЛОМАНА!";
-            els.finalDesc.innerHTML = `Победа! Ты поймал ИИ на лжи 3 раза и освободил баланс ${balance.toLocaleString('ru-RU')} ₽. Чат празднует!`;
+            els.finalDesc.innerHTML = `Победа! Ты успешно прошёл все 25 контрактов и разоблачил ИИ ${liesCaught} раз (нужно было ${LIES_TO_WIN}). Баланс ${balance.toLocaleString('ru-RU')} ₽ освобождён. Чат празднует!`;
             playBeep(880, 'sine', 0.6, 0.2);
             triggerThunder();
         } else {
             els.finalTitle.innerHTML = "💀 СИСТЕМА УТИЛИЗИРОВАЛА СТРИМ";
-            els.finalDesc.innerHTML = `Страх достиг 100%. Твой баланс ${balance.toLocaleString('ru-RU')} ₽ заморожен. Попробуй снова.`;
+            els.finalDesc.innerHTML = `Страх достиг 100%. Ты не смог удержать баланс и разоблачить ИИ (всего ${liesCaught} из ${LIES_TO_WIN} обманов). Твой миллион заморожен. Попробуй снова.`;
             playBeep(220, 'sawtooth', 1.2, 0.3);
         }
         els.finalModal.classList.remove('hidden');
