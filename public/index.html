@@ -42,7 +42,7 @@
             height: 100%;
             pointer-events: none;
             z-index: 1;
-            opacity: 0.65;
+            opacity: 0.6;
         }
         .container {
             position: relative;
@@ -66,10 +66,6 @@
             text-align: center;
             max-width: 550px;
             width: 90%;
-        }
-        .setup-card h1 {
-            font-size: 2rem;
-            margin-bottom: 20px;
         }
         .balance-input {
             background: #111;
@@ -386,7 +382,7 @@
     let pollActive = false;                 
     const LIES_TO_WIN = 12;                
 
-    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ ---
+    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ (как в твоём запросе) ---
     function generateContracts() {
         return [
             { id:1, type:"spins", title:"Gates of Olympus 1000", spins:15, stake:1000, threshold:0, text:"Дед настроен агрессивно. Сделай 15 спинов по ставке 1 000 ₽. ИИ гарантирует: баланс упадет ниже", failPenalty:18, stressChange:-8 },
@@ -467,11 +463,11 @@
         stepsContainer: document.getElementById('stepsContainer')
     };
 
-    // ========== АТМОСФЕРНЫЕ ЗВУКИ (только дождь и гром) ==========
+    // ========== АТМОСФЕРНЫЕ ЗВУКИ (ОРИГИНАЛЬНЫЙ ДОЖДЬ) ==========
     function startAmbientRain() {
         if (!audioCtx || soundMuted || rainSoundNode) return;
         try {
-            const bufferSize = audioCtx.sampleRate * 3;
+            const bufferSize = audioCtx.sampleRate * 2;   // как в оригинале
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
             let last = 0;
@@ -485,10 +481,10 @@
             rainSoundNode.loop = true;
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'bandpass';
-            filter.frequency.value = 1200;
+            filter.frequency.value = 1000;   // частота, как в первых версиях
             filter.Q.value = 0.7;
             const gain = audioCtx.createGain();
-            gain.gain.value = 0.12; // увеличил громкость дождя
+            gain.gain.value = 0.09;           // громкость, приятный шум
             rainSoundNode.connect(filter);
             filter.connect(gain);
             gain.connect(audioCtx.destination);
@@ -529,7 +525,7 @@
         flash.style.opacity = 0.9;
         document.body.appendChild(flash);
         setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 200); }, 100);
-        // Звук грома
+        // Звук грома (оставляем как был)
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
@@ -583,7 +579,7 @@
         requestAnimationFrame(animate);
     }
 
-    // ========== ДОЖДЬ НА CANVAS ==========
+    // ========== ДОЖДЬ НА CANVAS (усиленный) ==========
     const canvas = document.getElementById('rainCanvas');
     const ctx = canvas.getContext('2d');
     let raindrops = [];
@@ -591,12 +587,12 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         raindrops = [];
-        for (let i = 0; i < 140; i++) {
+        for (let i = 0; i < 160; i++) {
             raindrops.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
                 len: 10 + Math.random() * 25,
-                speed: 10 + Math.random() * 15
+                speed: 12 + Math.random() * 18
             });
         }
     }
@@ -605,7 +601,7 @@
     function drawRain() {
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = fear > 70 ? 'rgba(255, 50, 50, 0.35)' : 'rgba(0, 255, 0, 0.25)';
+        ctx.strokeStyle = fear > 70 ? 'rgba(255, 80, 80, 0.4)' : 'rgba(0, 255, 0, 0.3)';
         ctx.lineWidth = 1.8;
         for (let d of raindrops) {
             ctx.beginPath();
@@ -622,7 +618,7 @@
     }
     drawRain();
 
-    // ========== UI И ЛОГИКА ==========
+    // ========== UI И ЛОГИКА (без изменений) ==========
     function buildStepsUI() {
         if (!els.stepsContainer) return;
         els.stepsContainer.innerHTML = '';
@@ -892,7 +888,7 @@
         els.setupScreen.style.display = 'none';
         els.gameScreen.style.display = 'grid';
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        startAmbientRain();
+        startAmbientRain();   // запускаем дождь
         loadContract();
         setInterval(() => {
             if (gameStarted && fear > 40 && Math.random() < 0.3) triggerThunder();
