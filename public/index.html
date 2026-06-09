@@ -391,7 +391,6 @@
     let audioCtx = null;
     let soundMuted = false;
     let rainSoundNode = null;
-    let ambientHumNode = null;
     let gameStarted = false;
     let currentContractIndex = 0;          
     let fear = 15;
@@ -403,7 +402,7 @@
     let pollActive = false;                 
     const LIES_TO_WIN = 12;                
 
-    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ (как в твоём запросе) ---
+    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ ---
     function generateContracts() {
         return [
             { id:1, type:"spins", title:"Gates of Olympus 1000", spins:15, stake:1000, threshold:0, text:"Дед настроен агрессивно. Сделай 15 спинов по ставке 1 000 ₽. ИИ гарантирует: баланс упадет ниже", failPenalty:18, stressChange:-8 },
@@ -484,7 +483,7 @@
         stepsContainer: document.getElementById('stepsContainer')
     };
 
-    // ========== ЭТАЛОННЫЕ ЗВУКИ И ВИЗУАЛ (из когнитивного сбоя) ==========
+    // ========== ЗВУКИ (без гула, дождь тише на 20%) ==========
     function startAmbientRain() {
         if (!audioCtx || soundMuted || rainSoundNode) return;
         try {
@@ -504,7 +503,7 @@
             filter.Q.value = 0.7;
             
             const gainNode = audioCtx.createGain();
-            gainNode.gain.value = 0.04;
+            gainNode.gain.value = 0.032; // было 0.04, уменьшили на 20%
             
             rainSoundNode.connect(filter);
             filter.connect(gainNode);
@@ -513,37 +512,10 @@
         } catch(e) { console.log(e); }
     }
     
-    function startAtmosphericHum() {
-        if (!audioCtx || soundMuted || ambientHumNode) return;
-        try {
-            const now = audioCtx.currentTime;
-            const osc1 = audioCtx.createOscillator();
-            const osc2 = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc1.type = 'sine';   osc1.frequency.value = 50;
-            osc2.type = 'sawtooth'; osc2.frequency.value = 50.5;
-            const lowpass = audioCtx.createBiquadFilter();
-            lowpass.type = 'lowpass';
-            lowpass.frequency.value = 70;
-            gainNode.gain.value = 0.07;
-            osc1.connect(lowpass);
-            osc2.connect(lowpass);
-            lowpass.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            osc1.start(now);
-            osc2.start(now);
-            ambientHumNode = { osc1, osc2, gainNode };
-        } catch(e) { console.log(e); }
-    }
-    
     function stopAllAmbientSounds() {
         if (rainSoundNode) {
             try { rainSoundNode.stop(); } catch(e){}
             rainSoundNode = null;
-        }
-        if (ambientHumNode) {
-            try { ambientHumNode.osc1.stop(); ambientHumNode.osc2.stop(); } catch(e){}
-            ambientHumNode = null;
         }
     }
     
@@ -849,7 +821,7 @@
         shadowTimeout = setTimeout(() => { shadowTimeout = null; }, 3000);
     }
 
-    // ========== ИГРОВАЯ ЛОГИКА (без изменений, рабочая) ==========
+    // ========== ИГРОВАЯ ЛОГИКА (без изменений) ==========
     function buildStepsUI() {
         if (!els.stepsContainer) return;
         els.stepsContainer.innerHTML = '';
@@ -912,6 +884,9 @@
         updateHeartbeat();
         if (fear > 70 && Math.random() < 0.2 && !eventActive && !game.currentQuestionMode) showScaryShadow();
     }
+
+    let eventActive = false;
+    let currentQuestionObj = null;
 
     function loadContract() {
         if (currentContractIndex >= totalContracts) {
@@ -1129,7 +1104,6 @@
         els.gameScreen.style.display = 'grid';
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         startAmbientRain();
-        startAtmosphericHum();
         startThunderInterval();
         updateBloodOverlay();
         updateHeartbeat();
@@ -1149,7 +1123,6 @@
         if (soundMuted) stopAllAmbientSounds();
         else if (gameStarted && audioCtx && audioCtx.state === 'running') {
             startAmbientRain();
-            startAtmosphericHum();
         }
     };
 
@@ -1184,7 +1157,6 @@
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             if (gameStarted && !soundMuted && audioCtx && audioCtx.state === 'running') {
                 startAmbientRain();
-                startAtmosphericHum();
             }
         });
     }
