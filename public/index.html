@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>КОНТРАКТ: СБОЙ СИСТЕМЫ</title>
     <style>
+        /* ... (все стили остаются как в последней версии) ... */
         * {
             margin: 0;
             padding: 0;
@@ -402,7 +403,7 @@
     let pollActive = false;                 
     const LIES_TO_WIN = 12;                
 
-    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ ---
+    // --- ФИКСИРОВАННЫЙ МАССИВ ИЗ 25 ЗАДАНИЙ (структура та же) ---
     function generateContracts() {
         return [
             { id:1, type:"spins", title:"Gates of Olympus 1000", spins:15, stake:1000, threshold:0, text:"Дед настроен агрессивно. Сделай 15 спинов по ставке 1 000 ₽. ИИ гарантирует: баланс упадет ниже", failPenalty:18, stressChange:-8 },
@@ -433,14 +434,31 @@
         ];
     }
 
+    // ИСПРАВЛЕННАЯ функция finalizeContract с реалистичными порогами
     function finalizeContract(contract, currentBalance) {
         let c = { ...contract };
-        if (c.type === "spins" || c.type === "balance") {
-            const modifier = 0.85 + Math.random() * 0.09;
-            const thresholdVal = Math.floor(currentBalance * modifier);
+        if (c.type === "spins") {
+            // Максимальная просадка = количество спинов * ставка
+            const maxLoss = c.spins * c.stake;
+            // Минимально возможный баланс после серии
+            const minPossible = currentBalance - maxLoss;
+            // Порог должен быть выше минимального, иначе задание невыполнимо.
+            // Ставим порог на 1-5% выше минимального (но не выше текущего баланса)
+            let thresholdVal = Math.floor(minPossible + (maxLoss * (0.01 + Math.random() * 0.04)));
+            // Дополнительная случайность: порог может быть немного выше, но в любом случае реалистичен.
+            thresholdVal = Math.min(thresholdVal, currentBalance - 1);
+            thresholdVal = Math.max(thresholdVal, minPossible + 1);
             c.threshold = thresholdVal;
             c.text = `${c.text} ${thresholdVal.toLocaleString('ru-RU')} ₽.`;
-            c.goal = `🎯 ЦЕЛЬ: Сделай ${c.spins ? c.spins : '10-15'} спинов в слоте [${c.title}]. Если итоговый баланс ВЫШЕ ${thresholdVal.toLocaleString('ru-RU')} ₽ — система лжёт!`;
+            c.goal = `🎯 ЦЕЛЬ: Сделай ${c.spins} спинов в слоте [${c.title}] по ${c.stake} ₽. Если итоговый баланс ВЫШЕ ${thresholdVal.toLocaleString('ru-RU')} ₽ — система лжёт!`;
+        } else if (c.type === "balance") {
+            // Для свободной сессии просадка может быть больше – от 90% до 98% от текущего баланса
+            const minPercent = 0.90;
+            const maxPercent = 0.98;
+            const thresholdVal = Math.floor(currentBalance * (minPercent + Math.random() * (maxPercent - minPercent)));
+            c.threshold = thresholdVal;
+            c.text = `${c.text} ${thresholdVal.toLocaleString('ru-RU')} ₽.`;
+            c.goal = `🎯 ЦЕЛЬ: Сделай свободную сессию (10-20 спинов) в слоте [${c.title}]. Если итоговый баланс ВЫШЕ ${thresholdVal.toLocaleString('ru-RU')} ₽ — система лжёт!`;
         } else if (c.type === "bonus") {
             const predictedWin = Math.floor(c.buy * (0.15 + Math.random() * 0.35));
             c.predicted = predictedWin;
@@ -457,7 +475,7 @@
         return c;
     }
 
-    // DOM элементы
+    // DOM элементы (как в предыдущей версии)
     const els = {
         setupScreen: document.getElementById('setupScreen'),
         gameScreen: document.getElementById('gameScreen'),
@@ -483,7 +501,7 @@
         stepsContainer: document.getElementById('stepsContainer')
     };
 
-    // ========== ЗВУКИ (без гула, дождь тише на 20%) ==========
+    // ========== ЗВУКИ (только дождь, без гула) ==========
     function startAmbientRain() {
         if (!audioCtx || soundMuted || rainSoundNode) return;
         try {
@@ -492,19 +510,15 @@
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            
             rainSoundNode = audioCtx.createBufferSource();
             rainSoundNode.buffer = buffer;
             rainSoundNode.loop = true;
-            
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'bandpass';
             filter.frequency.value = 1000;
             filter.Q.value = 0.7;
-            
             const gainNode = audioCtx.createGain();
-            gainNode.gain.value = 0.032; // было 0.04, уменьшили на 20%
-            
+            gainNode.gain.value = 0.032;
             rainSoundNode.connect(filter);
             filter.connect(gainNode);
             gainNode.connect(audioCtx.destination);
@@ -513,10 +527,7 @@
     }
     
     function stopAllAmbientSounds() {
-        if (rainSoundNode) {
-            try { rainSoundNode.stop(); } catch(e){}
-            rainSoundNode = null;
-        }
+        if (rainSoundNode) { try { rainSoundNode.stop(); } catch(e){} rainSoundNode = null; }
     }
     
     function playBeep(freq, duration, type='sine', volume=0.1) {
@@ -544,8 +555,7 @@
     
     function triggerThunder() {
         if (!gameStarted) return;
-        
-        // Визуальная вспышка
+        // Вспышка и гром (код тот же, что в предыдущей версии)
         const flash = document.createElement('div');
         flash.style.position = 'fixed';
         flash.style.top = 0; flash.style.left = 0; flash.style.width = '100%'; flash.style.height = '100%';
@@ -554,10 +564,7 @@
         document.body.appendChild(flash);
         flash.style.transition = 'opacity 0.05s';
         flash.style.opacity = 0.9;
-        setTimeout(() => {
-            flash.style.opacity = 0;
-            setTimeout(() => flash.remove(), 200);
-        }, 100);
+        setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 200); }, 100);
         
         const darken = document.createElement('div');
         darken.style.position = 'fixed';
@@ -567,12 +574,8 @@
         document.body.appendChild(darken);
         darken.style.transition = 'opacity 0.1s';
         darken.style.opacity = 0.95;
-        setTimeout(() => {
-            darken.style.opacity = 0;
-            setTimeout(() => darken.remove(), 500);
-        }, 1500);
+        setTimeout(() => { darken.style.opacity = 0; setTimeout(() => darken.remove(), 500); }, 1500);
         
-        // Звук грома
         if (!soundMuted && audioCtx && audioCtx.state === 'running') {
             try {
                 const now = audioCtx.currentTime;
@@ -628,8 +631,6 @@
                 }
             } catch(e) { console.log("Thunder audio error:", e); }
         }
-        
-        // Тряска экрана
         const shakeDuration = 500 + (fear * 6);
         const shakeIntensity = 6 + Math.round(fear / 8);
         shakeScreen(shakeDuration, shakeIntensity);
@@ -640,9 +641,7 @@
         window.thunderInterval = setInterval(() => {
             if (!gameStarted) return;
             const delay = Math.random() * 30000;
-            setTimeout(() => {
-                if (gameStarted) triggerThunder();
-            }, delay);
+            setTimeout(() => { if (gameStarted) triggerThunder(); }, delay);
         }, 90000);
         setTimeout(() => { if (gameStarted) triggerThunder(); }, 10000);
     }
@@ -666,14 +665,6 @@
             }
         }
         requestAnimationFrame(step);
-    }
-    
-    function pixelateTemporarily() {
-        const container = document.querySelector('.container');
-        if (container) {
-            container.classList.add('pixelated');
-            setTimeout(() => container.classList.remove('pixelated'), 300);
-        }
     }
     
     function updateBloodOverlay() {
@@ -854,6 +845,9 @@
         }
     }
 
+    let eventActive = false;
+    let currentQuestionObj = null;
+
     function updateUI() {
         if (!gameStarted) return;
         fear = Math.min(100, Math.max(0, fear));
@@ -884,9 +878,6 @@
         updateHeartbeat();
         if (fear > 70 && Math.random() < 0.2 && !eventActive && !game.currentQuestionMode) showScaryShadow();
     }
-
-    let eventActive = false;
-    let currentQuestionObj = null;
 
     function loadContract() {
         if (currentContractIndex >= totalContracts) {
